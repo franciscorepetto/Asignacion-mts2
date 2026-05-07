@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OCASA — Layout</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --brand:#33c2ca;--brand-dark:#1fa8b0;--brand-light:#e8f9fa;--brand-mid:#b2e8eb;
+  --bg:#f4f6f7;--surface:#fff;--surface2:#f0f8f9;--border:#d8eef0;
+  --text:#1a1a1a;--text2:#5a6a6b;--text3:#a0b4b5;--danger:#e05548;
+}
+body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;border-bottom:2px solid var(--brand);background:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(51,194,202,.12)}
+.logo-text{font-size:22px;font-weight:800;letter-spacing:-.5px;color:#1a1a1a}
+.header-mid{font-size:13px;font-weight:600;color:var(--text2)}
+.header-mid span{color:var(--brand);font-weight:700}
+.hmeta{font-size:11px;font-weight:600;color:var(--text3);background:var(--brand-light);padding:4px 10px;border-radius:20px;border:1px solid var(--brand-mid);font-family:monospace}
+.back-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;background:none;border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;border-radius:8px;cursor:pointer;transition:all .15s}
+.back-btn:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-light)}
+#splash{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px}
+.splash-logo{font-size:48px;font-weight:800;letter-spacing:-2px;color:#1a1a1a;margin-bottom:4px}
+.splash-sub{font-size:14px;font-weight:500;color:var(--text2);margin-bottom:48px;letter-spacing:.02em}
+.splash-card{background:#fff;border-radius:16px;padding:32px;width:100%;max-width:480px;box-shadow:0 4px 24px rgba(51,194,202,.12);border:1.5px solid var(--border)}
+.splash-card h2{font-size:18px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.splash-card p{font-size:12px;color:var(--text2);margin-bottom:24px;line-height:1.6}
+.splash-label{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand-dark);margin-bottom:8px}
+.suc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:24px}
+.suc-btn{padding:12px 8px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;text-align:center;font-family:'Montserrat',sans-serif}
+.suc-btn:hover{border-color:var(--brand);background:var(--brand-light)}
+.suc-btn.active{border-color:var(--brand);background:var(--brand-light);box-shadow:0 0 0 3px rgba(51,194,202,.15)}
+.suc-code{font-size:16px;font-weight:800;color:var(--text);display:block}
+.suc-name{font-size:10px;font-weight:500;color:var(--text2);display:block;margin-top:2px}
+.suc-badge{font-size:9px;font-weight:600;color:var(--brand-dark);background:var(--brand-mid);padding:2px 6px;border-radius:10px;display:inline-block;margin-top:4px}
+.suc-badge.soon{background:#f0eeee;color:var(--text3)}
+.enter-btn{width:100%;padding:13px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.04em;box-shadow:0 2px 12px rgba(51,194,202,.35)}
+.enter-btn:hover{background:var(--brand-dark)}
+.enter-btn:disabled{background:var(--text3);box-shadow:none;cursor:not-allowed}
+.coming-note{font-size:10px;color:var(--text3);text-align:center;margin-top:12px;font-weight:500}
+#app{flex:1;display:none;flex-direction:column;overflow:hidden;min-height:0}
+.main{display:flex;flex:1;overflow:hidden;min-height:0}
+.sidebar{width:288px;flex-shrink:0;background:#fff;border-right:2px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.ss{padding:14px;border-bottom:1px solid var(--border)}
+.slabel{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand-dark);margin-bottom:7px}
+.mbtns{display:flex;gap:6px}
+.mbtn{flex:1;padding:8px;background:var(--bg);border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;border-radius:8px;cursor:pointer;transition:all .15s;text-align:center}
+.mbtn.active{background:var(--brand);color:#fff;border-color:var(--brand);box-shadow:0 2px 8px rgba(51,194,202,.35)}
+.mbtn:hover:not(.active){border-color:var(--brand);color:var(--brand)}
+.instr{padding:10px 12px;background:var(--brand-light);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.7;border-left:3px solid var(--brand)}
+.instr strong{color:var(--brand-dark);font-weight:700}
+.slist{flex:1;overflow-y:auto;padding:8px}
+.slist::-webkit-scrollbar{width:4px}
+.slist::-webkit-scrollbar-thumb{background:var(--brand-mid);border-radius:2px}
+.sitem{border-radius:10px;margin-bottom:6px;border:1.5px solid var(--border);overflow:hidden;transition:all .15s;background:#fff}
+.sitem:hover{box-shadow:0 2px 8px rgba(51,194,202,.1)}
+.sitem.selected{border-color:var(--brand);box-shadow:0 0 0 3px rgba(51,194,202,.15)}
+.sitem-header{display:flex;align-items:center;gap:8px;padding:9px 10px;cursor:pointer}
+.sitem-header:hover{background:var(--brand-light)}
+.scolor-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.sname{font-size:11px;font-weight:700;flex:1}
+.sarea-badge{font-size:10px;font-weight:600;color:var(--brand-dark);background:var(--brand-light);padding:2px 7px;border-radius:20px;border:1px solid var(--brand-mid)}
+.sdel{width:22px;height:22px;border:none;background:none;color:var(--text3);cursor:pointer;font-size:14px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .1s}
+.sdel:hover{background:#fce8e8;color:var(--danger)}
+.sedit:hover{background:var(--brand-light);color:var(--brand)}
+.sitem-acts{padding:6px 10px 8px;background:var(--surface2);border-top:1px solid var(--border)}
+.act-row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.act-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.act-name{font-size:10px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.act-pct{font-size:10px;font-weight:600;color:var(--text2);min-width:30px;text-align:right}
+.act-m2{font-size:10px;font-weight:700;color:var(--brand-dark);min-width:46px;text-align:right}
+.act-client{font-size:10px;font-weight:600;color:#a805e0;min-width:60px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.summary{padding:12px 14px;border-top:2px solid var(--border);background:var(--surface2)}
+.srow{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.skey{font-size:11px;font-weight:500;color:var(--text2)}
+.sval{font-size:13px;font-weight:700;color:var(--brand-dark)}
+.expbtn{margin:0 14px 12px;padding:10px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;cursor:pointer;width:calc(100% - 28px);letter-spacing:.04em;transition:all .15s;box-shadow:0 2px 8px rgba(51,194,202,.3)}
+.expbtn:hover{background:var(--brand-dark)}
+.cwrap{flex:1;position:relative;overflow:hidden;background:var(--bg);min-width:0}
+#fp{position:absolute;top:0;left:0;display:block}
+.tbar{position:absolute;top:14px;right:14px;display:flex;flex-direction:column;gap:5px;z-index:10}
+.tbtn{width:34px;height:34px;background:#fff;border:1.5px solid var(--border);color:var(--text2);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s;user-select:none;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.tbtn:hover{background:var(--brand-light);color:var(--brand);border-color:var(--brand)}
+.tbtn.active-tool{background:var(--brand);color:#fff;border-color:var(--brand)}
+.scalebar{position:absolute;bottom:14px;right:14px;background:#fff;border:1.5px solid var(--border);padding:5px 10px;border-radius:20px;font-size:10px;font-weight:600;color:var(--text2)}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal{background:#fff;border-radius:14px;padding:22px;min-width:400px;max-width:520px;box-shadow:0 12px 48px rgba(0,0,0,.16);border-top:4px solid var(--brand)}
+.modal h3{font-size:15px;font-weight:800;margin-bottom:2px}
+.modal .sub{font-size:11px;font-weight:500;color:var(--text2);margin-bottom:12px}
+.pct-bar{height:5px;background:var(--border);border-radius:3px;margin-bottom:14px;overflow:hidden}
+.pct-bar-fill{height:100%;border-radius:3px;transition:width .2s,background .2s}
+.modal-row{margin-bottom:7px;background:var(--brand-light);padding:10px 12px;border-radius:10px;border:1.5px solid var(--brand-mid)}
+.modal-row-top{display:flex;align-items:center;gap:8px}
+.modal-row-top select{flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:500;padding:5px 7px;border-radius:6px;outline:none}
+.modal-row-top select:focus{border-color:var(--brand)}
+.modal-row-top input[type=range]{flex:0 0 80px;accent-color:var(--brand)}
+.pct-val{font-size:12px;font-weight:700;min-width:34px;text-align:right;color:var(--brand-dark)}
+.del-act{width:22px;height:22px;border:none;background:none;color:var(--text3);cursor:pointer;font-size:16px;flex-shrink:0;border-radius:5px;transition:all .1s}
+.del-act:hover{background:#fce8e8;color:var(--danger)}
+.extra-fields{margin-top:8px;padding-top:8px;border-top:1px dashed var(--brand-mid);display:flex;flex-direction:column;gap:6px}
+.field-row{display:flex;align-items:center;gap:8px}
+.field-row label{font-size:10px;font-weight:700;white-space:nowrap;min-width:80px}
+.field-row label.client-lbl{color:#a805e0}
+.field-row label.piso-lbl{color:var(--brand-dark)}
+.field-row input, .field-row select.sm{flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;padding:5px 8px;border-radius:6px;outline:none}
+.field-row input:focus{border-color:var(--brand)}
+.field-row input.client-inp:focus{border-color:#a805e0}
+.add-row-btn{width:100%;padding:8px;border:1.5px dashed var(--brand-mid);background:none;color:var(--brand-dark);font-size:11px;font-weight:600;font-family:'Montserrat',sans-serif;cursor:pointer;border-radius:8px;margin-bottom:12px;transition:all .15s}
+.add-row-btn:hover{background:var(--brand-light);border-color:var(--brand)}
+.modal-footer{display:flex;gap:8px}
+.btn-primary{flex:1;padding:10px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:12px;cursor:pointer;transition:all .15s}
+.btn-primary:hover{background:var(--brand-dark)}
+.btn-secondary{padding:10px 16px;background:none;border:1.5px solid var(--border);color:var(--text2);border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-secondary:hover{border-color:var(--brand);color:var(--brand)}
+.overlap-warn{background:#fff8e5;border:1.5px solid #f5c842;color:#7a5e00;padding:9px 12px;border-radius:8px;font-size:11px;font-weight:500;margin-bottom:12px}
+#areaNameInp{font-size:15px;font-weight:800;border:none;border-bottom:2px solid var(--brand);outline:none;font-family:'Montserrat',sans-serif;width:100%;background:transparent;color:var(--text);padding-bottom:2px}
+.dropdown-section{margin-bottom:12px;padding:12px;background:var(--surface2);border-radius:8px;border:1.5px solid var(--brand-mid)}
+.dropdown-section label{display:block;font-size:10px;font-weight:700;color:var(--brand-dark);margin-bottom:6px}
+.dropdown-section select{width:100%;padding:8px;border:1.5px solid var(--border);border-radius:6px;font-family:'Montserrat',sans-serif;font-size:11px;background:#fff;outline:none}
+.dropdown-section select:focus{border-color:var(--brand)}
+.dropdown-section select:disabled{background:var(--bg);color:var(--text3);cursor:not-allowed}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-text">OCASA</div>
+  <div class="header-mid" id="headerMid">Layout de Sucursales</div>
+  <div class="hmeta" id="coords" style="display:none">x: —  y: —</div>
+  <button class="back-btn" id="backBtn" style="display:none" onclick="goBack()">← Volver</button>
+</header>
+
+<div id="splash">
+  <div class="splash-logo">OCASA</div>
+  <div class="splash-sub">Sistema de asignación de actividades por layout</div>
+  <div class="splash-card">
+    <h2>Seleccioná tu sucursal</h2>
+    <p>Elegí la sucursal sobre la que vas a trabajar. Vas a poder dibujar las áreas del layout y asignarles actividades de costeo.</p>
+    <div class="slabel">Sucursales disponibles</div>
+    <div class="suc-grid" id="sucGrid"></div>
+    <button class="enter-btn" id="enterBtn" disabled onclick="enterLayout()">Ingresar al layout →</button>
+    <div class="coming-note">Las sucursales marcadas como "Próximamente" están en proceso de carga.</div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="main">
+    <div class="sidebar">
+      <div class="ss">
+        <div class="slabel">Modo de trabajo</div>
+        <div class="mbtns">
+          <button class="mbtn active" id="btnD" onclick="setMode('draw')">✏ Dibujar área</button>
+          <button class="mbtn" id="btnS" onclick="setMode('select')">↖ Seleccionar</button>
+        </div>
+      </div>
+      <div class="ss">
+        <div class="instr" id="instrTxt">
+          <strong>Modo dibujo:</strong><br>
+          1. Clic = vértice del área<br>
+          2. Doble clic = cerrar polígono<br>
+          3. Asigná actividades y %
+        </div>
+      </div>
+      <div class="slabel" style="padding:12px 14px 4px">Áreas definidas</div>
+      <div class="slist" id="sList"><div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin áreas aún.</div></div>
+      <button class="expbtn" onclick="exportXLSX()">↓ Exportar tabla BASE (.xlsx)</button>
+      <div class="summary">
+        <div class="srow"><span class="skey">Total asignado</span><span class="sval" id="totArea">0.00 m²</span></div>
+        <div class="srow"><span class="skey">Áreas</span><span class="sval" id="totN">0</span></div>
+      </div>
+    </div>
+    <div class="cwrap" id="cwrap">
+      <canvas id="fp"></canvas>
+      <div class="tbar">
+        <div class="tbtn" onclick="zoom(1.2)" title="Zoom in">+</div>
+        <div class="tbtn" onclick="zoom(0.83)" title="Zoom out">−</div>
+        <div class="tbtn" onclick="resetView()" title="Encuadrar">⊡</div>
+        <div class="tbtn" id="btnPan" onclick="togglePan()" title="Mover (Espacio)">✋</div>
+        <div class="tbtn" onclick="undoVertex()" title="Deshacer vértice">↩</div>
+      </div>
+      <div class="scalebar" id="scalebar">—</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg" style="display:none" onclick="if(event.target===this)closeModal(true)">
+  <div class="modal">
+    <h3 id="modalTitle">Área</h3>
+    <div class="sub" id="modalSub"></div>
+    <div id="overlapWarn" class="overlap-warn" style="display:none">⚠ Esta área se superpone con otra existente.</div>
+    
+    <div class="dropdown-section">
+      <label>Agrupación</label>
+      <select id="agrupSelect" onchange="updateFamilias()">
+        <option value="">— seleccionar —</option>
+      </select>
+    </div>
+    
+    <div class="dropdown-section">
+      <label>Familia</label>
+      <select id="familiaSelect" onchange="updateActividades()" disabled>
+        <option value="">— seleccionar —</option>
+      </select>
+    </div>
+    
+    <div class="dropdown-section">
+      <label>Actividad</label>
+      <select id="actSelect" onchange="selectActividad()" disabled>
+        <option value="">— seleccionar —</option>
+      </select>
+    </div>
+    
+    <div class="pct-bar"><div class="pct-bar-fill" id="pctFill" style="width:0%"></div></div>
+    <div id="actRows"></div>
+    <button class="add-row-btn" onclick="addActRow()">+ Agregar otra actividad</button>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal(true)">Cancelar</button>
+      <button class="btn-primary" onclick="saveModal()">Guardar área</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA_REGISTRY={'MDQ':{name:'Mar del Plata',data:{"bbox": {"min_x": 6084.785, "max_x": 6370.148, "min_y": 3315.155, "max_y": 3414.689}, "lines": [{"x1": 6345.948, "y1": 3337.662, "x2": 6344.948, "y2": 3337.662, "layer": "00-Muros"}, {"x1": 6333.928, "y1": 3332.632, "x2": 6347.086, "y2": 3332.632, "layer": "Contorno"}, {"x1": 6333.928, "y1": 3335.632, "x2": 6333.928, "y2": 3332.632, "layer": "Contorno"}, {"x1": 6333.928, "y1": 3378.632, "x2": 6347.086, "y2": 3378.632, "layer": "Contorno"}, {"x1": 6333.928, "y1": 3375.632, "x2": 6333.928, "y2": 3378.632, "layer": "Contorno"}, {"x1": 6331.961, "y1": 3387.893, "x2": 6331.961, "y2": 3315.155, "layer": "Contorno"}, {"x1": 6346.078, "y1": 3337.662, "x2": 6347.078, "y2": 3337.662, "layer": "00-Muros"}, {"x1": 6358.098, "y1": 3332.632, "x2": 6344.939, "y2": 3332.632, "layer": "Contorno"}, {"x1": 6358.098, "y1": 3335.632, "x2": 6358.098, "y2": 3332.632, "layer": "Contorno"}, {"x1": 6358.098, "y1": 3378.632, "x2": 6344.939, "y2": 3378.632, "layer": "Contorno"}, {"x1": 6358.098, "y1": 3375.632, "x2": 6358.098, "y2": 3378.632, "layer": "Contorno"}, {"x1": 6104.032, "y1": 3354.352, "x2": 6104.032, "y2": 3354.152, "layer": "Muros"}, {"x1": 6104.032, "y1": 3393.952, "x2": 6104.032, "y2": 3394.152, "layer": "Muros"}, {"x1": 6127.863, "y1": 3356.117, "x2": 6127.963, "y2": 3356.117, "layer": "Muros"}, {"x1": 6127.863, "y1": 3356.117, "x2": 6127.863, "y2": 3359.767, "layer": "Muros"}, {"x1": 6127.963, "y1": 3356.117, "x2": 6127.963, "y2": 3359.767, "layer": "Muros"}, {"x1": 6101.206, "y1": 3359.352, "x2": 6101.206, "y2": 3359.452, "layer": "Muros"}, {"x1": 6134.913, "y1": 3359.667, "x2": 6135.963, "y2": 3359.667, "layer": "Muros"}, {"x1": 6127.863, "y1": 3359.767, "x2": 6127.963, "y2": 3359.767, "layer": "Muros"}, {"x1": 6091.329, "y1": 3399.152, "x2": 6120.584, "y2": 3399.152, "layer": "Muros"}, {"x1": 6091.624, "y1": 3406.152, "x2": 6120.591, "y2": 3406.152, "layer": "Muros"}, {"x1": 6091.329, "y1": 3340.202, "x2": 6120.584, "y2": 3340.202, "layer": "Muros"}, {"x1": 6091.329, "y1": 3335.152, "x2": 6120.625, "y2": 3335.152, "layer": "Muros"}, {"x1": 6362.024, "y1": 3335.832, "x2": 6362.024, "y2": 3335.632, "layer": "Muros"}, {"x1": 6362.024, "y1": 3375.432, "x2": 6362.024, "y2": 3375.632, "layer": "Muros"}, {"x1": 6359.197, "y1": 3340.832, "x2": 6359.197, "y2": 3340.932, "layer": "Muros"}], "polys": [{"pts": [[6100.106, 3359.537], [6100.106, 3359.767], [6100.556, 3359.767], [6100.556, 3359.537]], "closed": true, "layer": "Muros"}, {"pts": [[6127.863, 3354.352], [6127.863, 3354.802], [6128.093, 3354.802], [6128.093, 3354.352]], "closed": true, "layer": "Muros"}, {"pts": [[6084.785, 3325.97], [6084.785, 3414.689], [6140.338, 3414.689], [6140.338, 3325.97]], "closed": true, "layer": "Muros"}, {"pts": [[6099.906, 3394.152], [6099.906, 3354.152], [6104.032, 3354.152], [6104.032, 3354.352], [6100.106, 3354.352], [6100.106, 3393.952], [6104.032, 3393.952], [6104.032, 3394.152], [6099.906, 3394.152]], "closed": false, "layer": "Muros"}, {"pts": [[6111.956, 3355.567], [6110.856, 3355.567], [6110.856, 3356.344], [6110.956, 3356.344], [6110.956, 3355.667], [6111.956, 3355.667], [6111.956, 3355.567]], "closed": false, "layer": "Muros"}, {"pts": [[6110.856, 3357.05], [6110.956, 3357.05], [6110.956, 3358.667], [6111.956, 3358.667], [6111.956, 3358.767], [6110.856, 3358.767], [6110.856, 3357.05]], "closed": false, "layer": "Muros"}, {"pts": [[6108.429, 3394.152], [6108.429, 3393.952], [6107.932, 3393.952], [6107.932, 3394.152]], "closed": true, "layer": "Muros"}, {"pts": [[6111.047, 3357.127], [6111.047, 3357.27], [6110.956, 3357.27], [6110.956, 3357.127]], "closed": true, "layer": "Muros"}, {"pts": [[6111.774, 3357.127], [6111.774, 3357.27], [6111.956, 3357.27], [6111.956, 3357.127]], "closed": true, "layer": "Muros"}, {"pts": [[6120.584, 3394.152], [6120.584, 3354.152]], "closed": false, "layer": "Muros"}, {"pts": [[6131.892, 3356.896], [6131.992, 3356.896], [6131.992, 3355.782], [6133.242, 3355.782], [6133.242, 3356.896], [6133.342, 3356.896], [6133.342, 3356.782], [6133.441, 3356.782], [6133.441, 3356.682], [6133.342, 3356.682], [6133.342, 3355.782], [6134.813, 3355.782], [6134.813, 3356.682], [6134.141, 3356.682], [6134.141, 3356.782], [6134.813, 3356.782], [6134.813, 3358.082], [6133.342, 3358.082], [6133.342, 3357.596], [6133.242, 3357.596], [6133.242, 3358.082], [6132.772, 3358.082], [6132.772, 3358.182], [6133.713, 3358.182], [6133.713, 3358.882], [6133.813, 3358.882], [6133.813, 3358.182], [6134.813, 3358.182], [6134.813, 3359.667], [6131.992, 3359.667], [6131.992, 3358.182], [6132.072, 3358.182], [6132.072, 3358.082], [6131.992, 3358.082], [6131.992, 3357.596], [6131.892, 3357.596], [6131.892, 3359.767], [6134.913, 3359.767], [6134.913, 3355.682], [6131.892, 3355.682], [6131.892, 3356.896]], "closed": false, "layer": "Muros"}, {"pts": [[6127.963, 3354.802], [6127.963, 3355.367], [6127.863, 3355.367], [6127.863, 3354.802]], "closed": true, "layer": "Muros"}, {"pts": [[6108.45, 3354.152], [6108.45, 3354.352], [6107.932, 3354.352], [6107.932, 3354.152]], "closed": true, "layer": "Muros"}, {"pts": [[6109.35, 3354.152], [6109.35, 3354.352], [6111.956, 3354.352], [6111.956, 3393.952], [6109.329, 3393.952], [6109.329, 3394.152], [6112.156, 3394.152], [6112.156, 3354.152], [6109.35, 3354.152]], "closed": false, "layer": "Muros"}, {"pts": [[6127.763, 3359.667], [6127.763, 3359.767], [6127.707, 3359.767], [6127.707, 3359.667]], "closed": true, "layer": "Muros"}, {"pts": [[6124.262, 3359.767], [6124.262, 3359.667], [6124.313, 3359.667], [6124.313, 3359.767]], "closed": true, "layer": "Muros"}, {"pts": [[6124.762, 3359.767], [6124.762, 3359.667], [6124.813, 3359.667], [6124.813, 3359.767]], "closed": true, "layer": "Muros"}, {"pts": [[6126.26, 3359.717], [6126.26, 3359.667], [6126.31, 3359.667], [6126.31, 3359.717]], "closed": true, "layer": "Muros"}, {"pts": [[6126.31, 3359.769], [6126.31, 3359.717], [6126.36, 3359.717], [6126.36, 3359.769]], "closed": true, "layer": "Muros"}, {"pts": [[6128.063, 3359.667], [6128.063, 3359.767], [6128.118, 3359.767], [6128.118, 3359.667]], "closed": true, "layer": "Muros"}, {"pts": [[6131.892, 3359.767], [6131.892, 3359.667], [6131.842, 3359.667], [6131.842, 3359.767]], "closed": true, "layer": "Muros"}, {"pts": [[6131.392, 3359.767], [6131.392, 3359.667], [6131.342, 3359.667], [6131.342, 3359.767]], "closed": true, "layer": "Muros"}, {"pts": [[6129.73, 3359.717], [6129.73, 3359.667], [6129.68, 3359.667], [6129.68, 3359.717]], "closed": true, "layer": "Muros"}, {"pts": [[6129.68, 3359.769], [6129.68, 3359.717], [6129.63, 3359.717], [6129.63, 3359.769]], "closed": true, "layer": "Muros"}, {"pts": [[6123.963, 3359.767], [6123.963, 3354.152], [6136.163, 3354.152], [6136.163, 3359.767], [6135.963, 3359.767], [6135.963, 3359.767], [6135.963, 3359.767], [6135.963, 3354.352], [6124.163, 3354.352], [6124.162, 3359.767], [6124.063, 3359.767], [6124.162, 3359.767], [6123.963, 3359.767]], "closed": false, "layer": "Muros"}, {"pts": [[6127.963, 3356.117], [6127.963, 3359.767], [6127.863, 3359.767], [6127.863, 3356.117]], "closed": true, "layer": "Muros"}, {"pts": [[6358.098, 3341.017], [6358.098, 3341.247], [6358.548, 3341.247], [6358.548, 3341.017]], "closed": true, "layer": "Muros"}, {"pts": [[6357.898, 3375.632], [6357.898, 3373.333]], "closed": false, "layer": "Muros"}, {"pts": [[6369.948, 3337.047], [6368.848, 3337.047], [6368.848, 3337.824], [6368.948, 3337.824], [6368.948, 3337.147], [6369.948, 3337.147], [6369.948, 3337.047]], "closed": false, "layer": "Muros"}, {"pts": [[6368.848, 3338.53], [6368.948, 3338.53], [6368.948, 3340.147], [6369.948, 3340.147], [6369.948, 3340.247], [6368.848, 3340.247], [6368.848, 3338.53]], "closed": false, "layer": "Muros"}, {"pts": [[6366.42, 3375.632], [6366.42, 3375.432], [6365.924, 3375.432], [6365.924, 3375.632]], "closed": true, "layer": "Muros"}, {"pts": [[6369.039, 3338.607], [6369.039, 3338.75], [6368.948, 3338.75], [6368.948, 3338.607]], "closed": true, "layer": "Muros"}, {"pts": [[6369.765, 3338.607], [6369.765, 3338.75], [6369.948, 3338.75], [6369.948, 3338.607]], "closed": true, "layer": "Muros"}, {"pts": [[6357.898, 3335.632], [6357.898, 3332.632], [6369.948, 3332.632], [6369.948, 3335.632]], "closed": false, "layer": "Contorno"}, {"pts": [[6366.441, 3335.632], [6366.441, 3335.832], [6365.924, 3335.832], [6365.924, 3335.632]], "closed": true, "layer": "Muros"}, {"pts": [[6367.341, 3335.632], [6367.341, 3335.832], [6369.948, 3335.832], [6369.948, 3375.432], [6367.32, 3375.432], [6367.32, 3375.632], [6370.148, 3375.632], [6370.148, 3335.632], [6367.341, 3335.632]], "closed": false, "layer": "Muros"}, {"pts": [[6358.098, 3373.333], [6358.098, 3375.432], [6362.024, 3375.432], [6362.024, 3375.632], [6357.898, 3375.632]], "closed": false, "layer": "Muros"}, {"pts": [[6357.898, 3370.833], [6357.898, 3345.212]], "closed": false, "layer": "Muros"}, {"pts": [[6357.898, 3342.712], [6357.898, 3335.632], [6362.024, 3335.632], [6362.024, 3335.832], [6358.098, 3335.832], [6358.098, 3342.712]], "closed": false, "layer": "Muros"}, {"pts": [[6358.098, 3345.212], [6358.098, 3370.833]], "closed": false, "layer": "Muros"}], "labels": [{"text": "Nave", "x": 6105.685, "y": 3375.149}, {"text": "L\u00edmite de \u00e1rea exclusiva", "x": 6108.228, "y": 3340.31}, {"text": "L\u00edmite de \u00e1rea exclusiva", "x": 6108.228, "y": 3398.633}, {"text": "MAR DEL PLATA", "x": 6137.327, "y": 3354.037}, {"text": "Oficina de Recepcion", "x": 6101.682, "y": 3356.05}, {"text": "Tablero Carga de bater\u00edas", "x": 6111.023, "y": 3360.106}, {"text": "Despacho", "x": 6101.614, "y": 3391.731}, {"text": "Postal", "x": 6102.116, "y": 3384.721}, {"text": "Rendiciones", "x": 6102.116, "y": 3375.353}, {"text": "Rack de Sistemas", "x": 6102.506, "y": 3354.481}, {"text": "Carro/ jaula", "x": 6109.079, "y": 3367.89}, {"text": "Cross dock", "x": 6102.116, "y": 3365.053}, {"text": "Piso + 1 6 posiciones", "x": 6111.068, "y": 3363.382}, {"text": "Lockers", "x": 6133.056, "y": 3358.837}, {"text": "h bloque de hormig\u00f3n:  2,36 m", "x": 6099.692, "y": 3354.389}, {"text": "TGBT", "x": 6109.923, "y": 3354.742}, {"text": "Ducha", "x": 6134.161, "y": 3358.837}, {"text": "Ba\u00f1o", "x": 6132.728, "y": 3356.849}, {"text": "Comedor (a definir por  RRHH)", "x": 6129.268, "y": 3356.45}, {"text": "Sala de jefe y de reuni\u00f3n", "x": 6125.671, "y": 3356.02}, {"text": "Oficina de Recepcion", "x": 6358.494, "y": 3339.616}, {"text": "Tablero Carga de bater\u00edas", "x": 6369.014, "y": 3341.586}, {"text": "Despacho", "x": 6358.668, "y": 3374.628}, {"text": "Postal", "x": 6359.353, "y": 3367.912}, {"text": "Rendiciones", "x": 6358.882, "y": 3358.173}, {"text": "Rack de Sistemas", "x": 6360.497, "y": 3335.96}, {"text": "Cross dock", "x": 6359.421, "y": 3348.667}, {"text": "Piso + 1 6 posiciones", "x": 6369.059, "y": 3344.862}, {"text": "TGBT", "x": 6367.914, "y": 3336.221}, {"text": "Pll a canalizar", "x": 6361.383, "y": 3355.67}, {"text": "Dispenser", "x": 6347.884, "y": 3336.624}, {"text": "Dispenser", "x": 6347.884, "y": 3374.799}, {"text": "Nave B1", "x": 6334.285, "y": 3335.501}, {"text": "Nave B2", "x": 6354.98, "y": 3335.501}, {"text": "Nave B3", "x": 6368.122, "y": 3335.501}, {"text": "DEPOSITO ACTUAL", "x": 6362.671, "y": 3334.292}, {"text": "NUEVO DEPOSITO", "x": 6344.67, "y": 3335.288}, {"text": "SUCURSAL MAR DEL PLATA  AMPLIACION", "x": 6333.713, "y": 3329.44}], "sectors_raw": [{"pts": [[6100.106, 3369.267], [6103.206, 3369.267], [6103.206, 3363.922], [6100.106, 3363.922]], "closed": false}, {"pts": [[6100.058, 3379.267], [6103.158, 3379.267], [6103.158, 3372.873], [6100.058, 3372.873]], "closed": false}, {"pts": [[6100.106, 3381.387], [6103.158, 3381.387], [6103.158, 3389.267], [6100.106, 3389.268]], "closed": false}, {"pts": [[6103.856, 3393.952], [6103.856, 3391.392], [6100.106, 3391.392]], "closed": false}, {"pts": [[6358.098, 3350.747], [6361.198, 3350.747], [6361.198, 3345.401], [6358.098, 3345.401]], "closed": false}, {"pts": [[6358.049, 3360.747], [6361.149, 3360.747], [6361.149, 3354.353], [6358.049, 3354.353]], "closed": false}, {"pts": [[6358.098, 3362.867], [6361.149, 3362.867], [6361.149, 3370.747], [6358.098, 3370.748]], "closed": false}]}}};
+
+const ACTIVIDADES_ESTRUCTURA={"STAFF":{"COMERCIAL":["ADMINISTRACION COMERCIAL","COMERCIALES","COMERCIAL","COMERCIAL HUB","COMERCIAL USA","COMERCIAL SALUD","COMERCIAL SALUD HUB","COMERCIAL SALUD USA","DIRECCION GENERAL","PLANEAMIENTO COMERCIAL","MARKETING COMERCIAL","PLANEAMIENTO COM HUB","COMERCIAL SDI"],"ADMINISTRACION":["ADMINISTRACION","ADMINISTRACION HUB","ADMINISTRACION USA","CONTABILIDAD E IMPUESTOS","COMPRAS","FACTURACION Y CTAS A PAGAR","TESORERIA","ADMINISTRACION SDI"],"RRHH":["ADP Y RELACIONES LAB","COMP BENEFICIOS Y CDG RH","DESARROLLO Y EMPLEOS","RECURSOS HUMANOS","RRHH","RECURSOS HUMANOS HUB","RECURSOS HUMANOS USA","RRLL & BP OPERACIONES","ADP PAYROLL CDG & CB","RECURSOS HIUMANOS SDI"],"AUDITORIA":["AUDITORIA"],"CONTROL DE GESTION":["CONTROL DE GESTION","CONTROL DE GESTION HUB","CONTROL DE GESTION USA","RENTA Y BI"],"DIR. ADMINISTRACION":["DIR. ADM Y FINANZAS"],"OBRAS CIVILES":["OBRAS CIVILES"],"SISTEMAS":["DIR. INF Y TECNO","SISTEMAS","DIR. INF Y TECNO HUB","DIR. INF Y TECNO USA","INFRA Y SEG INFORMATICA","INGENIERIA DE SOFTWARE","INNOVACION"],"SERVICIOS":["IMPLEMENTACION","ANALISIS DE NEGOCIOS","SERVICIOS","SERVICIOS HUB","SERVICIOS USA","PRODUCTO"],"LEGALES":["LEGALES"],"MARKETING":["MARKETING"],"RIESGOS":["RIESGOS"],"TRANSFORMACION":["TRANSFORMACION"],"RESULTADOS NO GESTIONALES":["RESULTADOS NO GESTIONALES"],"CALIDAD Y DIR TECNICA GLOBAL":["CALIDAD Y DIR TECNICA GLOBAL"],"ASUNTOS INSTITUCIONALES":["ASUNTOS INSTITUCIONALES"],"COMUNICACIONES":["COMUNICACIONES"]},"STAFF - OPERACIONES":{"PICKING":["PICKING AG","PICKING AS"],"ALMACENAMIENTO":["ALMACENAMIENTO AG","ALMACENAMIENTO AS"],"CALIDAD Y DIR TECNICA":["CALIDAD Y DIR TECNICA AG","CALIDAD Y DIR TECNICA AS","CALIDAD Y DIR TECNICA DI","CALIDAD Y DIR TECNICA SP","CALIDAD Y DIR TECNICA XD","CALIDAD Y DIR.TECN. HUB","CALIDAD Y DIR.TECN. USA"],"IMPLEMENTACION OP":["IMPLEMENTACION OP AG","IMPLEMENTACION OP AS","IMPLEMENTACION OP DI","IMPLEMENTACION OP SP","IMPLEMENTACION OP XD"],"MEJORA CONTINUA":["MEJORA CONTINUA AG","MEJORA CONTINUA AS","MEJORA CONTINUA DI","MEJORA CONTINUA SP","MEJORA CONTINUA XD"],"PLANEAMIENTO":["PLANEAMIENTO AG","PLANEAMIENTO AS","PLANEAMIENTO DI","PLANEAMIENTO SP","PLANEAMIENTO XD","PLANEAMIENTO COM HUB"],"AUDITORIA OPERATIVA":["AUDITORIA OPERATIVA AG","AUDITORIA OPERATIVA AS","AUDITORIA OPERATIVA DI","AUDITORIA OPERATIVA SP","AUDITORIA OPERATIVA XD"],"CUSTOMER EXPERIENCE":["CUSTOMER EXPERIENCE AG","CUSTOMER EXPERIENCE AS","CUSTOMER EXPERIENCE DI","CUSTOMER EXPERIENCE MR","CUSTOMER EXPERIENCE SP","CUSTOMER EXPERIENCE USA","CUSTOMER EXPERIENCE XD"],"CUSTOMER INTELLIGENT":["CUSTOMER INTELLIGENT AG","CUSTOMER INTELLIGENT AS","CUSTOMER INTELLIGENT DI","CUSTOMER INTELLIGENT MR","CUSTOMER INTELLIGENT SP","CUSTOMER INTELLIGENT XD"],"CUSTOMER SUCCESS":["CUSTOMER SUCCESS AG","CUSTOMER SUCCESS AS","CUSTOMER SUCCESS DI","CUSTOMER SUCCESS MR","CUSTOMER SUCCESS SP","CUSTOMER SUCCESS XD"],"INGRESO":["INGRESO AG","INGRESO AS","INGRESOS SP"],"RECEPCION":["RECEPCION SP"],"RENDICION":["RENDICION DI","RENDICION SP"],"IMPOSICION":["IMPOSICION DI"],"PROGRAMACION":["PROGRAMACION DI","PROGRAMACION SP"],"CLASIFICACION":["CLASIFICACION DI","CLASIFICACION SP"],"DISTRIBUCION":["DISTRIBUCION DI","DISTRIBUCION SP"],"TRONCAL TERRESTRE":["TRONCAL TERRESTRE DI"],"TRONCAL AEREO":["TRONCAL AEREO DI"],"ADMINISTRACION OP":["ADMINISTRACION OP AG","ADMINISTRACION OP AS","ADMINISTRACION OP DI","ADMINISTRACION OP SP","ADMINISTRACION OP XD"]},"SOPORTE OPERATIVO":{"SEGURIDAD PATRIMONIAL":["SEGURIDAD PATRIMONIAL AG","SEGURIDAD PATRIMONIAL AS","SEGURIDAD PATRIMONIAL DI","SEGURIDAD PATRIMONIAL SP","SEGURIDAD PATRIMONIAL XD","SEGURIDAD PATRIM HUB"],"LIMPIEZA":["LIMPIEZA AG","LIMPIEZA AS","LIMPIEZA DI","LIMPIEZA SP","LIMPIEZA XD"],"MANTENIMIENTO":["MANTENIMIENTO AG","MANTENIMIENTO AS","MANTENIMIENTO DI","MANTENIMIENTO SP","MANTENIMIENTO XD"],"SEGURIDAD E HIGIENE":["SEGURIDAD E HIGIENE"]},"OPERACIONES":{"GENERAL":["OPERACIONES GENERAL"],"LOGISTICA GENERAL":["OPER LOGISTICA GRAL HUB","OPER LOGISTICA GRAL USA"],"LIFE SCIENCE":["OPER LIFE SCIENCE HUB","OPER LIFE SCIENCE USA"],"CONTROL GESTION OP":["CONTROL GESTION OP"],"INGENIERIA LOGISTICA":["INGENIERIA LOGISTICA OP"],"ESTRATEGIA TRANSPORTE":["ESTRATEGIA TRANSPORTE DI"],"COSTO FLOTA":["COSTO FLOTA PROPIA","COSTO FLOTA PROPIA MOTO"],"FLOTA PROPIA":["FLOTA PROPIA CAMIONETA","FLOTA PROPIA MOTO"],"AYUDANTE FLOTA":["AYUDANTE DE FLOTA"]},"GENERAL":{"GENERAL":["GENERAL"]},"OTROS":{"SERVICIOS ESPECIALES":["SERVICIO EXCLUSIVO SE","CROSS DOCK MELI SE","GUARDA ESPECIALIZADA SE","DESTRUCCION SE","REACONDICIONAMIENTO SE","MUDANZA","EMBALAJE SE","TRAMITACION SE","CHECK MAIL SE","MAILROOM SE","FULLFILMENT SE","NACIONALIZACIONES LYTESA SE","OTROS SE"],"POSTAL":["OPERACIONES POSTAL SDI"],"SDI":["ADMISION DI","ADMINISTRACION SDI","COMERCIAL SDI","FINISHING SDI"],"INTERNACIONAL":["INTERNACIONAL DI","INTERNACIONAL ADM DI"],"OCASA":["OCASA GLOBAL FORWARDING","OCASA PHARMA","OCASA SUPPLY CHAIN","OCASA ULTIMA MILLA","OCASA X BORDER TRANSACTIONS","OCASA XDOCK"],"ESPACIOS CEDIDOS":["ESPACIOS CEDIDOS AG","ESPACIOS CEDIDOS AS","ESPACIOS CEDIDOS SE"],"INPLANT":["INPLANT INF Y TECNOLOG","INPLANT RECURSOS HUMANOS"]}};
+
+const ESPACIOS_CEDIDOS=['ESPACIOS CEDIDOS AG','ESPACIOS CEDIDOS AS','ESPACIOS CEDIDOS SE'];
+const SUCURSALES=[{code:'MDQ',name:'Mar del Plata',available:true},{code:'IRI',name:'Iriarte',available:false},{code:'PLO',name:'PLO Plaza',available:false},{code:'CBN',name:'Caballito Norte',available:false},{code:'TOR',name:'Tortuguitas',available:false},{code:'MOR',name:'Morón',available:false}];
+const AREA_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0','#b5341a','#057a3a','#c45c00','#1a4db5'];
+const ACT_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0'];
+
+let currentSuc=null,DXF=null;
+let scale=1,ox=0,oy=0;
+let mode='draw',panMode=false;
+let curPts=[],areas=[],colIdx=0,selectedArea=null;
+let panning=false,panStart=null,panOff=null;
+let pendingPts=null,editingIdx=-1,modalRows=[];
+const canvas=document.getElementById('fp');
+const ctx=canvas.getContext('2d');
+const wrap=document.getElementById('cwrap');
+
+(function buildSplash(){
+  const grid=document.getElementById('sucGrid');
+  SUCURSALES.forEach(s=>{
+    const btn=document.createElement('button');
+    btn.className='suc-btn'+(s.available?'':' disabled');
+    btn.disabled=!s.available;
+    btn.innerHTML=`<span class="suc-code">${s.code}</span><span class="suc-name">${s.name}</span><span class="suc-badge${s.available?'':' soon'}">${s.available?'Disponible':'Próximamente'}</span>`;
+    if(s.available) btn.onclick=()=>{
+      document.querySelectorAll('.suc-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSuc=s;
+      document.getElementById('enterBtn').disabled=false;
+    };
+    grid.appendChild(btn);
+  });
+})();
+
+function enterLayout(){
+  if(!currentSuc) return;
+  DXF=DATA_REGISTRY[currentSuc.code].data;
+  document.getElementById('splash').style.display='none';
+  const app=document.getElementById('app');
+  app.style.display='flex';app.style.flexDirection='column';
+  document.getElementById('headerMid').innerHTML=`Layout · <span>${currentSuc.name}</span>`;
+  document.getElementById('coords').style.display='block';
+  document.getElementById('backBtn').style.display='flex';
+  initCanvas();
+}
+
+function goBack(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('splash').style.display='flex';
+  document.getElementById('coords').style.display='none';
+  document.getElementById('backBtn').style.display='none';
+  document.getElementById('headerMid').innerHTML='Layout de Sucursales';
+  areas=[];curPts=[];selectedArea=null;colIdx=0;canvas._snapPt=null;
+  document.querySelectorAll('.suc-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('enterBtn').disabled=true;
+  currentSuc=null;
+}
+
+function initCanvas(){
+  canvas.width=wrap.clientWidth;canvas.height=wrap.clientHeight;
+  if(canvas.width>0&&canvas.height>0) resetView(); else requestAnimationFrame(initCanvas);
+}
+new ResizeObserver(()=>{if(DXF){canvas.width=wrap.clientWidth;canvas.height=wrap.clientHeight;render();}}).observe(wrap);
+
+function toS(wx,wy){const bb=DXF.bbox;return[(wx-bb.min_x)*scale+ox,(bb.max_y-wy)*scale+oy];}
+function toW(sx,sy){const bb=DXF.bbox;return[(sx-ox)/scale+bb.min_x,bb.max_y-(sy-oy)/scale];}
+
+function resetView(){
+  const bb=DXF.bbox,m=40;
+  const dxfW=bb.max_x-bb.min_x,dxfH=bb.max_y-bb.min_y;
+  scale=Math.min((canvas.width-m*2)/dxfW,(canvas.height-m*2)/dxfH);
+  ox=(canvas.width-dxfW*scale)/2;oy=(canvas.height-dxfH*scale)/2;render();
+}
+function zoom(f){const cx=canvas.width/2,cy=canvas.height/2;ox=cx-(cx-ox)*f;oy=cy-(cy-oy)*f;scale*=f;render();}
+function togglePan(){panMode=!panMode;document.getElementById('btnPan').classList.toggle('active-tool',panMode);canvas.style.cursor=panMode?'grab':(mode==='draw'?'crosshair':'default');}
+
+function polyArea(pts){let a=0,n=pts.length;for(let i=0;i<n;i++){const j=(i+1)%n;a+=pts[i][0]*pts[j][1]-pts[j][0]*pts[i][1];}return Math.abs(a/2);}
+function pip([x,y],pts){let inside=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const xi=pts[i][0],yi=pts[i][1],xj=pts[j][0],yj=pts[j][1];if(((yi>y)!=(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi)) inside=!inside;}return inside;}
+function segsIntersect(a1,a2,b1,b2){const d1x=a2[0]-a1[0],d1y=a2[1]-a1[1],d2x=b2[0]-b1[0],d2y=b2[1]-b1[1];const cross=d1x*d2y-d1y*d2x;if(Math.abs(cross)<1e-10) return false;const t=((b1[0]-a1[0])*d2y-(b1[1]-a1[1])*d2x)/cross;const u=((b1[0]-a1[0])*d1y-(b1[1]-a1[1])*d1x)/cross;return t>0&&t<1&&u>0&&u<1;}
+function polysOverlap(pA,pB){for(const p of pA) if(pip(p,pB)) return true;for(const p of pB) if(pip(p,pA)) return true;for(let i=0;i<pA.length;i++){const a1=pA[i],a2=pA[(i+1)%pA.length];for(let j=0;j<pB.length;j++){if(segsIntersect(a1,a2,pB[j],pB[(j+1)%pB.length])) return true;}}return false;}
+function checkOverlap(pts,excl=-1){return areas.some((a,i)=>i!==excl&&polysOverlap(pts,a.pts));}
+function isCedido(n){return ESPACIOS_CEDIDOS.includes((n||'').toUpperCase().trim());}
+
+const SNAP_PX=14;
+function snapToVertex(wx,wy){
+  let best=null,bestDist=Infinity;
+  const[cx,cy]=toS(wx,wy);
+  areas.forEach(a=>{a.pts.forEach(p=>{const[sx,sy]=toS(p[0],p[1]);const d=Math.hypot(sx-cx,sy-cy);if(d<SNAP_PX&&d<bestDist){bestDist=d;best=p;}});});
+  curPts.forEach(p=>{const[sx,sy]=toS(p[0],p[1]);const d=Math.hypot(sx-cx,sy-cy);if(d<SNAP_PX&&d<bestDist){bestDist=d;best=p;}});
+  return best?[best[0],best[1]]:null;
+}
+
+function render(){
+  if(!DXF) return;
+  const bb=DXF.bbox;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const[x1,y2]=toS(bb.min_x,bb.min_y),[x2,y1]=toS(bb.max_x,bb.max_y);
+  ctx.fillStyle='#ffffff';ctx.fillRect(x1,y1,x2-x1,y2-y1);
+  ctx.strokeStyle='#e8f5f6';ctx.lineWidth=0.5;
+  const gm=10,gx0=Math.ceil(bb.min_x/gm)*gm;
+  for(let gx=gx0;gx<=bb.max_x;gx+=gm){const[sx]=toS(gx,0);ctx.beginPath();ctx.moveTo(sx,y1);ctx.lineTo(sx,y2);ctx.stroke();}
+  const gy0=Math.ceil(bb.min_y/gm)*gm;
+  for(let gy=gy0;gy<=bb.max_y;gy+=gm){const[,sy]=toS(0,gy);ctx.beginPath();ctx.moveTo(x1,sy);ctx.lineTo(x2,sy);ctx.stroke();}
+  areas.forEach((a,i)=>{
+    const isSel=selectedArea===i;
+    ctx.beginPath();a.pts.forEach((p,j)=>{const[sx,sy]=toS(p[0],p[1]);j?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});ctx.closePath();
+    ctx.fillStyle=a.color+'40';ctx.fill();
+    if(isSel){ctx.strokeStyle=a.color+'55';ctx.lineWidth=10;ctx.stroke();}
+    ctx.strokeStyle=a.color;ctx.lineWidth=isSel?3:2;ctx.setLineDash([]);ctx.stroke();
+    const cx=a.pts.reduce((s,p)=>s+p[0],0)/a.pts.length;
+    const cy=a.pts.reduce((s,p)=>s+p[1],0)/a.pts.length;
+    const[lx,ly]=toS(cx,cy);
+    const fs=Math.max(10,Math.min(14,scale*6));
+    const label=a.name||('Área '+(i+1));
+    ctx.font=`800 ${fs}px 'Montserrat',sans-serif`;
+    const tw=ctx.measureText(label).width;
+    ctx.fillStyle='rgba(255,255,255,0.88)';
+    ctx.beginPath();ctx.roundRect(lx-tw/2-6,ly-fs*1.45-4,tw+12,fs+8,4);ctx.fill();
+    ctx.fillStyle=a.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,lx,ly-fs*0.9);
+    const m2txt=a.totalArea.toFixed(1)+' m²';
+    ctx.font=`700 ${fs*.85}px 'Montserrat',sans-serif`;
+    const tw2=ctx.measureText(m2txt).width;
+    ctx.fillStyle='rgba(255,255,255,0.88)';
+    ctx.beginPath();ctx.roundRect(lx-tw2/2-5,ly+fs*0.1,tw2+10,fs*.85+6,4);ctx.fill();
+    ctx.fillStyle='#1a1a1a';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(m2txt,lx,ly+fs*0.85);
+    if(scale>0.05&&a.activities.length>0){
+      let yOff=ly+fs*0.85+fs*1.2;
+      a.activities.forEach((act,ai)=>{
+        const m2=(act.pct/100*a.totalArea).toFixed(1);
+        const short=act.name.length>20?act.name.slice(0,18)+'..':act.name;
+        const line=short+(act.client?' ('+act.client+')':'')+' '+act.pct+'% · '+m2+'m²';
+        ctx.font=`600 ${Math.max(7,fs*.72)}px 'Montserrat',sans-serif`;
+        const tw3=ctx.measureText(line).width;
+        ctx.fillStyle='rgba(255,255,255,0.82)';
+        ctx.beginPath();ctx.roundRect(lx-tw3/2-4,yOff-fs*.36,tw3+8,fs*.75+4,3);ctx.fill();
+        ctx.fillStyle=isCedido(act.name)?'#a805e0':ACT_COLORS[ai%ACT_COLORS.length];
+        ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(line,lx,yOff);
+        yOff+=fs*1.1;
+      });
+    }
+  });
+  DXF.polys.forEach(p=>{if(!p.pts||p.pts.length<2) return;ctx.beginPath();p.pts.forEach((pt,i)=>{const[sx,sy]=toS(pt[0],pt[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});if(p.closed) ctx.closePath();ctx.strokeStyle=p.layer==='Contorno'?'#1a1a1a':'#2a3a3b';ctx.lineWidth=(p.pts.length===4&&p.closed)?0.6:1.3;ctx.setLineDash([]);ctx.stroke();});
+  DXF.lines.forEach(l=>{const[lx1,ly1]=toS(l.x1,l.y1),[lx2,ly2]=toS(l.x2,l.y2);ctx.beginPath();ctx.moveTo(lx1,ly1);ctx.lineTo(lx2,ly2);ctx.strokeStyle='#2a3a3b';ctx.lineWidth=1;ctx.setLineDash([]);ctx.stroke();});
+  if(scale>0.05){DXF.labels.forEach(l=>{if(!l.text||l.text.length<2||l.text.includes('hormigón')||l.text.startsWith('h ')) return;const[lx,ly]=toS(l.x,l.y);if(lx<-50||lx>canvas.width+50||ly<-50||ly>canvas.height+50) return;ctx.fillStyle='#1fa8b0';ctx.font=`500 ${Math.max(7,Math.min(10,scale*3.5))}px 'Montserrat',sans-serif`;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText(l.text,lx,ly);});}
+  if(curPts.length>0){ctx.beginPath();curPts.forEach((p,i)=>{const[sx,sy]=toS(p[0],p[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});ctx.strokeStyle='#33c2ca';ctx.lineWidth=2;ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);curPts.forEach(p=>{const[sx,sy]=toS(p[0],p[1]);ctx.beginPath();ctx.arc(sx,sy,5,0,Math.PI*2);ctx.fillStyle='#33c2ca';ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.fill();ctx.stroke();});}
+  if(canvas._snapPt&&mode==='draw'){const[sx,sy]=toS(canvas._snapPt[0],canvas._snapPt[1]);ctx.beginPath();ctx.arc(sx,sy,9,0,Math.PI*2);ctx.strokeStyle='#33c2ca';ctx.lineWidth=2.5;ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.arc(sx,sy,3,0,Math.PI*2);ctx.fillStyle='#33c2ca';ctx.fill();}
+  document.getElementById('scalebar').textContent=(10/scale).toFixed(1)+'m = 10px';
+}
+
+function openModal(pts,existing,aIdx){
+  pendingPts=pts;editingIdx=aIdx!=null?aIdx:-1;
+  document.getElementById('overlapWarn').style.display=checkOverlap(pts,editingIdx)?'block':'none';
+  const defaultName=editingIdx>=0?(areas[editingIdx].name||('Área '+(editingIdx+1))):('Área '+(areas.length+1));
+  document.getElementById('modalTitle').innerHTML=`<input id="areaNameInp" value="${defaultName}" placeholder="Nombre del área">`;
+  document.getElementById('modalSub').textContent='Superficie total: '+polyArea(pts).toFixed(2)+' m²';
+  setTimeout(()=>document.getElementById('areaNameInp')?.select(),50);
+  modalRows=existing?existing.activities.map(a=>({name:a.name,pct:a.pct,client:a.client||'',piso:a.piso||'PB'})):[{name:'',pct:100,client:'',piso:'PB'}];
+  const agrupSel=document.getElementById('agrupSelect');
+  agrupSel.innerHTML='<option value="">— seleccionar —</option>'+Object.keys(ACTIVIDADES_ESTRUCTURA).map(a=>`<option value="${a}">${a}</option>`).join('');
+  document.getElementById('familiaSelect').innerHTML='<option value="">— seleccionar —</option>';
+  document.getElementById('familiaSelect').disabled=true;
+  document.getElementById('actSelect').innerHTML='<option value="">— seleccionar —</option>';
+  document.getElementById('actSelect').disabled=true;
+  renderModalRows();
+  document.getElementById('modalBg').style.display='flex';
+}
+
+function updateFamilias(){
+  const agrup=document.getElementById('agrupSelect').value;
+  const famSel=document.getElementById('familiaSelect');
+  const actSel=document.getElementById('actSelect');
+  if(!agrup){famSel.disabled=true;actSel.disabled=true;famSel.innerHTML='<option value="">— seleccionar —</option>';actSel.innerHTML='<option value="">— seleccionar —</option>';return;}
+  famSel.disabled=false;
+  famSel.innerHTML='<option value="">— seleccionar —</option>'+Object.keys(ACTIVIDADES_ESTRUCTURA[agrup]).map(f=>`<option value="${f}">${f}</option>`).join('');
+  actSel.disabled=true;
+  actSel.innerHTML='<option value="">— seleccionar —</option>';
+}
+
+function updateActividades(){
+  const agrup=document.getElementById('agrupSelect').value;
+  const fam=document.getElementById('familiaSelect').value;
+  const actSel=document.getElementById('actSelect');
+  if(!agrup||!fam){actSel.disabled=true;actSel.innerHTML='<option value="">— seleccionar —</option>';return;}
+  actSel.disabled=false;
+  actSel.innerHTML='<option value="">— seleccionar —</option>'+ACTIVIDADES_ESTRUCTURA[agrup][fam].map(a=>`<option value="${a}">${a}</option>`).join('');
+}
+
+function selectActividad(){
+  const act=document.getElementById('actSelect').value;
+  if(!act) return;
+  if(modalRows.length===1&&!modalRows[0].name){modalRows[0].name=act;}else{const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:act,pct:Math.max(1,100-used),client:'',piso:'PB'});}
+  document.getElementById('agrupSelect').value='';
+  document.getElementById('familiaSelect').value='';
+  document.getElementById('familiaSelect').disabled=true;
+  document.getElementById('actSelect').value='';
+  document.getElementById('actSelect').disabled=true;
+  renderModalRows();
+}
+
+function renderModalRows(){
+  const c=document.getElementById('actRows');c.innerHTML='';
+  const tot=modalRows.reduce((s,r)=>s+r.pct,0);
+  document.getElementById('pctFill').style.width=Math.min(100,tot)+'%';
+  document.getElementById('pctFill').style.background=tot>100?'#e05548':tot===100?'#33c2ca':'#f0a500';
+  modalRows.forEach((row,i)=>{
+    const ced=isCedido(row.name);
+    const d=document.createElement('div');d.className='modal-row';
+    d.innerHTML=`
+      <div class="modal-row-top">
+        <div style="flex:1;font-size:11px;font-weight:600;color:var(--text)">${row.name||'Sin actividad'}</div>
+        <input type="range" min="1" max="100" value="${row.pct}" oninput="modalRows[${i}].pct=+this.value;this.nextElementSibling.textContent=this.value+'%';renderPctBar()">
+        <span class="pct-val">${row.pct}%</span>
+        <button class="del-act" onclick="modalRows.splice(${i},1);renderModalRows()">×</button>
+      </div>
+      <div class="extra-fields">
+        <div class="field-row">
+          <label class="piso-lbl">Piso</label>
+          <select class="sm" onchange="modalRows[${i}].piso=this.value" style="flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;padding:5px 7px;border-radius:6px;outline:none">
+            ${['PB','1RO','2DO','3RO','SUBSUELO','ENTREPISO'].map(p=>`<option value="${p}"${p===row.piso?' selected':''}>${p}</option>`).join('')}
+          </select>
+        </div>
+        ${ced?`<div class="field-row">
+          <label class="client-lbl">Cliente (cód.)</label>
+          <input class="client-inp" type="text" placeholder="ej: IBM, FRESENIUS" value="${row.client||''}" oninput="modalRows[${i}].client=this.value">
+        </div>`:''}
+      </div>`;
+    c.appendChild(d);
+  });
+}
+
+function renderPctBar(){
+  const tot=modalRows.reduce((s,r)=>s+r.pct,0);
+  document.getElementById('pctFill').style.width=Math.min(100,tot)+'%';
+  document.getElementById('pctFill').style.background=tot>100?'#e05548':tot===100?'#33c2ca':'#f0a500';
+}
+
+function addActRow(){const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:'',pct:Math.max(1,100-used),client:'',piso:'PB'});renderModalRows();}
+
+function saveModal(){
+  const valid=modalRows.filter(r=>r.name.trim());
+  if(!valid.length){alert('Agregá al menos una actividad');return;}
+  const tot=valid.reduce((s,r)=>s+r.pct,0);
+  if(tot!==100&&!confirm('Los porcentajes suman '+tot+'% (no 100%). ¿Guardar igual?')) return;
+  const pts=pendingPts,totalArea=polyArea(pts);
+  const areaName=document.getElementById('areaNameInp')?.value.trim()||('Área '+(editingIdx>=0?editingIdx+1:areas.length+1));
+  const color=editingIdx>=0?areas[editingIdx].color:AREA_COLORS[colIdx%AREA_COLORS.length];
+  if(editingIdx>=0) areas[editingIdx]={pts,totalArea,color,name:areaName,activities:valid};
+  else{areas.push({pts,totalArea,color,name:areaName,activities:valid});colIdx++;}
+  curPts=[];pendingPts=null;editingIdx=-1;canvas._snapPt=null;
+  document.getElementById('modalBg').style.display='none';
+  updateList();render();
+}
+
+function closeModal(cancel){if(cancel) curPts=[];pendingPts=null;editingIdx=-1;canvas._snapPt=null;document.getElementById('modalBg').style.display='none';render();}
+
+function updateList(){
+  const list=document.getElementById('sList');
+  if(!areas.length){list.innerHTML='<div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin áreas aún.</div>';document.getElementById('totArea').textContent='0.00 m²';document.getElementById('totN').textContent='0';return;}
+  list.innerHTML=areas.map((a,i)=>{
+    const isSel=selectedArea===i;
+    const actHtml=a.activities.map((act,ai)=>{
+      const m2=(act.pct/100*a.totalArea).toFixed(1);
+      const col=isCedido(act.name)?'#a805e0':ACT_COLORS[ai%ACT_COLORS.length];
+      const short=act.name.length>22?act.name.slice(0,20)+'..':act.name;
+      return `<div class="act-row"><div class="act-dot" style="background:${col}"></div><div class="act-name" title="${act.name}">${short}</div><div class="act-pct">${act.pct}%</div><div class="act-m2">${m2} m²</div>${act.client?`<div class="act-client" title="${act.client}">${act.client}</div>`:''}</div>`;
+    }).join('');
+    const displayName=a.name||('Área '+(i+1));
+    return `<div class="sitem${isSel?' selected':''}" id="sitem${i}"><div class="sitem-header" onclick="selectArea(${i})"><div class="scolor-dot" style="background:${a.color}"></div><div class="sname" style="color:${a.color}">${displayName}</div><div class="sarea-badge">${a.totalArea.toFixed(1)} m²</div><button class="sdel sedit" onclick="event.stopPropagation();editArea(${i})" title="Editar">✎</button><button class="sdel" onclick="event.stopPropagation();deleteArea(${i})" title="Eliminar">✕</button></div><div class="sitem-acts">${actHtml}</div></div>`;
+  }).join('');
+  document.getElementById('totArea').textContent=areas.reduce((s,a)=>s+a.totalArea,0).toFixed(2)+' m²';
+  document.getElementById('totN').textContent=areas.length;
+}
+
+function selectArea(i){selectedArea=selectedArea===i?null:i;updateList();render();}
+function editArea(i){selectedArea=i;openModal(areas[i].pts,areas[i],i);updateList();render();}
+function deleteArea(i){if(!confirm('¿Eliminar "'+(areas[i].name||'Área '+(i+1))+'"?')) return;areas.splice(i,1);if(selectedArea===i) selectedArea=null;else if(selectedArea>i) selectedArea--;updateList();render();}
+
+canvas.addEventListener('click',e=>{if(panning||panMode&&panning) return;if(panMode) return;if(mode==='draw'){const[wx,wy]=toW(e.offsetX,e.offsetY);const snap=snapToVertex(wx,wy);curPts.push(snap||[wx,wy]);canvas._snapPt=null;render();}else{const[wx,wy]=toW(e.offsetX,e.offsetY);let found=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}selectedArea=found;updateList();render();}});
+canvas.addEventListener('dblclick',e=>{if(panMode||mode!=='draw') return;if(curPts.length<3){curPts=[];render();return;}const pts=[...curPts];curPts=[];canvas._snapPt=null;openModal(pts,null,null);});
+canvas.addEventListener('mousemove',e=>{if(!DXF) return;const[wx,wy]=toW(e.offsetX,e.offsetY);const bb=DXF.bbox;document.getElementById('coords').textContent='x: '+(wx-bb.min_x).toFixed(1)+'m  y: '+(wy-bb.min_y).toFixed(1)+'m';if(panning&&panStart){ox=panOff[0]+(e.clientX-panStart[0]);oy=panOff[1]+(e.clientY-panStart[1]);render();}if(mode==='draw'&&!panMode){const snap=snapToVertex(wx,wy);canvas._snapPt=snap||null;render();canvas.style.cursor=snap?'cell':'crosshair';}});
+canvas.addEventListener('mousedown',e=>{if(panMode||e.button===1||(mode==='select')){panning=true;panStart=[e.clientX,e.clientY];panOff=[ox,oy];canvas.style.cursor='grabbing';}});
+canvas.addEventListener('mouseup',()=>{setTimeout(()=>panning=false,10);canvas.style.cursor=panMode?'grab':(mode==='draw'?'crosshair':'default');});
+canvas.addEventListener('wheel',e=>{if(!DXF) return;e.preventDefault();const f=e.deltaY<0?1.12:0.9;ox=e.offsetX-(e.offsetX-ox)*f;oy=e.offsetY-(e.offsetY-oy)*f;scale*=f;render();},{passive:false});
+
+document.addEventListener('keydown',e=>{if(!DXF) return;if(e.code==='Space'&&!panMode){e.preventDefault();panMode=true;document.getElementById('btnPan').classList.add('active-tool');canvas.style.cursor='grab';}if(e.code==='Escape'){curPts=[];canvas._snapPt=null;selectedArea=null;updateList();render();}if((e.code==='Delete'||e.code==='Backspace')&&selectedArea!==null&&document.getElementById('modalBg').style.display==='none') deleteArea(selectedArea);});
+document.addEventListener('keyup',e=>{if(e.code==='Space'){panMode=false;document.getElementById('btnPan').classList.remove('active-tool');canvas.style.cursor=mode==='draw'?'crosshair':'default';}});
+
+function setMode(m){mode=m;curPts=[];canvas._snapPt=null;selectedArea=null;document.getElementById('btnD').classList.toggle('active',m==='draw');document.getElementById('btnS').classList.toggle('active',m==='select');if(!panMode) canvas.style.cursor=m==='draw'?'crosshair':'default';document.getElementById('instrTxt').innerHTML=m==='draw'?'<strong>Modo dibujo:</strong><br>1. Clic = vértice del área<br>2. Doble clic = cerrar polígono<br>3. Asigná actividades y %':'<strong>Modo selección:</strong><br>Clic = seleccionar área<br>✎ editar · ✕ eliminar · <kbd>Del</kbd> eliminar';updateList();render();}
+function undoVertex(){if(curPts.length){curPts.pop();render();}}
+
+function exportXLSX(){
+  if(!areas.length){alert('No hay áreas para exportar.');return;}
+  const wb=XLSX.utils.book_new();
+  const headers=['AF','SECTOR','N°','ETAPA','ACTIVIDAD','Mts2 sin reparto','%','Mts2','PISO','ESPACIOS CEDIDOS','CODIGO CLIENTE','VALIDACION'];
+  const rows=[headers];
+  const allActs=[];Object.values(ACTIVIDADES_ESTRUCTURA).forEach(agrup=>Object.values(agrup).forEach(fam=>allActs.push(...fam)));
+  const masterActs=new Set(allActs.map(a=>a.toUpperCase().trim()));
+  let n=1;
+  areas.forEach((a,i)=>{
+    a.activities.forEach(act=>{
+      const m2=(act.pct/100*a.totalArea);
+      const cedido=isCedido(act.name)?'SI':'NO';
+      const validacion=masterActs.has(act.name.toUpperCase().trim())?'OK':'NO ENCONTRADA';
+      rows.push([currentSuc?currentSuc.code:'',a.name||('Área '+(i+1)),'A'+(n++),'',act.name,+a.totalArea.toFixed(4),+(act.pct/100).toFixed(6),+m2.toFixed(4),act.piso||'PB',cedido,act.client||'',validacion]);
+    });
+  });
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:6},{wch:22},{wch:6},{wch:20},{wch:28},{wch:16},{wch:8},{wch:12},{wch:10},{wch:16},{wch:16},{wch:16}];
+  ws['!freeze']={xSplit:0,ySplit:1};
+  ws['!autofilter']={ref:'A1:L1'};
+  XLSX.utils.book_append_sheet(wb,ws,'BASE');
+  const fname='BASE_'+(currentSuc?currentSuc.code:'SUC')+'_'+new Date().toISOString().slice(0,10)+'.xlsx';
+  XLSX.writeFile(wb,fname);
+}
+</script>
+</body>
+</html>
