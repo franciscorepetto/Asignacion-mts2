@@ -116,6 +116,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 .field-row input.client-inp:focus{border-color:#a805e0;border-color:#a805e0}
 .add-row-btn{width:100%;padding:8px;border:1.5px dashed var(--brand-mid);background:none;color:var(--brand-dark);font-size:11px;font-weight:600;font-family:'Montserrat',sans-serif;cursor:pointer;border-radius:8px;margin-bottom:12px;transition:all .15s}
 .add-row-btn:hover{background:var(--brand-light);border-color:var(--brand)}
+  #areaNameInp{font-size:15px;font-weight:800;border:none;border-bottom:2px solid var(--brand);outline:none;font-family:'Montserrat',sans-serif;width:100%;background:transparent;color:var(--text);padding-bottom:2px}
 .modal-footer{display:flex;gap:8px}
 .btn-primary{flex:1;padding:10px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:12px;cursor:pointer;transition:all .15s}
 .btn-primary:hover{background:var(--brand-dark)}
@@ -300,7 +301,16 @@ function polysOverlap(pA,pB){for(const p of pA) if(pip(p,pB)) return true;for(co
 function checkOverlap(pts,excl=-1){return areas.some((a,i)=>i!==excl&&polysOverlap(pts,a.pts));}
 function isCedido(n){return ESPACIOS_CEDIDOS.includes((n||'').toUpperCase().trim());}
 
-// ── RENDER ───────────────────────────────────────
+// ── SNAP ─────────────────────────────────────────
+const SNAP_PX=14;
+function snapToVertex(wx,wy){
+  let best=null,bestDist=Infinity;
+  const[cx,cy]=toS(wx,wy);
+  areas.forEach(a=>{a.pts.forEach(p=>{const[sx,sy]=toS(p[0],p[1]);const d=Math.hypot(sx-cx,sy-cy);if(d<SNAP_PX&&d<bestDist){bestDist=d;best=p;}});});
+  curPts.forEach(p=>{const[sx,sy]=toS(p[0],p[1]);const d=Math.hypot(sx-cx,sy-cy);if(d<SNAP_PX&&d<bestDist){bestDist=d;best=p;}});
+  return best?[best[0],best[1]]:null;
+}
+  // ── RENDER ───────────────────────────────────────
 function render(){
   if(!DXF) return;
   const bb=DXF.bbox;
@@ -322,7 +332,7 @@ function render(){
     const cy=a.pts.reduce((s,p)=>s+p[1],0)/a.pts.length;
     const[lx,ly]=toS(cx,cy);
     const fs=Math.max(10,Math.min(14,scale*6));
-    const label='Área '+(i+1);
+    const label=a.name||('Área '+(i+1));
     ctx.font=`800 ${fs}px 'Montserrat',sans-serif`;
     const tw=ctx.measureText(label).width;
     ctx.fillStyle='rgba(255,255,255,0.88)';
@@ -354,6 +364,7 @@ function render(){
   DXF.lines.forEach(l=>{const[lx1,ly1]=toS(l.x1,l.y1),[lx2,ly2]=toS(l.x2,l.y2);ctx.beginPath();ctx.moveTo(lx1,ly1);ctx.lineTo(lx2,ly2);ctx.strokeStyle='#2a3a3b';ctx.lineWidth=1;ctx.setLineDash([]);ctx.stroke();});
   if(scale>0.05){DXF.labels.forEach(l=>{if(!l.text||l.text.length<2||l.text.includes('hormigón')||l.text.startsWith('h ')) return;const[lx,ly]=toS(l.x,l.y);if(lx<-50||lx>canvas.width+50||ly<-50||ly>canvas.height+50) return;ctx.fillStyle='#1fa8b0';ctx.font=`500 ${Math.max(7,Math.min(10,scale*3.5))}px 'Montserrat',sans-serif`;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText(l.text,lx,ly);});}
   if(curPts.length>0){ctx.beginPath();curPts.forEach((p,i)=>{const[sx,sy]=toS(p[0],p[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});ctx.strokeStyle='#33c2ca';ctx.lineWidth=2;ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);curPts.forEach(p=>{const[sx,sy]=toS(p[0],p[1]);ctx.beginPath();ctx.arc(sx,sy,5,0,Math.PI*2);ctx.fillStyle='#33c2ca';ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.fill();ctx.stroke();});}
+  if(canvas._snapPt&&mode==='draw'){const[sx,sy]=toS(canvas._snapPt[0],canvas._snapPt[1]);ctx.beginPath();ctx.arc(sx,sy,9,0,Math.PI*2);ctx.strokeStyle='#33c2ca';ctx.lineWidth=2.5;ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.arc(sx,sy,3,0,Math.PI*2);ctx.fillStyle='#33c2ca';ctx.fill();}
   document.getElementById('scalebar').textContent=(10/scale).toFixed(1)+'m = 10px';
 }
 
@@ -361,7 +372,9 @@ function render(){
 function openModal(pts,existing,aIdx){
   pendingPts=pts;editingIdx=aIdx!=null?aIdx:-1;
   document.getElementById('overlapWarn').style.display=checkOverlap(pts,editingIdx)?'block':'none';
-  document.getElementById('modalTitle').textContent='Área '+(editingIdx>=0?editingIdx+1:areas.length+1);
+  const defaultName=editingIdx>=0?(areas[editingIdx].name||('Área '+(editingIdx+1))):('Área '+(areas.length+1));
+  document.getElementById('modalTitle').innerHTML=`<input id="areaNameInp" value="${defaultName}" placeholder="Nombre del área">`;
+  setTimeout(()=>document.getElementById('areaNameInp')?.select(),50);
   document.getElementById('modalSub').textContent='Superficie total: '+polyArea(pts).toFixed(2)+' m²';
   modalRows=existing?existing.activities.map(a=>({name:a.name,pct:a.pct,client:a.client||'',piso:a.piso||'PB'})):[{name:'',pct:100,client:'',piso:'PB'}];
   renderModalRows();
@@ -416,9 +429,10 @@ function saveModal(){
   const tot=valid.reduce((s,r)=>s+r.pct,0);
   if(tot!==100&&!confirm('Los porcentajes suman '+tot+'% (no 100%). ¿Guardar igual?')) return;
   const pts=pendingPts,totalArea=polyArea(pts);
+  const areaName=document.getElementById('areaNameInp')?.value.trim()||('Área '+(editingIdx>=0?editingIdx+1:areas.length+1));
   const color=editingIdx>=0?areas[editingIdx].color:AREA_COLORS[colIdx%AREA_COLORS.length];
-  if(editingIdx>=0) areas[editingIdx]={pts,totalArea,color,activities:valid};
-  else{areas.push({pts,totalArea,color,activities:valid});colIdx++;}
+  if(editingIdx>=0) areas[editingIdx]={pts,totalArea,color,name:areaName,activities:valid};
+  else{areas.push({pts,totalArea,color,name:areaName,activities:valid});colIdx++;}
   curPts=[];pendingPts=null;editingIdx=-1;
   document.getElementById('modalBg').style.display='none';
   updateList();render();
@@ -446,7 +460,7 @@ function updateList(){
     return `<div class="sitem${isSel?' selected':''}" id="sitem${i}">
       <div class="sitem-header" onclick="selectArea(${i})">
         <div class="scolor-dot" style="background:${a.color}"></div>
-        <div class="sname" style="color:${a.color}">Área ${i+1}</div>
+        <div class="sname" style="color:${a.color}">${a.name||('Área '+(i+1))}</div>
         <div class="sarea-badge">${a.totalArea.toFixed(1)} m²</div>
         <button class="sdel sedit" onclick="event.stopPropagation();editArea(${i})" title="Editar">✎</button>
         <button class="sdel" onclick="event.stopPropagation();deleteArea(${i})" title="Eliminar">✕</button>
@@ -460,7 +474,7 @@ function updateList(){
 function selectArea(i){selectedArea=selectedArea===i?null:i;updateList();render();}
 function editArea(i){selectedArea=i;openModal(areas[i].pts,areas[i],i);updateList();render();}
 function deleteArea(i){
-  if(!confirm('¿Eliminar área '+(i+1)+'?')) return;
+  if(!confirm('¿Eliminar "'+(areas[i].name||'Área '+(i+1))+'"?')) return;
   areas.splice(i,1);
   if(selectedArea===i) selectedArea=null;
   else if(selectedArea>i) selectedArea--;
@@ -468,9 +482,10 @@ function deleteArea(i){
 }
 
 // ── CANVAS EVENTS ────────────────────────────────
-canvas.addEventListener('click',e=>{if(panning||panMode&&panning) return;if(panMode) return;if(mode==='draw'){curPts.push(toW(e.offsetX,e.offsetY));render();}else{const[wx,wy]=toW(e.offsetX,e.offsetY);let found=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}selectedArea=found;updateList();render();}});
+canvas.addEventListener('click',e=>{if(panning||panMode&&panning) return;if(panMode) return;if(mode==='draw'){const[wx,wy]=toW(e.offsetX,e.offsetY);const snap=snapToVertex(wx,wy);curPts.push(snap||[wx,wy]);canvas._snapPt=null;render();}else{const[wx,wy]=toW(e.offsetX,e.offsetY);let found=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}selectedArea=found;updateList();render();}});
 canvas.addEventListener('dblclick',e=>{if(panMode||mode!=='draw') return;if(curPts.length<3){curPts=[];render();return;}const pts=[...curPts];curPts=[];openModal(pts,null,null);});
-canvas.addEventListener('mousemove',e=>{if(!DXF) return;const[wx,wy]=toW(e.offsetX,e.offsetY);const bb=DXF.bbox;document.getElementById('coords').textContent='x: '+(wx-bb.min_x).toFixed(1)+'m  y: '+(wy-bb.min_y).toFixed(1)+'m';if(panning&&panStart){ox=panOff[0]+(e.clientX-panStart[0]);oy=panOff[1]+(e.clientY-panStart[1]);render();}});
+canvas.addEventListener('mousemove',e=>{if(!DXF) return;const[wx,wy]=toW(e.offsetX,e.offsetY);const bb=DXF.bbox;document.getElementById('coords').textContent='x: '+(wx-bb.min_x).toFixed(1)+'m  y: '+(wy-bb.min_y).toFixed(1)+'m';if(panning&&panStart){ox=panOff[0]+(e.clientX-panStart[0]);oy=panOff[1]+(e.clientY-panStart[1]);render();}
+  if(mode==='draw'&&!panMode){const snap=snapToVertex(wx,wy);canvas._snapPt=snap||null;render();canvas.style.cursor=snap?'cell':'crosshair';}});
 canvas.addEventListener('mousedown',e=>{if(panMode||e.button===1||(mode==='select')){panning=true;panStart=[e.clientX,e.clientY];panOff=[ox,oy];canvas.style.cursor='grabbing';}});
 canvas.addEventListener('mouseup',()=>{setTimeout(()=>panning=false,10);canvas.style.cursor=panMode?'grab':(mode==='draw'?'crosshair':'default');});
 canvas.addEventListener('wheel',e=>{if(!DXF) return;e.preventDefault();const f=e.deltaY<0?1.12:0.9;ox=e.offsetX-(e.offsetX-ox)*f;oy=e.offsetY-(e.offsetY-oy)*f;scale*=f;render();},{passive:false});
@@ -494,7 +509,7 @@ function exportXLSX(){
       const validacion=masterActs.has(act.name.toUpperCase().trim())?'OK':'NO ENCONTRADA';
       rows.push([
         currentSuc?currentSuc.code:'',  // AF
-        '',                              // SECTOR — en blanco
+        a.name||('Área '+(i+1)),         // SECTOR — nombre del área
         'A'+(n++),                       // N°
         '',                              // ETAPA — en blanco
         act.name,                        // ACTIVIDAD
