@@ -6,7 +6,7 @@
 <title>OCASA — Layout</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<style>
+<script src="https://unpkg.com/dxf-parser/dist/dxf-parser.js"></script><style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --brand:#33c2ca;--brand-dark:#1fa8b0;--brand-light:#e8f9fa;--brand-mid:#b2e8eb;
@@ -253,8 +253,15 @@ fetch('clientes.csv')
   .catch(e=>console.error('No se pudo cargar clientes.csv',e));
 function getClientDesc(cod){const c=CLIENTES.find(c=>c.codigo===cod);return c?c.descripcion:cod;}
 const ESPACIOS_CEDIDOS=['ESPACIOS CEDIDOS AG','ESPACIOS CEDIDOS AS','ESPACIOS CEDIDOS SE'];
-const SUCURSALES=[{code:'MDQ',name:'Mar del Plata',available:true},{code:'IRI',name:'Iriarte',available:false},{code:'PLO',name:'PLO Plaza',available:false},{code:'CBN',name:'Caballito Norte',available:false},{code:'TOR',name:'Tortuguitas',available:false},{code:'MOR',name:'Morón',available:false}];
-const AREA_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0','#b5341a','#057a3a','#c45c00','#1a4db5'];
+const SUCURSALES=[
+  {code:'MDQ',name:'Mar del Plata',available:true,dxf:'mapas/planos/Layout MDQ - Marzo 2026.dxf'},
+  {code:'FLO',name:'Flores',available:true,dxf:'mapas/planos/Copia de FLO-Flores-Plano Base-V02.dxf'},
+  {code:'IRI',name:'Iriarte',available:false,dxf:''},
+  {code:'PLO',name:'PLO Plaza',available:false,dxf:''},
+  {code:'CBN',name:'Caballito Norte',available:false,dxf:''},
+  {code:'TOR',name:'Tortuguitas',available:false,dxf:''},
+  {code:'MOR',name:'Morón',available:false,dxf:''}
+];const AREA_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0','#b5341a','#057a3a','#c45c00','#1a4db5'];
 const ACT_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0'];
 
 let currentSuc=null,DXF=null;
@@ -284,16 +291,51 @@ const wrap=document.getElementById('cwrap');
   });
 })();
 
+  function normalizeDXF(parsed){
+  const lines=[],polys=[],labels=[];
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  function upd(x,y){if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}
+  (parsed.entities||[]).forEach(e=>{
+    const layer=e.layer||'0';
+    if(e.type==='LINE'){
+      const{x:x1=0,y:y1=0}=e.start||{},{x:x2=0,y:y2=0}=e.end||{};
+      lines.push({x1,y1,x2,y2,layer});upd(x1,y1);upd(x2,y2);
+    } else if(e.type==='LWPOLYLINE'||e.type==='POLYLINE'){
+      const pts=(e.vertices||[]).map(v=>[v.x||0,v.y||0]);
+      if(pts.length>=2){polys.push({pts,closed:!!(e.closed||e.shape),layer});pts.forEach(([x,y])=>upd(x,y));}
+    } else if(e.type==='TEXT'){
+      const{x=0,y=0}=e.startPoint||{};
+      if(e.text){labels.push({text:e.text,x,y});upd(x,y);}
+    } else if(e.type==='MTEXT'){
+      const{x=0,y=0}=e.position||{};
+      const txt=(e.text||'').replace(/\\[A-Za-z][^;]*;/g,'').replace(/[{}]/g,'').trim();
+      if(txt){labels.push({text:txt,x,y});upd(x,y);}
+    }
+  });
+  return{bbox:{min_x:minX-2,max_x:maxX+2,min_y:minY-2,max_y:maxY+2},lines,polys,labels};
+}
 function enterLayout(){
   if(!currentSuc) return;
-  DXF=DATA_REGISTRY[currentSuc.code].data;
-  document.getElementById('splash').style.display='none';
-  const app=document.getElementById('app');
-  app.style.display='flex';app.style.flexDirection='column';
-  document.getElementById('headerMid').innerHTML=`Layout · <span>${currentSuc.name}</span>`;
-  document.getElementById('coords').style.display='block';
-  document.getElementById('backBtn').style.display='flex';
-  initCanvas();
+  const btn=document.getElementById('enterBtn');
+  btn.disabled=true;btn.textContent='Cargando plano…';
+  fetch(encodeURI(currentSuc.dxf))
+    .then(r=>{if(!r.ok) throw new Error('Archivo no encontrado: '+currentSuc.dxf);return r.text();})
+    .then(text=>{
+      const parser=new DxfParser();
+      DXF=normalizeDXF(parser.parseSync(text));
+      document.getElementById('splash').style.display='none';
+      const app=document.getElementById('app');
+      app.style.display='flex';app.style.flexDirection='column';
+      document.getElementById('headerMid').innerHTML=`Layout · <span>${currentSuc.name}</span>`;
+      document.getElementById('coords').style.display='block';
+      document.getElementById('backBtn').style.display='flex';
+      btn.textContent='Ingresar al layout →';
+      initCanvas();
+    })
+    .catch(err=>{
+      alert('No se pudo cargar el plano.\n'+err.message);
+      btn.disabled=false;btn.textContent='Ingresar al layout →';
+    });
 }
 
 function goBack(){
