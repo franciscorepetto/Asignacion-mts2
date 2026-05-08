@@ -293,6 +293,7 @@ function enterLayout(){
   document.getElementById('headerMid').innerHTML=`Layout · <span>${currentSuc.name}</span>`;
   document.getElementById('coords').style.display='block';
   document.getElementById('backBtn').style.display='flex';
+  try{const saved=localStorage.getItem('areas_'+currentSuc.code);if(saved){areas=JSON.parse(saved);colIdx=areas.length;}}catch(e){}
   initCanvas();
 }
 
@@ -329,7 +330,7 @@ function togglePan(){panMode=!panMode;document.getElementById('btnPan').classLis
 function polyArea(pts){let a=0,n=pts.length;for(let i=0;i<n;i++){const j=(i+1)%n;a+=pts[i][0]*pts[j][1]-pts[j][0]*pts[i][1];}return Math.abs(a/2);}
 function pip([x,y],pts){let inside=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const xi=pts[i][0],yi=pts[i][1],xj=pts[j][0],yj=pts[j][1];if(((yi>y)!=(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi)) inside=!inside;}return inside;}
 function segsIntersect(a1,a2,b1,b2){const d1x=a2[0]-a1[0],d1y=a2[1]-a1[1],d2x=b2[0]-b1[0],d2y=b2[1]-b1[1];const cross=d1x*d2y-d1y*d2x;if(Math.abs(cross)<1e-10) return false;const t=((b1[0]-a1[0])*d2y-(b1[1]-a1[1])*d2x)/cross;const u=((b1[0]-a1[0])*d1y-(b1[1]-a1[1])*d1x)/cross;return t>0&&t<1&&u>0&&u<1;}
-function polysOverlap(pA,pB){for(const p of pA) if(pip(p,pB)) return true;for(const p of pB) if(pip(p,pA)) return true;for(let i=0;i<pA.length;i++){const a1=pA[i],a2=pA[(i+1)%pA.length];for(let j=0;j<pB.length;j++){if(segsIntersect(a1,a2,pB[j],pB[(j+1)%pB.length])) return true;}}return false;}
+function polysOverlap(pA,pB){const onVert=(p,poly)=>poly.some(v=>Math.abs(v[0]-p[0])<1e-9&&Math.abs(v[1]-p[1])<1e-9);for(const p of pA) if(!onVert(p,pB)&&pip(p,pB)) return true;for(const p of pB) if(!onVert(p,pA)&&pip(p,pA)) return true;for(let i=0;i<pA.length;i++){const a1=pA[i],a2=pA[(i+1)%pA.length];for(let j=0;j<pB.length;j++){if(segsIntersect(a1,a2,pB[j],pB[(j+1)%pB.length])) return true;}}return false;}
 function checkOverlap(pts,excl=-1){return areas.some((a,i)=>i!==excl&&polysOverlap(pts,a.pts));}
 function isCedido(n){return ESPACIOS_CEDIDOS.includes((n||'').toUpperCase().trim());}
 
@@ -501,9 +502,11 @@ function saveModal(){
   else{areas.push({pts,totalArea,color,name:areaName,activities:valid});colIdx++;}
   curPts=[];pendingPts=null;editingIdx=-1;canvas._snapPt=null;
   document.getElementById('modalBg').style.display='none';
-  updateList();render();
+  updateList();saveAreas();render();
 }
 
+function saveAreas(){if(currentSuc)localStorage.setItem('areas_'+currentSuc.code,JSON.stringify(areas));}
+  
 function closeModal(cancel){if(cancel) curPts=[];pendingPts=null;editingIdx=-1;canvas._snapPt=null;document.getElementById('modalBg').style.display='none';render();}
 
 function updateList(){
@@ -526,8 +529,8 @@ function updateList(){
 
 function selectArea(i){selectedArea=selectedArea===i?null:i;updateList();render();}
 function editArea(i){selectedArea=i;openModal(areas[i].pts,areas[i],i);updateList();render();}
-function deleteArea(i){if(!confirm('¿Eliminar "'+(areas[i].name||'Área '+(i+1))+'"?')) return;areas.splice(i,1);if(selectedArea===i) selectedArea=null;else if(selectedArea>i) selectedArea--;updateList();render();}
-
+function deleteArea(i){if(!confirm('¿Eliminar "'+(areas[i].name||'Área '+(i+1))+'"?')) return;areas.splice(i,1);if(selectedArea===i) selectedArea=null;else if(selectedArea>i) selectedArea--;updateList();saveAreas();render();}
+  
 canvas.addEventListener('click',e=>{if(panning||panMode&&panning) return;if(panMode) return;if(mode==='draw'){const[wx,wy]=toW(e.offsetX,e.offsetY);const snap=snapToVertex(wx,wy);curPts.push(snap||[wx,wy]);canvas._snapPt=null;render();}else{const[wx,wy]=toW(e.offsetX,e.offsetY);let found=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}selectedArea=found;updateList();render();}});
 canvas.addEventListener('dblclick',e=>{if(panMode||mode!=='draw') return;if(curPts.length<3){curPts=[];render();return;}const pts=[...curPts];curPts=[];canvas._snapPt=null;openModal(pts,null,null);});
 canvas.addEventListener('mousemove',e=>{if(!DXF) return;const[wx,wy]=toW(e.offsetX,e.offsetY);const bb=DXF.bbox;document.getElementById('coords').textContent='x: '+(wx-bb.min_x).toFixed(1)+'m  y: '+(wy-bb.min_y).toFixed(1)+'m';if(panning&&panStart){ox=panOff[0]+(e.clientX-panStart[0]);oy=panOff[1]+(e.clientY-panStart[1]);render();}if(mode==='draw'&&!panMode){const snap=snapToVertex(wx,wy);canvas._snapPt=snap||null;render();canvas.style.cursor=snap?'cell':'crosshair';}});
