@@ -366,7 +366,7 @@ function enterLayout(){
   document.getElementById('headerMid').innerHTML=`Layout · <span>${currentSuc.name}</span>`;
   document.getElementById('coords').style.display='block';
   document.getElementById('backBtn').style.display='flex';
-  try{const saved=localStorage.getItem('areas_'+currentSuc.code);if(saved){areas=JSON.parse(saved);colIdx=areas.length;}}catch(e){}
+    try{const saved=localStorage.getItem('areas_'+currentSuc.code);if(saved){areas=JSON.parse(saved);colIdx=areas.length;updateList();}}catch(e){}
   initCanvas();
 }
 
