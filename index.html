@@ -6,6 +6,7 @@
 <title>OCASA — Layout</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/dxf-parser/dist/dxf-parser.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -223,7 +224,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 </div>
 
 <script>
-const DATA_REGISTRY={'MDQ':{name:'Mar del Plata',data:{"bbox": {"min_x": 6084.785, "max_x": 6370.148, "min_y": 3315.155, "max_y": 3414.689}, "lines": [{"x1": 6345.948, "y1": 3337.662, "x2": 6344.948, "y2": 3337.662, "layer": "00-Muros"}, {"x1": 6333.928, "y1": 3332.632, "x2": 6347.086, "y2": 3332.632, "layer": "Contorno"}, {"x1": 6333.928, "y1": 3335.632, "x2": 6333.928, "y2": 3332.632, "layer": "Contorno"}, {"x1": 6333.928, "y1": 3378.632, "x2": 6347.086, "y2": 3378.632, "layer": "Contorno"}, {"x1": 6333.928, "y1": 3375.632, "x2": 6333.928, "y2": 3378.632, "layer": "Contorno"}, {"x1": 6331.961, "y1": 3387.893, "x2": 6331.961, "y2": 3315.155, "layer": "Contorno"}, {"x1": 6346.078, "y1": 3337.662, "x2": 6347.078, "y2": 3337.662, "layer": "00-Muros"}, {"x1": 6358.098, "y1": 3332.632, "x2": 6344.939, "y2": 3332.632, "layer": "Contorno"}, {"x1": 6358.098, "y1": 3335.632, "x2": 6358.098, "y2": 3332.632, "layer": "Contorno"}, {"x1": 6358.098, "y1": 3378.632, "x2": 6344.939, "y2": 3378.632, "layer": "Contorno"}, {"x1": 6358.098, "y1": 3375.632, "x2": 6358.098, "y2": 3378.632, "layer": "Contorno"}, {"x1": 6104.032, "y1": 3354.352, "x2": 6104.032, "y2": 3354.152, "layer": "Muros"}, {"x1": 6104.032, "y1": 3393.952, "x2": 6104.032, "y2": 3394.152, "layer": "Muros"}, {"x1": 6127.863, "y1": 3356.117, "x2": 6127.963, "y2": 3356.117, "layer": "Muros"}, {"x1": 6127.863, "y1": 3356.117, "x2": 6127.863, "y2": 3359.767, "layer": "Muros"}, {"x1": 6127.963, "y1": 3356.117, "x2": 6127.963, "y2": 3359.767, "layer": "Muros"}, {"x1": 6101.206, "y1": 3359.352, "x2": 6101.206, "y2": 3359.452, "layer": "Muros"}, {"x1": 6134.913, "y1": 3359.667, "x2": 6135.963, "y2": 3359.667, "layer": "Muros"}, {"x1": 6127.863, "y1": 3359.767, "x2": 6127.963, "y2": 3359.767, "layer": "Muros"}, {"x1": 6091.329, "y1": 3399.152, "x2": 6120.584, "y2": 3399.152, "layer": "Muros"}, {"x1": 6091.624, "y1": 3406.152, "x2": 6120.591, "y2": 3406.152, "layer": "Muros"}, {"x1": 6091.329, "y1": 3340.202, "x2": 6120.584, "y2": 3340.202, "layer": "Muros"}, {"x1": 6091.329, "y1": 3335.152, "x2": 6120.625, "y2": 3335.152, "layer": "Muros"}, {"x1": 6362.024, "y1": 3335.832, "x2": 6362.024, "y2": 3335.632, "layer": "Muros"}, {"x1": 6362.024, "y1": 3375.432, "x2": 6362.024, "y2": 3375.632, "layer": "Muros"}, {"x1": 6359.197, "y1": 3340.832, "x2": 6359.197, "y2": 3340.932, "layer": "Muros"}], "polys": [{"pts": [[6100.106, 3359.537], [6100.106, 3359.767], [6100.556, 3359.767], [6100.556, 3359.537]], "closed": true, "layer": "Muros"}, {"pts": [[6127.863, 3354.352], [6127.863, 3354.802], [6128.093, 3354.802], [6128.093, 3354.352]], "closed": true, "layer": "Muros"}, {"pts": [[6084.785, 3325.97], [6084.785, 3414.689], [6140.338, 3414.689], [6140.338, 3325.97]], "closed": true, "layer": "Muros"}, {"pts": [[6099.906, 3394.152], [6099.906, 3354.152], [6104.032, 3354.152], [6104.032, 3354.352], [6100.106, 3354.352], [6100.106, 3393.952], [6104.032, 3393.952], [6104.032, 3394.152], [6099.906, 3394.152]], "closed": false, "layer": "Muros"}, {"pts": [[6111.956, 3355.567], [6110.856, 3355.567], [6110.856, 3356.344], [6110.956, 3356.344], [6110.956, 3355.667], [6111.956, 3355.667], [6111.956, 3355.567]], "closed": false, "layer": "Muros"}, {"pts": [[6110.856, 3357.05], [6110.956, 3357.05], [6110.956, 3358.667], [6111.956, 3358.667], [6111.956, 3358.767], [6110.856, 3358.767], [6110.856, 3357.05]], "closed": false, "layer": "Muros"}, {"pts": [[6108.429, 3394.152], [6108.429, 3393.952], [6107.932, 3393.952], [6107.932, 3394.152]], "closed": true, "layer": "Muros"}, {"pts": [[6111.047, 3357.127], [6111.047, 3357.27], [6110.956, 3357.27], [6110.956, 3357.127]], "closed": true, "layer": "Muros"}, {"pts": [[6111.774, 3357.127], [6111.774, 3357.27], [6111.956, 3357.27], [6111.956, 3357.127]], "closed": true, "layer": "Muros"}, {"pts": [[6120.584, 3394.152], [6120.584, 3354.152]], "closed": false, "layer": "Muros"}, {"pts": [[6131.892, 3356.896], [6131.992, 3356.896], [6131.992, 3355.782], [6133.242, 3355.782], [6133.242, 3356.896], [6133.342, 3356.896], [6133.342, 3356.782], [6133.441, 3356.782], [6133.441, 3356.682], [6133.342, 3356.682], [6133.342, 3355.782], [6134.813, 3355.782], [6134.813, 3356.682], [6134.141, 3356.682], [6134.141, 3356.782], [6134.813, 3356.782], [6134.813, 3358.082], [6133.342, 3358.082], [6133.342, 3357.596], [6133.242, 3357.596], [6133.242, 3358.082], [6132.772, 3358.082], [6132.772, 3358.182], [6133.713, 3358.182], [6133.713, 3358.882], [6133.813, 3358.882], [6133.813, 3358.182], [6134.813, 3358.182], [6134.813, 3359.667], [6131.992, 3359.667], [6131.992, 3358.182], [6132.072, 3358.182], [6132.072, 3358.082], [6131.992, 3358.082], [6131.992, 3357.596], [6131.892, 3357.596], [6131.892, 3359.767], [6134.913, 3359.767], [6134.913, 3355.682], [6131.892, 3355.682], [6131.892, 3356.896]], "closed": false, "layer": "Muros"}, {"pts": [[6127.963, 3354.802], [6127.963, 3355.367], [6127.863, 3355.367], [6127.863, 3354.802]], "closed": true, "layer": "Muros"}, {"pts": [[6108.45, 3354.152], [6108.45, 3354.352], [6107.932, 3354.352], [6107.932, 3354.152]], "closed": true, "layer": "Muros"}, {"pts": [[6109.35, 3354.152], [6109.35, 3354.352], [6111.956, 3354.352], [6111.956, 3393.952], [6109.329, 3393.952], [6109.329, 3394.152], [6112.156, 3394.152], [6112.156, 3354.152], [6109.35, 3354.152]], "closed": false, "layer": "Muros"}, {"pts": [[6127.763, 3359.667], [6127.763, 3359.767], [6127.707, 3359.767], [6127.707, 3359.667]], "closed": true, "layer": "Muros"}, {"pts": [[6124.262, 3359.767], [6124.262, 3359.667], [6124.313, 3359.667], [6124.313, 3359.767]], "closed": true, "layer": "Muros"}, {"pts": [[6124.762, 3359.767], [6124.762, 3359.667], [6124.813, 3359.667], [6124.813, 3359.767]], "closed": true, "layer": "Muros"}, {"pts": [[6126.26, 3359.717], [6126.26, 3359.667], [6126.31, 3359.667], [6126.31, 3359.717]], "closed": true, "layer": "Muros"}, {"pts": [[6126.31, 3359.769], [6126.31, 3359.717], [6126.36, 3359.717], [6126.36, 3359.769]], "closed": true, "layer": "Muros"}, {"pts": [[6128.063, 3359.667], [6128.063, 3359.767], [6128.118, 3359.767], [6128.118, 3359.667]], "closed": true, "layer": "Muros"}, {"pts": [[6131.892, 3359.767], [6131.892, 3359.667], [6131.842, 3359.667], [6131.842, 3359.767]], "closed": true, "layer": "Muros"}, {"pts": [[6131.392, 3359.767], [6131.392, 3359.667], [6131.342, 3359.667], [6131.342, 3359.767]], "closed": true, "layer": "Muros"}, {"pts": [[6129.73, 3359.717], [6129.73, 3359.667], [6129.68, 3359.667], [6129.68, 3359.717]], "closed": true, "layer": "Muros"}, {"pts": [[6129.68, 3359.769], [6129.68, 3359.717], [6129.63, 3359.717], [6129.63, 3359.769]], "closed": true, "layer": "Muros"}, {"pts": [[6123.963, 3359.767], [6123.963, 3354.152], [6136.163, 3354.152], [6136.163, 3359.767], [6135.963, 3359.767], [6135.963, 3359.767], [6135.963, 3359.767], [6135.963, 3354.352], [6124.163, 3354.352], [6124.162, 3359.767], [6124.063, 3359.767], [6124.162, 3359.767], [6123.963, 3359.767]], "closed": false, "layer": "Muros"}, {"pts": [[6127.963, 3356.117], [6127.963, 3359.767], [6127.863, 3359.767], [6127.863, 3356.117]], "closed": true, "layer": "Muros"}, {"pts": [[6358.098, 3341.017], [6358.098, 3341.247], [6358.548, 3341.247], [6358.548, 3341.017]], "closed": true, "layer": "Muros"}, {"pts": [[6357.898, 3375.632], [6357.898, 3373.333]], "closed": false, "layer": "Muros"}, {"pts": [[6369.948, 3337.047], [6368.848, 3337.047], [6368.848, 3337.824], [6368.948, 3337.824], [6368.948, 3337.147], [6369.948, 3337.147], [6369.948, 3337.047]], "closed": false, "layer": "Muros"}, {"pts": [[6368.848, 3338.53], [6368.948, 3338.53], [6368.948, 3340.147], [6369.948, 3340.147], [6369.948, 3340.247], [6368.848, 3340.247], [6368.848, 3338.53]], "closed": false, "layer": "Muros"}, {"pts": [[6366.42, 3375.632], [6366.42, 3375.432], [6365.924, 3375.432], [6365.924, 3375.632]], "closed": true, "layer": "Muros"}, {"pts": [[6369.039, 3338.607], [6369.039, 3338.75], [6368.948, 3338.75], [6368.948, 3338.607]], "closed": true, "layer": "Muros"}, {"pts": [[6369.765, 3338.607], [6369.765, 3338.75], [6369.948, 3338.75], [6369.948, 3338.607]], "closed": true, "layer": "Muros"}, {"pts": [[6357.898, 3335.632], [6357.898, 3332.632], [6369.948, 3332.632], [6369.948, 3335.632]], "closed": false, "layer": "Contorno"}, {"pts": [[6366.441, 3335.632], [6366.441, 3335.832], [6365.924, 3335.832], [6365.924, 3335.632]], "closed": true, "layer": "Muros"}, {"pts": [[6367.341, 3335.632], [6367.341, 3335.832], [6369.948, 3335.832], [6369.948, 3375.432], [6367.32, 3375.432], [6367.32, 3375.632], [6370.148, 3375.632], [6370.148, 3335.632], [6367.341, 3335.632]], "closed": false, "layer": "Muros"}, {"pts": [[6358.098, 3373.333], [6358.098, 3375.432], [6362.024, 3375.432], [6362.024, 3375.632], [6357.898, 3375.632]], "closed": false, "layer": "Muros"}, {"pts": [[6357.898, 3370.833], [6357.898, 3345.212]], "closed": false, "layer": "Muros"}, {"pts": [[6357.898, 3342.712], [6357.898, 3335.632], [6362.024, 3335.632], [6362.024, 3335.832], [6358.098, 3335.832], [6358.098, 3342.712]], "closed": false, "layer": "Muros"}, {"pts": [[6358.098, 3345.212], [6358.098, 3370.833]], "closed": false, "layer": "Muros"}], "labels": [{"text": "Nave", "x": 6105.685, "y": 3375.149}, {"text": "L\u00edmite de \u00e1rea exclusiva", "x": 6108.228, "y": 3340.31}, {"text": "L\u00edmite de \u00e1rea exclusiva", "x": 6108.228, "y": 3398.633}, {"text": "MAR DEL PLATA", "x": 6137.327, "y": 3354.037}, {"text": "Oficina de Recepcion", "x": 6101.682, "y": 3356.05}, {"text": "Tablero Carga de bater\u00edas", "x": 6111.023, "y": 3360.106}, {"text": "Despacho", "x": 6101.614, "y": 3391.731}, {"text": "Postal", "x": 6102.116, "y": 3384.721}, {"text": "Rendiciones", "x": 6102.116, "y": 3375.353}, {"text": "Rack de Sistemas", "x": 6102.506, "y": 3354.481}, {"text": "Carro/ jaula", "x": 6109.079, "y": 3367.89}, {"text": "Cross dock", "x": 6102.116, "y": 3365.053}, {"text": "Piso + 1 6 posiciones", "x": 6111.068, "y": 3363.382}, {"text": "Lockers", "x": 6133.056, "y": 3358.837}, {"text": "h bloque de hormig\u00f3n:  2,36 m", "x": 6099.692, "y": 3354.389}, {"text": "TGBT", "x": 6109.923, "y": 3354.742}, {"text": "Ducha", "x": 6134.161, "y": 3358.837}, {"text": "Ba\u00f1o", "x": 6132.728, "y": 3356.849}, {"text": "Comedor (a definir por  RRHH)", "x": 6129.268, "y": 3356.45}, {"text": "Sala de jefe y de reuni\u00f3n", "x": 6125.671, "y": 3356.02}, {"text": "Oficina de Recepcion", "x": 6358.494, "y": 3339.616}, {"text": "Tablero Carga de bater\u00edas", "x": 6369.014, "y": 3341.586}, {"text": "Despacho", "x": 6358.668, "y": 3374.628}, {"text": "Postal", "x": 6359.353, "y": 3367.912}, {"text": "Rendiciones", "x": 6358.882, "y": 3358.173}, {"text": "Rack de Sistemas", "x": 6360.497, "y": 3335.96}, {"text": "Cross dock", "x": 6359.421, "y": 3348.667}, {"text": "Piso + 1 6 posiciones", "x": 6369.059, "y": 3344.862}, {"text": "TGBT", "x": 6367.914, "y": 3336.221}, {"text": "Pll a canalizar", "x": 6361.383, "y": 3355.67}, {"text": "Dispenser", "x": 6347.884, "y": 3336.624}, {"text": "Dispenser", "x": 6347.884, "y": 3374.799}, {"text": "Nave B1", "x": 6334.285, "y": 3335.501}, {"text": "Nave B2", "x": 6354.98, "y": 3335.501}, {"text": "Nave B3", "x": 6368.122, "y": 3335.501}, {"text": "DEPOSITO ACTUAL", "x": 6362.671, "y": 3334.292}, {"text": "NUEVO DEPOSITO", "x": 6344.67, "y": 3335.288}, {"text": "SUCURSAL MAR DEL PLATA  AMPLIACION", "x": 6333.713, "y": 3329.44}], "sectors_raw": [{"pts": [[6100.106, 3369.267], [6103.206, 3369.267], [6103.206, 3363.922], [6100.106, 3363.922]], "closed": false}, {"pts": [[6100.058, 3379.267], [6103.158, 3379.267], [6103.158, 3372.873], [6100.058, 3372.873]], "closed": false}, {"pts": [[6100.106, 3381.387], [6103.158, 3381.387], [6103.158, 3389.267], [6100.106, 3389.268]], "closed": false}, {"pts": [[6103.856, 3393.952], [6103.856, 3391.392], [6100.106, 3391.392]], "closed": false}, {"pts": [[6358.098, 3350.747], [6361.198, 3350.747], [6361.198, 3345.401], [6358.098, 3345.401]], "closed": false}, {"pts": [[6358.049, 3360.747], [6361.149, 3360.747], [6361.149, 3354.353], [6358.049, 3354.353]], "closed": false}, {"pts": [[6358.098, 3362.867], [6361.149, 3362.867], [6361.149, 3370.747], [6358.098, 3370.748]], "closed": false}]}}};
 
 let ACTIVIDADES_ESTRUCTURA={};
 
@@ -253,7 +253,15 @@ fetch('clientes.csv')
   .catch(e=>console.error('No se pudo cargar clientes.csv',e));
 function getClientDesc(cod){const c=CLIENTES.find(c=>c.codigo===cod);return c?c.descripcion:cod;}
 const ESPACIOS_CEDIDOS=['ESPACIOS CEDIDOS AG','ESPACIOS CEDIDOS AS','ESPACIOS CEDIDOS SE'];
-const SUCURSALES=[{code:'MDQ',name:'Mar del Plata',available:true},{code:'IRI',name:'Iriarte',available:false},{code:'PLO',name:'PLO Plaza',available:false},{code:'CBN',name:'Caballito Norte',available:false},{code:'TOR',name:'Tortuguitas',available:false},{code:'MOR',name:'Morón',available:false}];
+const SUCURSALES=[
+  {code:'MDQ',name:'Mar del Plata', available:true, dxf:'mapas/planos/Layout MDQ - Marzo 2026.dxf'},
+  {code:'FLO',name:'Flores',        available:true, dxf:'mapas/planos/Copia de FLO-Flores-Plano Base-V02.dxf'},
+  {code:'IRI',name:'Iriarte',       available:false,dxf:'mapas/planos/IRI.dxf'},
+  {code:'PLO',name:'PLO Plaza',     available:false,dxf:'mapas/planos/PLO.dxf'},
+  {code:'CBN',name:'Caballito Norte',available:false,dxf:'mapas/planos/CBN.dxf'},
+  {code:'TOR',name:'Tortuguitas',   available:false,dxf:'mapas/planos/TOR.dxf'},
+  {code:'MOR',name:'Morón',         available:false,dxf:'mapas/planos/MOR.dxf'}
+];
 const AREA_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0','#b5341a','#057a3a','#c45c00','#1a4db5'];
 const ACT_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0'];
 
@@ -284,16 +292,55 @@ const wrap=document.getElementById('cwrap');
   });
 })();
 
+function normalizeDXF(parsed){
+  const lines=[],polys=[],labels=[];
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  function upd(x,y){if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}
+  (parsed.entities||[]).forEach(e=>{
+    const layer=e.layer||'0';
+    if(e.type==='LINE'){
+      const {x:x1=0,y:y1=0}=e.start||{},{x:x2=0,y:y2=0}=e.end||{};
+      lines.push({x1,y1,x2,y2,layer});upd(x1,y1);upd(x2,y2);
+    } else if(e.type==='LWPOLYLINE'||e.type==='POLYLINE'){
+      const pts=(e.vertices||[]).map(v=>[v.x||0,v.y||0]);
+      if(pts.length>=2){polys.push({pts,closed:!!(e.closed||e.shape),layer});pts.forEach(([x,y])=>upd(x,y));}
+    } else if(e.type==='TEXT'){
+      const {x=0,y=0}=e.startPoint||{};
+      if(e.text){labels.push({text:e.text,x,y});upd(x,y);}
+    } else if(e.type==='MTEXT'){
+      const {x=0,y=0}=e.position||{};
+      const txt=(e.text||'').replace(/\\[A-Za-z][^;]*;/g,'').replace(/[{}]/g,'').trim();
+      if(txt){labels.push({text:txt,x,y});upd(x,y);}
+    }
+  });
+  const p=2;
+  return{bbox:{min_x:minX-p,max_x:maxX+p,min_y:minY-p,max_y:maxY+p},lines,polys,labels};
+}
+
 function enterLayout(){
   if(!currentSuc) return;
-  DXF=DATA_REGISTRY[currentSuc.code].data;
-  document.getElementById('splash').style.display='none';
-  const app=document.getElementById('app');
-  app.style.display='flex';app.style.flexDirection='column';
-  document.getElementById('headerMid').innerHTML=`Layout · <span>${currentSuc.name}</span>`;
-  document.getElementById('coords').style.display='block';
-  document.getElementById('backBtn').style.display='flex';
-  initCanvas();
+  const btn=document.getElementById('enterBtn');
+  btn.disabled=true;
+  btn.textContent='Cargando plano…';
+  fetch(encodeURI(currentSuc.dxf))
+    .then(r=>{if(!r.ok) throw new Error('Archivo no encontrado: '+currentSuc.dxf);return r.text();})
+    .then(text=>{
+      const parser=new DxfParser();
+      DXF=normalizeDXF(parser.parseSync(text));
+      document.getElementById('splash').style.display='none';
+      const app=document.getElementById('app');
+      app.style.display='flex';app.style.flexDirection='column';
+      document.getElementById('headerMid').innerHTML=`Layout · <span>${currentSuc.name}</span>`;
+      document.getElementById('coords').style.display='block';
+      document.getElementById('backBtn').style.display='flex';
+      btn.textContent='Ingresar al layout →';
+      initCanvas();
+    })
+    .catch(err=>{
+      alert('No se pudo cargar el plano.\n'+err.message);
+      btn.disabled=false;
+      btn.textContent='Ingresar al layout →';
+    });
 }
 
 function goBack(){
@@ -302,7 +349,8 @@ function goBack(){
   document.getElementById('coords').style.display='none';
   document.getElementById('backBtn').style.display='none';
   document.getElementById('headerMid').innerHTML='Layout de Sucursales';
-  areas=[];curPts=[];selectedArea=null;colIdx=0;canvas._snapPt=null;
+  DXF=null;areas=[];curPts=[];selectedArea=null;colIdx=0;canvas._snapPt=null;
+document.getElementById('enterBtn').textContent='Ingresar al layout →';
   document.querySelectorAll('.suc-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('enterBtn').disabled=true;
   currentSuc=null;
