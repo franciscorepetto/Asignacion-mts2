@@ -296,13 +296,22 @@ function normalizeDXF(parsed){
   const lines=[],polys=[],labels=[];
   let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
   function upd(x,y){if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}
+
+  // Bbox solo desde entidades directas (no bloques INSERT que pueden tener coords disparatadas)
+  (parsed.entities||[]).forEach(e=>{
+    if(e.type==='LINE'){const{x:x1=0,y:y1=0}=e.start||{},{x:x2=0,y:y2=0}=e.end||{};upd(x1,y1);upd(x2,y2);}
+    else if(e.type==='LWPOLYLINE'||e.type==='POLYLINE'){(e.vertices||[]).forEach(v=>upd(v.x||0,v.y||0));}
+    else if(e.type==='ARC'||e.type==='CIRCLE'){const{x=0,y=0}=e.center||{};const r=e.radius||0;upd(x-r,y-r);upd(x+r,y+r);}
+  });
+  const bbox={min_x:minX-2,max_x:maxX+2,min_y:minY-2,max_y:maxY+2};
+
   function arcToLines(cx,cy,r,startDeg,endDeg,layer){
     let s=startDeg*Math.PI/180,e=endDeg*Math.PI/180;
     if(e<=s) e+=Math.PI*2;
     const steps=Math.max(8,Math.round((e-s)*r*4));
     const pts=[];
     for(let i=0;i<=steps;i++){const a=s+(e-s)*i/steps;pts.push([cx+r*Math.cos(a),cy+r*Math.sin(a)]);}
-    for(let i=0;i<pts.length-1;i++){const[x1,y1]=pts[i],[x2,y2]=pts[i+1];lines.push({x1,y1,x2,y2,layer});upd(x1,y1);upd(x2,y2);}
+    for(let i=0;i<pts.length-1;i++){const[x1,y1]=pts[i],[x2,y2]=pts[i+1];lines.push({x1,y1,x2,y2,layer});}
   }
   function applyTransform(x,y,ins){
     const sx=(ins.xScale||ins.scaleX||1),sy=(ins.yScale||ins.scaleY||1);
@@ -316,29 +325,29 @@ function normalizeDXF(parsed){
     const layer=e.layer||'0';
     const tr=transform||(([x,y])=>[x,y]);
     if(e.type==='LINE'){
-      const {x:x1=0,y:y1=0}=e.start||{},{x:x2=0,y:y2=0}=e.end||{};
+      const{x:x1=0,y:y1=0}=e.start||{},{x:x2=0,y:y2=0}=e.end||{};
       const[tx1,ty1]=tr([x1,y1]),[tx2,ty2]=tr([x2,y2]);
-      lines.push({x1:tx1,y1:ty1,x2:tx2,y2:ty2,layer});upd(tx1,ty1);upd(tx2,ty2);
+      lines.push({x1:tx1,y1:ty1,x2:tx2,y2:ty2,layer});
     } else if(e.type==='LWPOLYLINE'||e.type==='POLYLINE'){
       const pts=(e.vertices||[]).map(v=>tr([v.x||0,v.y||0]));
-      if(pts.length>=2){polys.push({pts,closed:!!(e.closed||e.shape),layer});pts.forEach(([x,y])=>upd(x,y));}
+      if(pts.length>=2) polys.push({pts,closed:!!(e.closed||e.shape),layer});
     } else if(e.type==='ARC'){
-      const {x:cx=0,y:cy=0}=e.center||{};
+      const{x:cx=0,y:cy=0}=e.center||{};
       const[tcx,tcy]=tr([cx,cy]);
       arcToLines(tcx,tcy,e.radius||0,e.startAngle||0,e.endAngle||360,layer);
     } else if(e.type==='CIRCLE'){
-      const {x:cx=0,y:cy=0}=e.center||{};
+      const{x:cx=0,y:cy=0}=e.center||{};
       const[tcx,tcy]=tr([cx,cy]);
       arcToLines(tcx,tcy,e.radius||0,0,360,layer);
     } else if(e.type==='TEXT'){
-      const {x=0,y=0}=e.startPoint||{};
+      const{x=0,y=0}=e.startPoint||{};
       const[tx,ty]=tr([x,y]);
-      if(e.text){labels.push({text:e.text,x:tx,y:ty});upd(tx,ty);}
+      if(e.text) labels.push({text:e.text,x:tx,y:ty});
     } else if(e.type==='MTEXT'){
-      const {x=0,y=0}=e.position||{};
+      const{x=0,y=0}=e.position||{};
       const[tx,ty]=tr([x,y]);
       const txt=(e.text||'').replace(/\\[A-Za-z][^;]*;/g,'').replace(/[{}]/g,'').trim();
-      if(txt){labels.push({text:txt,x:tx,y:ty});upd(tx,ty);}
+      if(txt) labels.push({text:txt,x:tx,y:ty});
     } else if(e.type==='INSERT'){
       const block=parsed.blocks&&parsed.blocks[e.name||e.block];
       if(block){
@@ -348,8 +357,7 @@ function normalizeDXF(parsed){
     }
   }
   (parsed.entities||[]).forEach(e=>processEntity(e,null));
-  const p=2;
-  return{bbox:{min_x:minX-p,max_x:maxX+p,min_y:minY-p,max_y:maxY+p},lines,polys,labels};
+  return{bbox,lines,polys,labels};
 }
 
 function enterLayout(){
