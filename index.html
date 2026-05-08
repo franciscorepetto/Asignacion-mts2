@@ -28,14 +28,20 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 .splash-card h2{font-size:18px;font-weight:700;margin-bottom:6px;color:var(--text)}
 .splash-card p{font-size:12px;color:var(--text2);margin-bottom:24px;line-height:1.6}
 .splash-label{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand-dark);margin-bottom:8px}
-.suc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:24px}
-.suc-btn{padding:12px 8px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;text-align:center;font-family:'Montserrat',sans-serif}
-.suc-btn:hover{border-color:var(--brand);background:var(--brand-light)}
-.suc-btn.active{border-color:var(--brand);background:var(--brand-light);box-shadow:0 0 0 3px rgba(51,194,202,.15)}
-.suc-code{font-size:16px;font-weight:800;color:var(--text);display:block}
-.suc-name{font-size:10px;font-weight:500;color:var(--text2);display:block;margin-top:2px}
-.suc-badge{font-size:9px;font-weight:600;color:var(--brand-dark);background:var(--brand-mid);padding:2px 6px;border-radius:10px;display:inline-block;margin-top:4px}
-.suc-badge.soon{background:#f0eeee;color:var(--text3)}
+.suc-search{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;outline:none;margin-bottom:8px;color:var(--text);background:#fff}
+.suc-search:focus{border-color:var(--brand)}
+.suc-list{max-height:240px;overflow-y:auto;border:1.5px solid var(--border);border-radius:10px;margin-bottom:16px}
+.suc-list::-webkit-scrollbar{width:4px}
+.suc-list::-webkit-scrollbar-thumb{background:var(--brand-mid);border-radius:2px}
+.suc-item{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s}
+.suc-item:last-child{border-bottom:none}
+.suc-item:hover:not(.unavailable){background:var(--brand-light)}
+.suc-item.active{background:var(--brand-light);border-left:3px solid var(--brand)}
+.suc-item.unavailable{opacity:0.4;cursor:not-allowed}
+.suc-item-code{font-size:11px;font-weight:800;color:var(--brand-dark);min-width:38px}
+.suc-item-name{font-size:12px;font-weight:500;color:var(--text);flex:1}
+.suc-item-badge{font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:var(--brand-mid);color:var(--brand-dark)}
+.suc-item-badge.soon{background:#f0eeee;color:var(--text3)}
 .enter-btn{width:100%;padding:13px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.04em;box-shadow:0 2px 12px rgba(51,194,202,.35)}
 .enter-btn:hover{background:var(--brand-dark)}
 .enter-btn:disabled{background:var(--text3);box-shadow:none;cursor:not-allowed}
@@ -139,7 +145,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
     <h2>Seleccioná tu sucursal</h2>
     <p>Elegí la sucursal sobre la que vas a trabajar. Vas a poder dibujar las áreas del layout y asignarles actividades de costeo.</p>
     <div class="slabel">Sucursales disponibles</div>
-    <div class="suc-grid" id="sucGrid"></div>
+    <input type="text" id="sucSearch" class="suc-search" placeholder="Buscar por nombre o código..." oninput="filterSucursales(this.value)">
+<div class="suc-list" id="sucGrid"></div>
     <button class="enter-btn" id="enterBtn" disabled onclick="enterLayout()">Ingresar al layout →</button>
     <div class="coming-note">Las sucursales marcadas como "Próximamente" están en proceso de carga.</div>
   </div>
@@ -253,7 +260,68 @@ fetch('clientes.csv')
   .catch(e=>console.error('No se pudo cargar clientes.csv',e));
 function getClientDesc(cod){const c=CLIENTES.find(c=>c.codigo===cod);return c?c.descripcion:cod;}
 const ESPACIOS_CEDIDOS=['ESPACIOS CEDIDOS AG','ESPACIOS CEDIDOS AS','ESPACIOS CEDIDOS SE'];
-const SUCURSALES=[{code:'MDQ',name:'Mar del Plata',available:true},{code:'IRI',name:'Iriarte',available:false},{code:'PLO',name:'PLO Plaza',available:false},{code:'CBN',name:'Caballito Norte',available:false},{code:'TOR',name:'Tortuguitas',available:false},{code:'MOR',name:'Morón',available:false}];
+const SUCURSALES=[
+  {code:'AEP',name:'Aeroparque',available:false},
+  {code:'EZE',name:'Ezeiza',available:false},
+  {code:'AVE',name:'Avellaneda',available:false},
+  {code:'ALG',name:'Alta Gracia',available:false},
+  {code:'AZU',name:'Azul',available:false},
+  {code:'BAH',name:'Bahía Blanca',available:false},
+  {code:'BEL',name:'Belgrano',available:false},
+  {code:'CAT',name:'Catamarca',available:false},
+  {code:'CDN',name:'Centro Dist. Norte',available:false},
+  {code:'CRV',name:'Comodoro Rivadavia',available:false},
+  {code:'CBA',name:'Córdoba La Voz',available:false},
+  {code:'CO2',name:'Córdoba Circunvalación',available:false},
+  {code:'CPR',name:'Córdoba Paraná',available:false},
+  {code:'CTE',name:'Corrientes',available:false},
+  {code:'CDE',name:'Cruz del Eje',available:false},
+  {code:'ESQ',name:'Esquel',available:false},
+  {code:'EES',name:'Esteban Echeverría',available:false},
+  {code:'FLO',name:'Flores',available:false},
+  {code:'FMA',name:'Formosa',available:false},
+  {code:'IRI',name:'Iriarte',available:false},
+  {code:'JMA',name:'Jesús María',available:false},
+  {code:'JUJ',name:'Jujuy',available:false},
+  {code:'LCA',name:'La Carlota',available:false},
+  {code:'LRJ',name:'La Rioja',available:false},
+  {code:'MDQ',name:'Mar del Plata',available:true},
+  {code:'MTZ',name:'Martínez',available:false},
+  {code:'MDZ',name:'Mendoza',available:false},
+  {code:'NQN',name:'Neuquén',available:false},
+  {code:'OTT',name:'Malvinas Argentinas',available:false},
+  {code:'PAR',name:'Paraná',available:false},
+  {code:'PIL',name:'Pilar',available:false},
+  {code:'PLO',name:'Plaza Logística',available:false},
+  {code:'POS',name:'Posadas',available:false},
+  {code:'RAF',name:'Rafaela',available:false},
+  {code:'RAW',name:'Rawson',available:false},
+  {code:'RES',name:'Resistencia',available:false},
+  {code:'RCU',name:'Río Cuarto',available:false},
+  {code:'RGL',name:'Río Gallegos',available:false},
+  {code:'RGR',name:'Río Grande',available:false},
+  {code:'RTE',name:'Río Tercero',available:false},
+  {code:'ROS',name:'Rosario',available:false},
+  {code:'SPY',name:'Salta Paraguay',available:false},
+  {code:'SRA',name:'Salta Ragone',available:false},
+  {code:'STV',name:'Salta Tavella',available:false},
+  {code:'ST3',name:'Salta Tavella III',available:false},
+  {code:'SFC',name:'San Francisco',available:false},
+  {code:'SJU',name:'San Juan',available:false},
+  {code:'SLU',name:'San Luis',available:false},
+  {code:'SFE',name:'Santa Fe (Santo Tomé)',available:false},
+  {code:'SRO',name:'Santa Rosa',available:false},
+  {code:'SGO',name:'Santiago del Estero',available:false},
+  {code:'SRN',name:'Sarandí',available:false},
+  {code:'TOR',name:'Tortuguitas',available:false},
+  {code:'TLW',name:'Trelew',available:false},
+  {code:'TUC',name:'Tucumán',available:false},
+  {code:'USH',name:'Ushuaia',available:false},
+  {code:'VDM',name:'Viedma',available:false},
+  {code:'VCP',name:'Villa Carlos Paz',available:false},
+  {code:'VDO',name:'Villa Dolores',available:false},
+  {code:'VMR',name:'Villa María',available:false}
+];
 const AREA_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0','#b5341a','#057a3a','#c45c00','#1a4db5'];
 const ACT_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0'];
 
@@ -268,20 +336,25 @@ const ctx=canvas.getContext('2d');
 const wrap=document.getElementById('cwrap');
 
 (function buildSplash(){
-  const grid=document.getElementById('sucGrid');
-  SUCURSALES.forEach(s=>{
-    const btn=document.createElement('button');
-    btn.className='suc-btn'+(s.available?'':' disabled');
-    btn.disabled=!s.available;
-    btn.innerHTML=`<span class="suc-code">${s.code}</span><span class="suc-name">${s.name}</span><span class="suc-badge${s.available?'':' soon'}">${s.available?'Disponible':'Próximamente'}</span>`;
-    if(s.available) btn.onclick=()=>{
-      document.querySelectorAll('.suc-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      currentSuc=s;
-      document.getElementById('enterBtn').disabled=false;
-    };
-    grid.appendChild(btn);
-  });
+  const list=document.getElementById('sucGrid');
+  function renderList(filter){
+    list.innerHTML='';
+    const q=(filter||'').toLowerCase();
+    SUCURSALES.filter(s=>!q||s.name.toLowerCase().includes(q)||s.code.toLowerCase().includes(q)).forEach(s=>{
+      const item=document.createElement('div');
+      item.className='suc-item'+(s.available?'':' unavailable');
+      item.innerHTML=`<span class="suc-item-code">${s.code}</span><span class="suc-item-name">${s.name}</span><span class="suc-item-badge${s.available?'':' soon'}">${s.available?'Disponible':'Próx.'}</span>`;
+      if(s.available) item.onclick=()=>{
+        document.querySelectorAll('.suc-item').forEach(i=>i.classList.remove('active'));
+        item.classList.add('active');
+        currentSuc=s;
+        document.getElementById('enterBtn').disabled=false;
+      };
+      list.appendChild(item);
+    });
+  }
+  renderList();
+  window.filterSucursales=renderList;
 })();
 
 function enterLayout(){
