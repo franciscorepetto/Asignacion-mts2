@@ -246,6 +246,12 @@ fetch('actividades.csv')
   .then(r=>r.text())
   .then(csv=>{ACTIVIDADES_ESTRUCTURA=_parseCSVEstructura(csv);})
   .catch(e=>console.error('No se pudo cargar actividades.csv',e));
+let CLIENTES=[];
+fetch('clientes.csv')
+  .then(r=>r.text())
+  .then(csv=>{CLIENTES=csv.trim().split(/\r?\n/).slice(1).map(line=>{const p=line.split(';');return{codigo:(p[0]||'').trim(),descripcion:(p[1]||'').trim()};}).filter(c=>c.codigo&&c.descripcion).sort((a,b)=>a.descripcion.localeCompare(b.descripcion,'es'));})
+  .catch(e=>console.error('No se pudo cargar clientes.csv',e));
+function getClientDesc(cod){const c=CLIENTES.find(c=>c.codigo===cod);return c?c.descripcion:cod;}
 const ESPACIOS_CEDIDOS=['ESPACIOS CEDIDOS AG','ESPACIOS CEDIDOS AS','ESPACIOS CEDIDOS SE'];
 const SUCURSALES=[{code:'MDQ',name:'Mar del Plata',available:true},{code:'IRI',name:'Iriarte',available:false},{code:'PLO',name:'PLO Plaza',available:false},{code:'CBN',name:'Caballito Norte',available:false},{code:'TOR',name:'Tortuguitas',available:false},{code:'MOR',name:'Morón',available:false}];
 const AREA_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0','#b5341a','#057a3a','#c45c00','#1a4db5'];
@@ -466,8 +472,9 @@ function renderModalRows(){
           </select>
         </div>
         ${ced?`<div class="field-row">
-          <label class="client-lbl">Cliente (cód.)</label>
-          <input class="client-inp" type="text" placeholder="ej: IBM, FRESENIUS" value="${row.client||''}" oninput="modalRows[${i}].client=this.value">
+          <label class="client-lbl">Cliente</label>
+          <input class="client-inp" type="text" list="cl-list-${i}" placeholder="Buscar cliente..." value="${CLIENTES.find(c=>c.codigo===row.client)?.descripcion||''}" oninput="const m=CLIENTES.find(c=>c.descripcion===this.value);if(m)modalRows[${i}].client=m.codigo;else if(!this.value)modalRows[${i}].client='';" autocomplete="off">
+          <datalist id="cl-list-${i}">${CLIENTES.map(c=>`<option value="${c.descripcion}"></option>`).join('')}</datalist>
         </div>`:''}
       </div>`;
     c.appendChild(d);
