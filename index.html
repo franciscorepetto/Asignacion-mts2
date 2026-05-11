@@ -160,14 +160,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
   <div class="main">
     <div class="sidebar">
       <div class="ss">
-        <div class="slabel">Modo de trabajo</div>
-        <div class="mbtns">
-          <button class="mbtn active" id="btnD" onclick="setMode('draw')">✏ Polígono</button>
-          <button class="mbtn" id="btnR" onclick="setMode('rect')">▭ Rectángulo</button>
-          <button class="mbtn" id="btnS" onclick="setMode('select')">↖ Seleccionar</button>
-        </div>
-      </div>
-      <div class="ss">
         <div class="instr" id="instrTxt">
           <strong>Modo dibujo:</strong><br>
           1. Clic = vértice del área<br>
@@ -191,7 +183,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
         <div class="tbtn" onclick="zoom(1.2)" title="Zoom in">+</div>
         <div class="tbtn" onclick="zoom(0.83)" title="Zoom out">−</div>
         <div class="tbtn" onclick="resetView()" title="Encuadrar">⊡</div>
-        <div class="tbtn" id="btnPan" onclick="togglePan()" title="Mover (Espacio)">✋</div>
+        <div class="tbtn active-tool" id="btnD" onclick="setMode('draw')" title="Polígono">✏</div>
+        <div class="tbtn" id="btnR" onclick="setMode('rect')" title="Rectángulo">▭</div>
+        <div class="tbtn" id="btnPan" onclick="setMode('pan')" title="Mover (Espacio)">✋</div>
         <div class="tbtn" onclick="undoVertex()" title="Deshacer vértice">↩</div>
       </div>
       <div class="scalebar" id="scalebar">—</div>
@@ -417,7 +411,6 @@ function resetView(){
   ox=(canvas.width-dxfW*scale)/2;oy=(canvas.height-dxfH*scale)/2;render();
 }
 function zoom(f){const cx=canvas.width/2,cy=canvas.height/2;ox=cx-(cx-ox)*f;oy=cy-(cy-oy)*f;scale*=f;render();}
-function togglePan(){panMode=!panMode;document.getElementById('btnPan').classList.toggle('active-tool',panMode);canvas.style.cursor=panMode?'grab':(mode==='draw'?'crosshair':'default');}
 
 function polyArea(pts){let a=0,n=pts.length;for(let i=0;i<n;i++){const j=(i+1)%n;a+=pts[i][0]*pts[j][1]-pts[j][0]*pts[i][1];}return Math.abs(a/2);}
 function pip([x,y],pts){let inside=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const xi=pts[i][0],yi=pts[i][1],xj=pts[j][0],yj=pts[j][1];if(((yi>y)!=(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi)) inside=!inside;}return inside;}
@@ -641,7 +634,7 @@ canvas.addEventListener('dblclick',e=>{if(panMode||mode!=='draw') return;if(curP
 canvas.addEventListener('mousemove',e=>{if(!DXF) return;const[wx,wy]=toW(e.offsetX,e.offsetY);const bb=DXF.bbox;document.getElementById('coords').textContent='x: '+(wx-bb.min_x).toFixed(1)+'m  y: '+(wy-bb.min_y).toFixed(1)+'m';if(panning&&panStart){ox=panOff[0]+(e.clientX-panStart[0]);oy=panOff[1]+(e.clientY-panStart[1]);render();}if(mode==='draw'&&!panMode){const snap=snapToVertex(wx,wy);canvas._snapPt=snap||null;render();canvas.style.cursor=snap?'cell':'crosshair';}
 else if(mode==='rect'&&rectStart){rectCurrent=[wx,wy];render();}});
 canvas.addEventListener('mousedown',e=>{
-  if(panMode||e.button===1||(mode==='select')){panning=true;panStart=[e.clientX,e.clientY];panOff=[ox,oy];canvas.style.cursor='grabbing';}
+  if(panMode||e.button===1){panning=true;panStart=[e.clientX,e.clientY];panOff=[ox,oy];canvas.style.cursor='grabbing';}
   else if(mode==='rect'){const[wx,wy]=toW(e.offsetX,e.offsetY);rectStart=[wx,wy];rectCurrent=[wx,wy];}
 });
 canvas.addEventListener('mouseup',e=>{
@@ -660,10 +653,21 @@ canvas.addEventListener('mouseup',e=>{
 });
 canvas.addEventListener('wheel',e=>{if(!DXF) return;e.preventDefault();const f=e.deltaY<0?1.12:0.9;ox=e.offsetX-(e.offsetX-ox)*f;oy=e.offsetY-(e.offsetY-oy)*f;scale*=f;render();},{passive:false});
 
-document.addEventListener('keydown',e=>{if(!DXF) return;if(e.code==='Space'&&!panMode){e.preventDefault();panMode=true;document.getElementById('btnPan').classList.add('active-tool');canvas.style.cursor='grab';}if(e.code==='Escape'){curPts=[];canvas._snapPt=null;selectedArea=null;updateList();render();}if((e.code==='Delete'||e.code==='Backspace')&&selectedArea!==null&&document.getElementById('modalBg').style.display==='none') deleteArea(selectedArea);});
-document.addEventListener('keyup',e=>{if(e.code==='Space'){panMode=false;document.getElementById('btnPan').classList.remove('active-tool');canvas.style.cursor=mode==='draw'?'crosshair':'default';}});
+document.addEventListener('keydown',e=>{if(!DXF) return;if(e.code==='Space'&&mode!=='pan'){e.preventDefault();setMode('pan');}if(e.code==='Escape'){curPts=[];canvas._snapPt=null;selectedArea=null;updateList();render();}if((e.code==='Delete'||e.code==='Backspace')&&selectedArea!==null&&document.getElementById('modalBg').style.display==='none') deleteArea(selectedArea);});
+document.addEventListener('keyup',e=>{if(e.code==='Space'){setMode('draw');}});
 
-function setMode(m){mode=m;curPts=[];canvas._snapPt=null;selectedArea=null;document.getElementById('btnD').classList.toggle('active',m==='draw');document.getElementById('btnR').classList.toggle('active',m==='rect');document.getElementById('btnS').classList.toggle('active',m==='select');if(!panMode) canvas.style.cursor=m==='draw'?'crosshair':'default';document.getElementById('instrTxt').innerHTML=m==='draw'?'<strong>Modo polígono:</strong><br>1. Clic = vértice del área<br>2. Doble clic = cerrar polígono<br>3. Asigná actividades y %':m==='rect'?'<strong>Modo rectángulo:</strong><br>1. Clic y arrastrá para dibujar<br>2. Soltá para confirmar el área':'<strong>Modo selección:</strong><br>Clic = seleccionar área<br>✎ editar · ✕ eliminar · <kbd>Del</kbd> eliminar';updateList();render();}
+function setMode(m){
+  mode=m;
+  panMode=(m==='pan');
+  curPts=[];canvas._snapPt=null;rectStart=null;rectCurrent=null;
+  selectedArea=null;
+  document.getElementById('btnD').classList.toggle('active-tool',m==='draw');
+  document.getElementById('btnR').classList.toggle('active-tool',m==='rect');
+  document.getElementById('btnPan').classList.toggle('active-tool',m==='pan');
+  canvas.style.cursor=m==='pan'?'grab':m==='draw'||m==='rect'?'crosshair':'default';
+  document.getElementById('instrTxt').innerHTML=m==='draw'?'<strong>Modo polígono:</strong><br>1. Clic = vértice del área<br>2. Doble clic = cerrar polígono<br>3. Asigná actividades y %':m==='rect'?'<strong>Modo rectángulo:</strong><br>1. Clic y arrastrá para dibujar<br>2. Soltá para confirmar':'<strong>Modo mover:</strong><br>Clic y arrastrá para mover el plano<br><kbd>Espacio</kbd> también activa este modo';
+  updateList();render();
+}
 function undoVertex(){if(curPts.length){curPts.pop();render();}}
 async function cargarTrabajoSplash(input){
   const file=input.files[0];if(!file)return;
