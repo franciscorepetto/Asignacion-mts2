@@ -765,8 +765,7 @@ function parseDXF(text){
     if(x0!==null&&x1!==null&&y0!==null&&y1!==null)break;
   }
   if(x0===null)return res;
-  res.bbox={min_x:x0,max_x:x1,min_y:y0,max_y:y1};
-  const m=Math.max(x1-x0,y1-y0)*0.25;
+const m=Math.max(x1-x0,y1-y0)*0.25;
   const inR=(x,y)=>x>=x0-m&&x<=x1+m&&y>=y0-m&&y<=y1+m;
   let i=0,n=pairs.length;
   while(i<n){
@@ -787,6 +786,11 @@ function parseDXF(text){
       if(txt&&inR(tx,ty))res.labels.push({text:txt,x:tx,y:ty});
     }else{i++;}
   }
+    // Compute bbox from LINE/LWPOLYLINE only — $EXTMIN/$EXTMAX includes text far from the real plan
+  let bx0=Infinity,bx1=-Infinity,by0=Infinity,by1=-Infinity;
+  res.lines.forEach(l=>{bx0=Math.min(bx0,l.x1,l.x2);bx1=Math.max(bx1,l.x1,l.x2);by0=Math.min(by0,l.y1,l.y2);by1=Math.max(by1,l.y1,l.y2);});
+  res.polys.forEach(p=>p.pts.forEach(([px,py])=>{bx0=Math.min(bx0,px);bx1=Math.max(bx1,px);by0=Math.min(by0,py);by1=Math.max(by1,py);}));
+  res.bbox=bx0<Infinity?{min_x:bx0,max_x:bx1,min_y:by0,max_y:by1}:{min_x:x0,max_x:x1,min_y:y0,max_y:y1};
   return res;
 }
 </script>
