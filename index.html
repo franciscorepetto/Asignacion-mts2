@@ -162,7 +162,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
       <div class="ss">
         <div class="slabel">Modo de trabajo</div>
         <div class="mbtns">
-          <button class="mbtn active" id="btnD" onclick="setMode('draw')">✏ Dibujar área</button>
+          <button class="mbtn active" id="btnD" onclick="setMode('draw')">✏ Polígono</button>
+          <button class="mbtn" id="btnR" onclick="setMode('rect')">▭ Rectángulo</button>
           <button class="mbtn" id="btnS" onclick="setMode('select')">↖ Seleccionar</button>
         </div>
       </div>
@@ -334,6 +335,7 @@ let scale=1,ox=0,oy=0,baseScale=1;
 let mode='draw',panMode=false;
 let curPts=[],areas=[],colIdx=0,selectedArea=null;
 let panning=false,panStart=null,panOff=null;
+let rectStart=null,rectCurrent=null;
 let pendingPts=null,editingIdx=-1,modalRows=[];
 const canvas=document.getElementById('fp');
 const ctx=canvas.getContext('2d');
@@ -490,6 +492,14 @@ if(_la>0){
   DXF.labels.forEach(l=>{if(!l.text||l.text.length<2||l.text.includes('hormigón')||l.text.startsWith('h ')) return;const[lx,ly]=toS(l.x,l.y);if(lx<-50||lx>canvas.width+50||ly<-50||ly>canvas.height+50) return;ctx.fillStyle='#1fa8b0';ctx.font=`500 ${Math.max(7,Math.min(10,scale*3.5))}px 'Montserrat',sans-serif`;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText(l.text,lx,ly);});
   ctx.globalAlpha=1;
 }
+  if(rectStart&&rectCurrent){
+  const[sx0,sy0]=toS(Math.min(rectStart[0],rectCurrent[0]),Math.max(rectStart[1],rectCurrent[1]));
+  const[sx1,sy1]=toS(Math.max(rectStart[0],rectCurrent[0]),Math.min(rectStart[1],rectCurrent[1]));
+  ctx.strokeStyle='#33c2ca';ctx.lineWidth=2;ctx.setLineDash([5,3]);
+  ctx.strokeRect(sx0,sy0,sx1-sx0,sy1-sy0);
+  ctx.fillStyle='rgba(51,194,202,0.1)';ctx.fillRect(sx0,sy0,sx1-sx0,sy1-sy0);
+  ctx.setLineDash([]);
+}
   if(curPts.length>0){ctx.beginPath();curPts.forEach((p,i)=>{const[sx,sy]=toS(p[0],p[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});ctx.strokeStyle='#33c2ca';ctx.lineWidth=2;ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);curPts.forEach(p=>{const[sx,sy]=toS(p[0],p[1]);ctx.beginPath();ctx.arc(sx,sy,5,0,Math.PI*2);ctx.fillStyle='#33c2ca';ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.fill();ctx.stroke();});}
   if(canvas._snapPt&&mode==='draw'){const[sx,sy]=toS(canvas._snapPt[0],canvas._snapPt[1]);ctx.beginPath();ctx.arc(sx,sy,9,0,Math.PI*2);ctx.strokeStyle='#33c2ca';ctx.lineWidth=2.5;ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.arc(sx,sy,3,0,Math.PI*2);ctx.fillStyle='#33c2ca';ctx.fill();}
   document.getElementById('scalebar').textContent=(10/scale).toFixed(1)+'m = 10px';
@@ -628,15 +638,32 @@ function deleteArea(i){if(!confirm('¿Eliminar "'+(areas[i].name||'Área '+(i+1)
   
 canvas.addEventListener('click',e=>{if(panning||panMode&&panning) return;if(panMode) return;if(mode==='draw'){const[wx,wy]=toW(e.offsetX,e.offsetY);const snap=snapToVertex(wx,wy);curPts.push(snap||[wx,wy]);canvas._snapPt=null;render();}else{const[wx,wy]=toW(e.offsetX,e.offsetY);let found=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}selectedArea=found;updateList();render();}});
 canvas.addEventListener('dblclick',e=>{if(panMode||mode!=='draw') return;if(curPts.length<3){curPts=[];render();return;}const pts=[...curPts];curPts=[];canvas._snapPt=null;openModal(pts,null,null);});
-canvas.addEventListener('mousemove',e=>{if(!DXF) return;const[wx,wy]=toW(e.offsetX,e.offsetY);const bb=DXF.bbox;document.getElementById('coords').textContent='x: '+(wx-bb.min_x).toFixed(1)+'m  y: '+(wy-bb.min_y).toFixed(1)+'m';if(panning&&panStart){ox=panOff[0]+(e.clientX-panStart[0]);oy=panOff[1]+(e.clientY-panStart[1]);render();}if(mode==='draw'&&!panMode){const snap=snapToVertex(wx,wy);canvas._snapPt=snap||null;render();canvas.style.cursor=snap?'cell':'crosshair';}});
-canvas.addEventListener('mousedown',e=>{if(panMode||e.button===1||(mode==='select')){panning=true;panStart=[e.clientX,e.clientY];panOff=[ox,oy];canvas.style.cursor='grabbing';}});
-canvas.addEventListener('mouseup',()=>{setTimeout(()=>panning=false,10);canvas.style.cursor=panMode?'grab':(mode==='draw'?'crosshair':'default');});
+canvas.addEventListener('mousemove',e=>{if(!DXF) return;const[wx,wy]=toW(e.offsetX,e.offsetY);const bb=DXF.bbox;document.getElementById('coords').textContent='x: '+(wx-bb.min_x).toFixed(1)+'m  y: '+(wy-bb.min_y).toFixed(1)+'m';if(panning&&panStart){ox=panOff[0]+(e.clientX-panStart[0]);oy=panOff[1]+(e.clientY-panStart[1]);render();}if(mode==='draw'&&!panMode){const snap=snapToVertex(wx,wy);canvas._snapPt=snap||null;render();canvas.style.cursor=snap?'cell':'crosshair';}
+else if(mode==='rect'&&rectStart){rectCurrent=[wx,wy];render();}});
+canvas.addEventListener('mousedown',e=>{
+  if(panMode||e.button===1||(mode==='select')){panning=true;panStart=[e.clientX,e.clientY];panOff=[ox,oy];canvas.style.cursor='grabbing';}
+  else if(mode==='rect'){const[wx,wy]=toW(e.offsetX,e.offsetY);rectStart=[wx,wy];rectCurrent=[wx,wy];}
+});
+canvas.addEventListener('mouseup',e=>{
+  if(mode==='rect'&&rectStart){
+    const[wx,wy]=toW(e.offsetX,e.offsetY);
+    const x0=Math.min(rectStart[0],wx),x1=Math.max(rectStart[0],wx);
+    const y0=Math.min(rectStart[1],wy),y1=Math.max(rectStart[1],wy);
+    if(Math.abs(x1-x0)>0.1&&Math.abs(y1-y0)>0.1){
+      const pts=[[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
+      openModal(pts,null,null);
+    }
+    rectStart=null;rectCurrent=null;render();
+  }
+  setTimeout(()=>panning=false,10);
+  canvas.style.cursor=panMode?'grab':(mode==='draw'?'crosshair':mode==='rect'?'crosshair':'default');
+});
 canvas.addEventListener('wheel',e=>{if(!DXF) return;e.preventDefault();const f=e.deltaY<0?1.12:0.9;ox=e.offsetX-(e.offsetX-ox)*f;oy=e.offsetY-(e.offsetY-oy)*f;scale*=f;render();},{passive:false});
 
 document.addEventListener('keydown',e=>{if(!DXF) return;if(e.code==='Space'&&!panMode){e.preventDefault();panMode=true;document.getElementById('btnPan').classList.add('active-tool');canvas.style.cursor='grab';}if(e.code==='Escape'){curPts=[];canvas._snapPt=null;selectedArea=null;updateList();render();}if((e.code==='Delete'||e.code==='Backspace')&&selectedArea!==null&&document.getElementById('modalBg').style.display==='none') deleteArea(selectedArea);});
 document.addEventListener('keyup',e=>{if(e.code==='Space'){panMode=false;document.getElementById('btnPan').classList.remove('active-tool');canvas.style.cursor=mode==='draw'?'crosshair':'default';}});
 
-function setMode(m){mode=m;curPts=[];canvas._snapPt=null;selectedArea=null;document.getElementById('btnD').classList.toggle('active',m==='draw');document.getElementById('btnS').classList.toggle('active',m==='select');if(!panMode) canvas.style.cursor=m==='draw'?'crosshair':'default';document.getElementById('instrTxt').innerHTML=m==='draw'?'<strong>Modo dibujo:</strong><br>1. Clic = vértice del área<br>2. Doble clic = cerrar polígono<br>3. Asigná actividades y %':'<strong>Modo selección:</strong><br>Clic = seleccionar área<br>✎ editar · ✕ eliminar · <kbd>Del</kbd> eliminar';updateList();render();}
+function setMode(m){mode=m;curPts=[];canvas._snapPt=null;selectedArea=null;document.getElementById('btnD').classList.toggle('active',m==='draw');document.getElementById('btnR').classList.toggle('active',m==='rect');document.getElementById('btnS').classList.toggle('active',m==='select');if(!panMode) canvas.style.cursor=m==='draw'?'crosshair':'default';document.getElementById('instrTxt').innerHTML=m==='draw'?'<strong>Modo polígono:</strong><br>1. Clic = vértice del área<br>2. Doble clic = cerrar polígono<br>3. Asigná actividades y %':m==='rect'?'<strong>Modo rectángulo:</strong><br>1. Clic y arrastrá para dibujar<br>2. Soltá para confirmar el área':'<strong>Modo selección:</strong><br>Clic = seleccionar área<br>✎ editar · ✕ eliminar · <kbd>Del</kbd> eliminar';updateList();render();}
 function undoVertex(){if(curPts.length){curPts.pop();render();}}
 async function cargarTrabajoSplash(input){
   const file=input.files[0];if(!file)return;
