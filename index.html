@@ -13,7 +13,7 @@
   --bg:#f4f6f7;--surface:#fff;--surface2:#f0f8f9;--border:#d8eef0;
   --text:#1a1a1a;--text2:#5a6a6b;--text3:#a0b4b5;--danger:#e05548;
 }
-body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:auto}
 header{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;border-bottom:2px solid var(--brand);background:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(51,194,202,.12)}
 .logo-text{font-size:22px;font-weight:800;letter-spacing:-.5px;color:#1a1a1a}
 .header-mid{font-size:13px;font-weight:600;color:var(--text2)}
@@ -148,12 +148,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
     <input type="text" id="sucSearch" class="suc-search" placeholder="Buscar por nombre o código..." oninput="filterSucursales(this.value)">
 <div class="suc-list" id="sucGrid"></div>
     <button class="enter-btn" id="enterBtn" disabled onclick="enterLayout()">Ingresar al layout →</button>
-    <div style="margin-top:8px;text-align:center">
-  <label style="font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;text-decoration:underline">
-    ¿Tenés un archivo de trabajo? Cargalo acá
-    <input type="file" accept=".json" style="display:none" onchange="cargarTrabajoSplash(this)">
-  </label>
-</div>
+        <label class="enter-btn" style="background:#fff;color:var(--text2);border:1.5px solid var(--border);box-shadow:none;margin-top:8px;cursor:pointer;text-align:center;display:block;box-sizing:border-box">
+      📂 Cargar layout con actividades (.json)
+      <input type="file" accept=".json" style="display:none" onchange="cargarTrabajoSplash(this)">
+    </label>
     <div class="coming-note">Las sucursales marcadas como "Próximamente" están en proceso de carga.</div>
   </div>
 </div>
@@ -685,8 +683,10 @@ function exportXLSX(){
   if(!areas.length){alert('No hay áreas para exportar.');return;}
   const wb=XLSX.utils.book_new();
   const headers=['AF','SECTOR','N°','ETAPA','ACTIVIDAD','Mts2 sin reparto','%','Mts2','PISO','ESPACIOS CEDIDOS','CODIGO CLIENTE','VALIDACION'];
-  const rows=[headers];
-  const allActs=[];Object.values(ACTIVIDADES_ESTRUCTURA).forEach(agrup=>Object.values(agrup).forEach(fam=>allActs.push(...fam)));
+const rev=prompt('Código de revisión (ej: R01). Dejá vacío para omitir:','');
+const fecha=new Date().toLocaleDateString('es-AR');
+const meta=['Sucursal: '+(currentSuc?currentSuc.code:''),'Fecha: '+fecha,'Revisión: '+(rev||'—')];
+const rows=[meta,[],headers];  const allActs=[];Object.values(ACTIVIDADES_ESTRUCTURA).forEach(agrup=>Object.values(agrup).forEach(fam=>allActs.push(...fam)));
   const masterActs=new Set(allActs.map(a=>a.toUpperCase().trim()));
   let n=1;
   areas.forEach((a,i)=>{
