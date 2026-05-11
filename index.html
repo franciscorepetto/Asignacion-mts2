@@ -471,7 +471,7 @@ function render(){
       a.activities.forEach((act,ai)=>{
         const m2=(act.pct/100*a.totalArea).toFixed(1);
         const short=act.name.length>20?act.name.slice(0,18)+'..':act.name;
-        const line=short+(act.client?' ('+act.client+')':'')+' '+act.pct+'% · '+m2+'m²';
+        const line=short+(act.client?' ('+getClientDesc(act.client)+')':'')+' '+act.pct+'% · '+m2+'m²';
         ctx.font=`600 ${Math.max(7,fs*.72)}px 'Montserrat',sans-serif`;
         const tw3=ctx.measureText(line).width;
         ctx.fillStyle='rgba(255,255,255,0.82)';
