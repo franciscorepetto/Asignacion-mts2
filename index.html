@@ -176,6 +176,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
       </div>
       <div class="slabel" style="padding:12px 14px 4px">Áreas definidas</div>
       <div class="slist" id="sList"><div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin áreas aún.</div></div>
+      <button class="expbtn" style="background:#e05548;margin-bottom:4px" onclick="limpiarAreas()">🗑 Limpiar todas las áreas</button>
       <button class="expbtn" onclick="exportXLSX()">↓ Exportar tabla BASE (.xlsx)</button>
 <button class="expbtn" style="background:var(--brand-dark);margin-top:4px" onclick="guardarTrabajo()">↓ Exportar actividades (.json)</button>
       <div class="summary">
@@ -679,10 +680,16 @@ function cargarTrabajo(input){
   reader.readAsText(file);
   input.value='';
 }
+  function limpiarAreas(){
+  if(!areas.length) return;
+  if(!confirm('¿Estás seguro que querés borrar todas las áreas? Esta acción no se puede deshacer.')) return;
+  areas=[];colIdx=0;selectedArea=null;
+  saveAreas();updateList();render();
+}
 function exportXLSX(){
   if(!areas.length){alert('No hay áreas para exportar.');return;}
   const wb=XLSX.utils.book_new();
-  const headers=['AF','SECTOR','N°','ETAPA','ACTIVIDAD','Mts2 sin reparto','%','Mts2','PISO','ESPACIOS CEDIDOS','CODIGO CLIENTE','VALIDACION'];
+  const headers=['AF','SECTOR','N°','ETAPA','ACTIVIDAD','Mts2 sin reparto','%','Mts2','PISO','ESPACIOS CEDIDOS','CODIGO CLIENTE','NOMBRE CLIENTE','VALIDACION'];
 const fecha=new Date().toLocaleDateString('es-AR');
 const meta=['Sucursal: '+(currentSuc?currentSuc.code:''),'Fecha: '+fecha];
 const rows=[meta,[],headers];
@@ -694,7 +701,7 @@ const rows=[meta,[],headers];
       const m2=(act.pct/100*a.totalArea);
       const cedido=isCedido(act.name)?'SI':'NO';
       const validacion=masterActs.has(act.name.toUpperCase().trim())?'OK':'NO ENCONTRADA';
-      rows.push([currentSuc?currentSuc.code:'',a.name||('Área '+(i+1)),'A'+(n++),'',act.name,+a.totalArea.toFixed(4),+(act.pct/100).toFixed(6),+m2.toFixed(4),act.piso||'PB',cedido,act.client||'',validacion]);
+      rows.push([currentSuc?currentSuc.code:'',a.name||('Área '+(i+1)),'A'+(n++),'',act.name,+a.totalArea.toFixed(4),+(act.pct/100).toFixed(6),+m2.toFixed(4),act.piso||'PB',cedido,act.client||'',getClientDesc(act.client||''),validacion]);
     });
   });
   const ws=XLSX.utils.aoa_to_sheet(rows);
