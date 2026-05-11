@@ -173,6 +173,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
       <div class="slabel" style="padding:12px 14px 4px">Áreas definidas</div>
       <div class="slist" id="sList"><div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin áreas aún.</div></div>
       <button class="expbtn" onclick="exportXLSX()">↓ Exportar tabla BASE (.xlsx)</button>
+<button class="expbtn" style="background:var(--brand-dark);margin-top:4px" onclick="guardarTrabajo()">↓ Guardar trabajo</button>
+<label class="expbtn" style="background:#5a6a6b;margin-top:4px;cursor:pointer;text-align:center;display:block">↑ Cargar trabajo<input type="file" accept=".json" style="display:none" onchange="cargarTrabajo(this)"></label>
       <div class="summary">
         <div class="srow"><span class="skey">Total asignado</span><span class="sval" id="totArea">0.00 m²</span></div>
         <div class="srow"><span class="skey">Áreas</span><span class="sval" id="totN">0</span></div>
@@ -633,6 +635,29 @@ document.addEventListener('keyup',e=>{if(e.code==='Space'){panMode=false;documen
 function setMode(m){mode=m;curPts=[];canvas._snapPt=null;selectedArea=null;document.getElementById('btnD').classList.toggle('active',m==='draw');document.getElementById('btnS').classList.toggle('active',m==='select');if(!panMode) canvas.style.cursor=m==='draw'?'crosshair':'default';document.getElementById('instrTxt').innerHTML=m==='draw'?'<strong>Modo dibujo:</strong><br>1. Clic = vértice del área<br>2. Doble clic = cerrar polígono<br>3. Asigná actividades y %':'<strong>Modo selección:</strong><br>Clic = seleccionar área<br>✎ editar · ✕ eliminar · <kbd>Del</kbd> eliminar';updateList();render();}
 function undoVertex(){if(curPts.length){curPts.pop();render();}}
 
+  function guardarTrabajo(){
+  if(!areas.length){alert('No hay áreas para guardar.');return;}
+  const data=JSON.stringify({suc:currentSuc.code,areas},null,2);
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(data);
+  a.download='trabajo_'+(currentSuc?currentSuc.code:'SUC')+'_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+
+function cargarTrabajo(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(data.suc&&data.suc!==currentSuc.code&&!confirm('Este archivo es de '+data.suc+' pero estás en '+currentSuc.code+'. ¿Cargar igual?'))return;
+      areas=data.areas;colIdx=areas.length;
+      saveAreas();updateList();render();
+    }catch(err){alert('Archivo inválido.');}
+  };
+  reader.readAsText(file);
+  input.value='';
+}
 function exportXLSX(){
   if(!areas.length){alert('No hay áreas para exportar.');return;}
   const wb=XLSX.utils.book_new();
