@@ -280,7 +280,7 @@ const SUCURSALES=[
   {code:'CPR',name:'Córdoba Paraná',available:false},
   {code:'CTE',name:'Corrientes',available:false},
   {code:'CDE',name:'Cruz del Eje',available:false},
-  {code:'ESQ',name:'Esquel',available:false},
+  {code:'ESQ',name:'Esquel',available:true},
   {code:'EES',name:'Esteban Echeverría',available:false},
   {code:'FLO',name:'Flores',available:true},
   {code:'FMA',name:'Formosa',available:false},
@@ -366,7 +366,7 @@ async function enterLayout(){
   const btn=document.getElementById('enterBtn');
   btn.disabled=true;btn.textContent='Cargando plano...';
   try{
-    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf'})[currentSuc.code];
+    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf'})[currentSuc.code];
     if(!file) throw new Error('Plano no disponible');
     const resp=await fetch('mapas/planos/'+file.replace(/ /g,'%20'));
     if(!resp.ok) throw new Error('HTTP '+resp.status);
