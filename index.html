@@ -683,10 +683,10 @@ function exportXLSX(){
   if(!areas.length){alert('No hay áreas para exportar.');return;}
   const wb=XLSX.utils.book_new();
   const headers=['AF','SECTOR','N°','ETAPA','ACTIVIDAD','Mts2 sin reparto','%','Mts2','PISO','ESPACIOS CEDIDOS','CODIGO CLIENTE','VALIDACION'];
-const rev=prompt('Código de revisión (ej: R01). Dejá vacío para omitir:','');
 const fecha=new Date().toLocaleDateString('es-AR');
-const meta=['Sucursal: '+(currentSuc?currentSuc.code:''),'Fecha: '+fecha,'Revisión: '+(rev||'—')];
-const rows=[meta,[],headers];  const allActs=[];Object.values(ACTIVIDADES_ESTRUCTURA).forEach(agrup=>Object.values(agrup).forEach(fam=>allActs.push(...fam)));
+const meta=['Sucursal: '+(currentSuc?currentSuc.code:''),'Fecha: '+fecha];
+const rows=[meta,[],headers];
+  const allActs=[];Object.values(ACTIVIDADES_ESTRUCTURA).forEach(agrup=>Object.values(agrup).forEach(fam=>allActs.push(...fam)));
   const masterActs=new Set(allActs.map(a=>a.toUpperCase().trim()));
   let n=1;
   areas.forEach((a,i)=>{
