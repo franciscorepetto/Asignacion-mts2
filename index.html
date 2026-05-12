@@ -262,11 +262,11 @@ const ESPACIOS_CEDIDOS=['ESPACIOS CEDIDOS AG','ESPACIOS CEDIDOS AS','ESPACIOS CE
 const SUCURSALES=[
   {code:'AEP',name:'Aeroparque',available:false},
   {code:'EZE',name:'Ezeiza',available:false},
-  {code:'AVE',name:'Avellaneda',available:true},
+  {code:'AVE',name:'Avellaneda',available:false},
   {code:'ALG',name:'Alta Gracia',available:false},
   {code:'AZU',name:'Azul',available:false},
   {code:'BAH',name:'Bahía Blanca',available:false},
-  {code:'BEL',name:'Belgrano',available:true},
+  {code:'BEL',name:'Belgrano',available:false},
   {code:'CAT',name:'Catamarca',available:false},
   {code:'CDN',name:'Centro Dist. Norte',available:false},
   {code:'CRV',name:'Comodoro Rivadavia',available:false},
@@ -362,8 +362,7 @@ async function enterLayout(){
   const btn=document.getElementById('enterBtn');
   btn.disabled=true;btn.textContent='Cargando plano...';
   try{
-    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',AVE:'Copia de AVE-2  ARQUITECTURA-BASE-R09.dxf',BEL:'Copia de BLG-Echeverria 1217 - TABLEROS ELECTRICOS - R01 (1).dxf',POS:'Copia de PSS-Posadas .Comedor 07-07-2020.dxf'})[currentSuc.code];
-    if(!file) throw new Error('Plano no disponible');
+    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',POS:'Copia de PSS-Posadas .Comedor 07-07-2020.dxf'})[currentSuc.code];    if(!file) throw new Error('Plano no disponible');
     const resp=await fetch('mapas/planos/'+file.replace(/ /g,'%20'));
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     DXF=parseDXF(await resp.text());
