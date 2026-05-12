@@ -6,6 +6,7 @@
 <title>OCASA — Layout</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -270,7 +271,7 @@ const SUCURSALES=[
   {code:'CAT',name:'Catamarca',available:false},
   {code:'CDN',name:'Centro Dist. Norte',available:false},
   {code:'CRV',name:'Comodoro Rivadavia',available:false},
-  {code:'CBA',name:'Córdoba La Voz',available:false},
+  {code:'CBA',name:'Córdoba La Voz',available:true},
   {code:'CO2',name:'Córdoba Circunvalación',available:false},
   {code:'CPR',name:'Córdoba Paraná',available:false},
   {code:'CTE',name:'Corrientes',available:false},
@@ -278,7 +279,7 @@ const SUCURSALES=[
   {code:'ESQ',name:'Esquel',available:true},
   {code:'EES',name:'Esteban Echeverría',available:false},
   {code:'FLO',name:'Flores',available:true},
-  {code:'FMA',name:'Formosa',available:false},
+  {code:'FMA',name:'Formosa',available:true},
   {code:'IRI',name:'Iriarte',available:false},
   {code:'JMA',name:'Jesús María',available:false},
   {code:'JUJ',name:'Jujuy',available:false},
@@ -362,11 +363,18 @@ async function enterLayout(){
   const btn=document.getElementById('enterBtn');
   btn.disabled=true;btn.textContent='Cargando plano...';
   try{
-    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',AVE:'Copia de AVE-2  ARQUITECTURA-BASE-R09.dxf',BEL:'Copia de BLG-Echeverria 1217 - TABLEROS ELECTRICOS - R01 (1).dxf',POS:'Copia de PSS-Posadas .Comedor 07-07-2020.dxf'})[currentSuc.code];
-    if(!file) throw new Error('Plano no disponible');
-    const resp=await fetch('mapas/planos/'+file.replace(/ /g,'%20'));
+    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',AVE:'Copia de AVE-2  ARQUITECTURA-BASE-R09.dxf',POS:'Copia de PSS-Posadas .Comedor 07-07-2020.dxf',FMA:'https://github.com/franciscorepetto/Asignacion-mts2/releases/download/COR-FMA/Copia%20de%20FMA-Formosa%20-%20Plantas%2009-Ago-2019.zip',CBA:'https://github.com/franciscorepetto/Asignacion-mts2/releases/download/COR-FMA/Copia%20de%20COR-LA%20VOZ-Base%20xref-04%20-%20CORRECCION%20CORTINA%20RAPIDA%20version%202004.zip'})[currentSuc.code];    if(!file) throw new Error('Plano no disponible');
+        const url=file.startsWith('http')?file:'mapas/planos/'+file.replace(/ /g,'%20');
+    const resp=await fetch(url);
     if(!resp.ok) throw new Error('HTTP '+resp.status);
-    DXF=parseDXF(await resp.text());
+    if(url.endsWith('.zip')){
+      const zip=await JSZip.loadAsync(await resp.arrayBuffer());
+      const entry=Object.values(zip.files).find(f=>f.name.endsWith('.dxf'));
+      if(!entry) throw new Error('No se encontró DXF en el ZIP');
+      DXF=parseDXF(await entry.async('string'));
+    }else{
+      DXF=parseDXF(await resp.text());
+    }
   }catch(e){
     alert('No se pudo cargar el plano: '+e.message);
     btn.disabled=false;btn.textContent='Ingresar al layout →';
