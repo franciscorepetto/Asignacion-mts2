@@ -363,8 +363,7 @@ async function enterLayout(){
   const btn=document.getElementById('enterBtn');
   btn.disabled=true;btn.textContent='Cargando plano...';
   try{
-    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',AVE:'Copia de AVE-2  ARQUITECTURA-BASE-R09.dxf',POS:'Copia de PSS-Posadas .Comedor 07-07-2020.dxf',FMA:'https://github.com/franciscorepetto/Asignacion-mts2/releases/download/COR-FMA/Copia%20de%20FMA-Formosa%20-%20Plantas%2009-Ago-2019.zip',CBA:'https://github.com/franciscorepetto/Asignacion-mts2/releases/download/COR-FMA/Copia%20de%20COR-LA%20VOZ-Base%20xref-04%20-%20CORRECCION%20CORTINA%20RAPIDA%20version%202004.zip'})[currentSuc.code];    if(!file) throw new Error('Plano no disponible');
-        const url=file.startsWith('http')?file:'mapas/planos/'+file.replace(/ /g,'%20');
+const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',AVE:'Copia de AVE-2  ARQUITECTURA-BASE-R09.dxf',POS:'Copia de PSS-Posadas .Comedor 07-07-2020.dxf',BEL:'Copia de BLG-Echeverria 1217 - TABLEROS ELECTRICOS - R01 (1).dxf',FMA:'https://github.com/user-attachments/files/27638950/Copia.de.FMA-Formosa.-.Plantas.09-Ago-2019.zip',CBA:'https://github.com/user-attachments/files/27638951/Copia.de.COR-LA.VOZ-Base.xref-04.-.CORRECCION.CORTINA.RAPIDA.version.2004.zip'})[currentSuc.code];        const url=file.startsWith('http')?file:'mapas/planos/'+file.replace(/ /g,'%20');
     const resp=await fetch(url);
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     if(url.endsWith('.zip')){
