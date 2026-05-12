@@ -260,12 +260,12 @@ fetch('clientes.csv')
 function getClientDesc(cod){const c=CLIENTES.find(c=>c.codigo===cod);return c?c.descripcion:cod;}
 const ESPACIOS_CEDIDOS=['ESPACIOS CEDIDOS AG','ESPACIOS CEDIDOS AS','ESPACIOS CEDIDOS SE'];
 const SUCURSALES=[
-  {code:'AEP',name:'Aeroparque',available:false},
-  {code:'EZE',name:'Ezeiza',available:false},
+  {code:'AEP',name:'Aeroparque',available:true},
+  {code:'EZE',name:'Ezeiza',available:true},
   {code:'AVE',name:'Avellaneda',available:false},
   {code:'ALG',name:'Alta Gracia',available:false},
   {code:'AZU',name:'Azul',available:false},
-  {code:'BAH',name:'Bahía Blanca',available:false},
+  {code:'BAH',name:'Bahía Blanca',available:true},
   {code:'BEL',name:'Belgrano',available:false},
   {code:'CAT',name:'Catamarca',available:false},
   {code:'CDN',name:'Centro Dist. Norte',available:false},
@@ -282,8 +282,8 @@ const SUCURSALES=[
   {code:'IRI',name:'Iriarte',available:false},
   {code:'JMA',name:'Jesús María',available:false},
   {code:'JUJ',name:'Jujuy',available:false},
-  {code:'LCA',name:'La Carlota',available:false},
-  {code:'LRJ',name:'La Rioja',available:false},
+  {code:'LCA',name:'La Carlota',available:true},
+  {code:'LRJ',name:'La Rioja',available:true},
   {code:'MDQ',name:'Mar del Plata',available:true},
   {code:'MTZ',name:'Martínez',available:false},
   {code:'MDZ',name:'Mendoza',available:false},
@@ -362,8 +362,7 @@ async function enterLayout(){
   const btn=document.getElementById('enterBtn');
   btn.disabled=true;btn.textContent='Cargando plano...';
   try{
-    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',POS:'Copia de PSS-Posadas .Comedor 07-07-2020.dxf'})[currentSuc.code];    if(!file) throw new Error('Plano no disponible');
-    const resp=await fetch('mapas/planos/'+file.replace(/ /g,'%20'));
+    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',POS:'Copia de PSS-Posadas .Comedor 07-07-2020.dxf',AEP:'Copia de AEP-ILUM MMTO-R01.dxf',EZE:'Copia de EZE-mod. EZE .PROPUUESTA 2025-01-29 (1).dxf',BAH:'Copia de BHI-Bahia Blanca.V4 - ARQUITECTURA (1).dxf',LCA:'Copia de LCA-2021 09 13 PLANO FINAL LA CARLOTA.dxf',LRJ:'Copia de IRJ-La RIOJA.dxf'})[currentSuc.code];    const resp=await fetch('mapas/planos/'+file.replace(/ /g,'%20'));
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     DXF=parseDXF(await resp.text());
   }catch(e){
