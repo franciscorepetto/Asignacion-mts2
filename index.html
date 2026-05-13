@@ -90,6 +90,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 .tbtn{width:34px;height:34px;background:#fff;border:1.5px solid var(--border);color:var(--text2);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s;user-select:none;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .tbtn:hover{background:var(--brand-light);color:var(--brand);border-color:var(--brand)}
 .tbtn.active-tool{background:var(--brand);color:#fff;border-color:var(--brand)}
+.zoom-slider{writing-mode:vertical-lr;direction:rtl;width:4px;height:80px;accent-color:var(--brand);cursor:pointer;margin:2px auto;display:block;}
 .scalebar{position:absolute;bottom:14px;right:14px;background:#fff;border:1.5px solid var(--border);padding:5px 10px;border-radius:20px;font-size:10px;font-weight:600;color:var(--text2)}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 .modal{background:#fff;border-radius:14px;padding:22px;min-width:400px;max-width:520px;box-shadow:0 12px 48px rgba(0,0,0,.16);border-top:4px solid var(--brand)}
@@ -182,6 +183,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
       <div class="tbar">
         <div class="tbtn" onclick="zoom(1.2)" title="Zoom in">+</div>
         <div class="tbtn" onclick="zoom(0.83)" title="Zoom out">−</div>
+<input type="range" class="zoom-slider" id="zoomSlider" min="1" max="100" value="50" oninput="zoomToSlider(this.value)" title="Zoom">
         <div class="tbtn" onclick="resetView()" title="Encuadrar">⊡</div>
         <div class="tbtn active-tool" id="btnD" onclick="setMode('draw')" title="Polígono">✏</div>
         <div class="tbtn" id="btnR" onclick="setMode('rect')" title="Rectángulo">▭</div>
@@ -408,9 +410,9 @@ function resetView(){
   const bb=DXF.bbox,m=40;
   const dxfW=bb.max_x-bb.min_x,dxfH=bb.max_y-bb.min_y;
   scale=Math.min((canvas.width-m*2)/dxfW,(canvas.height-m*2)/dxfH);baseScale=scale;
-  ox=(canvas.width-dxfW*scale)/2;oy=(canvas.height-dxfH*scale)/2;render();
+  ox=(canvas.width-dxfW*scale)/2;oy=(canvas.height-dxfH*scale)/2;syncSlider();render();
 }
-function zoom(f){const cx=canvas.width/2,cy=canvas.height/2;ox=cx-(cx-ox)*f;oy=cy-(cy-oy)*f;scale*=f;render();}
+function zoom(f){const cx=canvas.width/2,cy=canvas.height/2;ox=cx-(cx-ox)*f;oy=cy-(cy-oy)*f;scale*=f;syncSlider();render();}
 
 function polyArea(pts){let a=0,n=pts.length;for(let i=0;i<n;i++){const j=(i+1)%n;a+=pts[i][0]*pts[j][1]-pts[j][0]*pts[i][1];}return Math.abs(a/2);}
 function pip([x,y],pts){let inside=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const xi=pts[i][0],yi=pts[i][1],xj=pts[j][0],yj=pts[j][1];if(((yi>y)!=(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi)) inside=!inside;}return inside;}
@@ -668,7 +670,9 @@ function setMode(m){
   document.getElementById('instrTxt').innerHTML=m==='draw'?'<strong>Modo polígono:</strong><br>1. Clic = vértice del área<br>2. Doble clic = cerrar polígono<br>3. Asigná actividades y %':m==='rect'?'<strong>Modo rectángulo:</strong><br>1. Clic y arrastrá para dibujar<br>2. Soltá para confirmar':'<strong>Modo mover:</strong><br>Clic y arrastrá para mover el plano<br><kbd>Espacio</kbd> también activa este modo';
   updateList();render();
 }
-function undoVertex(){if(curPts.length){curPts.pop();render();}}
+function zoomToSlider(val){const cx=canvas.width/2,cy=canvas.height/2;const target=baseScale*Math.pow(10,(val-50)/40);const f=target/scale;ox=cx-(cx-ox)*f;oy=cy-(cy-oy)*f;scale=target;render();}
+function syncSlider(){const sl=document.getElementById('zoomSlider');if(sl&&baseScale>0)sl.value=Math.max(1,Math.min(100,Math.round(50+40*Math.log10(scale/baseScale))));}
+  function undoVertex(){if(curPts.length){curPts.pop();render();}}
 async function cargarTrabajoSplash(input){
   const file=input.files[0];if(!file)return;
   const reader=new FileReader();
