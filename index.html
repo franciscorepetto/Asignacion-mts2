@@ -303,7 +303,7 @@ const SUCURSALES=[
   {code:'RGR',name:'Río Grande',available:false},
   {code:'RTE',name:'Río Tercero',available:false},
   {code:'ROS',name:'Rosario',available:false},
-  {code:'SPY',name:'Salta Paraguay',available:false},
+  {code:'SPY',name:'Salta Paraguay',available:true},
   {code:'SRA',name:'Salta Ragone',available:false},
   {code:'STV',name:'Salta Tavella',available:true},
   {code:'ST3',name:'Salta Tavella III',available:false},
@@ -364,7 +364,7 @@ async function enterLayout(){
   const btn=document.getElementById('enterBtn');
   btn.disabled=true;btn.textContent='Cargando plano...';
   try{
-    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',POS:'Copia de PSS-Posadas .Comedor 07-07-2020.dxf',AEP:'Copia de AEP-ILUM MMTO-R01.dxf',EZE:'Copia de EZE-mod. EZE .PROPUUESTA 2025-01-29 (1).dxf',BAH:'Copia de BHI-Bahia Blanca.V4 - ARQUITECTURA (1).dxf',LCA:'Copia de LCA-2021 09 13 PLANO FINAL LA CARLOTA.dxf',LRJ:'Copia de IRJ-La RIOJA.dxf',STV:'Copia de SLT-SALTA - TAVELLA - BASE-r01.dxf'})[currentSuc.code];
+    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',POS:'Copia de PSS-Posadas .Comedor 07-07-2020.dxf',AEP:'Copia de AEP-ILUM MMTO-R01.dxf',EZE:'Copia de EZE-mod. EZE .PROPUUESTA 2025-01-29 (1).dxf',BAH:'Copia de BHI-Bahia Blanca.V4 - ARQUITECTURA (1).dxf',LCA:'Copia de LCA-2021 09 13 PLANO FINAL LA CARLOTA.dxf',LRJ:'Copia de IRJ-La RIOJA.dxf',STV:'Copia de SLT-SALTA - TAVELLA - BASE-r01.dxf',SPY:'Copia de SLW - PARAGUAY - PLANO BASE (1).dxf'})[currentSuc.code];
     const url=file.startsWith('http')?file:'mapas/planos/'+file.replace(/ /g,'%20');
     const resp=await fetch(url);
     if(!resp.ok) throw new Error('HTTP '+resp.status);
