@@ -6,7 +6,6 @@
 <title>OCASA — Layout</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -302,10 +301,10 @@ const SUCURSALES=[
   {code:'RGR',name:'Río Grande',available:false},
   {code:'RTE',name:'Río Tercero',available:false},
   {code:'ROS',name:'Rosario',available:false},
-  {code:'SPY',name:'Salta Paraguay',available:true},
-  {code:'SRA',name:'Salta Ragone',available:true},
+  {code:'SPY',name:'Salta Paraguay',available:false},
+  {code:'SRA',name:'Salta Ragone',available:false},
   {code:'STV',name:'Salta Tavella',available:true},
-  {code:'ST3',name:'Salta Tavella III',available:true},
+  {code:'ST3',name:'Salta Tavella III',available:false},
   {code:'SFC',name:'San Francisco',available:false},
   {code:'SJU',name:'San Juan',available:false},
   {code:'SLU',name:'San Luis',available:false},
@@ -363,9 +362,12 @@ async function enterLayout(){
   const btn=document.getElementById('enterBtn');
   btn.disabled=true;btn.textContent='Cargando plano...';
   try{
-    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',POS:'Copia de PSS-Posadas .Comedor 07-07-2020.dxf',AEP:'Copia de AEP-ILUM MMTO-R01.dxf',EZE:'Copia de EZE-mod. EZE .PROPUUESTA 2025-01-29 (1).dxf',BAH:'Copia de BHI-Bahia Blanca.V4 - ARQUITECTURA (1).dxf',LCA:'Copia de LCA-2021 09 13 PLANO FINAL LA CARLOTA.dxf',LRJ:'Copia de IRJ-La RIOJA.dxf',SPY:'Copia de SLW - PARAGUAY - PLANO BASE.zip',SRA:'Copia de SLA- RAG- LAYOUT - R 04 v23-08-2023.zip',STV:'Copia de SLT-SALTA - TAVELLA - BASE-r01.zip',ST3:'Copia de SL3-2024 06 11 PLANO SALTA TAVELLA III.zip'})[currentSuc.code];    const url=file.startsWith('http')?file:'mapas/planos/'+file.replace(/ /g,'%20');    const resp=await fetch(url);
+    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',POS:'Copia de PSS-Posadas .Comedor 07-07-2020.dxf',AEP:'Copia de AEP-ILUM MMTO-R01.dxf',EZE:'Copia de EZE-mod. EZE .PROPUUESTA 2025-01-29 (1).dxf',BAH:'Copia de BHI-Bahia Blanca.V4 - ARQUITECTURA (1).dxf',LCA:'Copia de LCA-2021 09 13 PLANO FINAL LA CARLOTA.dxf',LRJ:'Copia de IRJ-La RIOJA.dxf',STV:'Copia de SLT-SALTA - TAVELLA - BASE-r01.dxf';
+    const url=file.startsWith('http')?file:'mapas/planos/'+file.replace(/ /g,'%20');
+    const resp=await fetch(url);
     if(!resp.ok) throw new Error('HTTP '+resp.status);
-if(url.endsWith('.zip')){const zip=await JSZip.loadAsync(await resp.arrayBuffer());const entry=Object.values(zip.files).find(f=>f.name.endsWith('.dxf'));if(!entry)throw new Error('No se encontró DXF en el ZIP');DXF=parseDXF(await entry.async('string'));}else{DXF=parseDXF(await resp.text());}  }catch(e){
+    DXF=parseDXF(await resp.text());
+  }catch(e){
     alert('No se pudo cargar el plano: '+e.message);
     btn.disabled=false;btn.textContent='Ingresar al layout →';
     return;
