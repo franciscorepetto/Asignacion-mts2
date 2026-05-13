@@ -391,7 +391,7 @@ function goBack(){
   document.getElementById('coords').style.display='none';
   document.getElementById('backBtn').style.display='none';
   document.getElementById('headerMid').innerHTML='Layout de Sucursales';
-  areas=[];curPts=[];selectedArea=null;colIdx=0;canvas._snapPt=null;
+  areas=[];curPts=[];selectedArea=null;colIdx=0;canvas._snapPt=null;updateList();
   document.querySelectorAll('.suc-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('enterBtn').disabled=true;
   currentSuc=null;
@@ -457,27 +457,6 @@ function render(){
     ctx.fillStyle='rgba(255,255,255,0.88)';
     ctx.beginPath();ctx.roundRect(lx-tw/2-6,ly-fs*1.45-4,tw+12,fs+8,4);ctx.fill();
     ctx.fillStyle=a.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,lx,ly-fs*0.9);
-    const m2txt=a.totalArea.toFixed(1)+' m²';
-    ctx.font=`700 ${fs*.85}px 'Montserrat',sans-serif`;
-    const tw2=ctx.measureText(m2txt).width;
-    ctx.fillStyle='rgba(255,255,255,0.88)';
-    ctx.beginPath();ctx.roundRect(lx-tw2/2-5,ly+fs*0.1,tw2+10,fs*.85+6,4);ctx.fill();
-    ctx.fillStyle='#1a1a1a';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(m2txt,lx,ly+fs*0.85);
-    if(scale>0.05&&a.activities.length>0){
-      let yOff=ly+fs*0.85+fs*1.2;
-      a.activities.forEach((act,ai)=>{
-        const m2=(act.pct/100*a.totalArea).toFixed(1);
-        const short=act.name.length>20?act.name.slice(0,18)+'..':act.name;
-        const line=short+(act.client?' ('+getClientDesc(act.client)+')':'')+' '+act.pct+'% · '+m2+'m²';
-        ctx.font=`600 ${Math.max(7,fs*.72)}px 'Montserrat',sans-serif`;
-        const tw3=ctx.measureText(line).width;
-        ctx.fillStyle='rgba(255,255,255,0.82)';
-        ctx.beginPath();ctx.roundRect(lx-tw3/2-4,yOff-fs*.36,tw3+8,fs*.75+4,3);ctx.fill();
-        ctx.fillStyle=isCedido(act.name)?'#a805e0':ACT_COLORS[ai%ACT_COLORS.length];
-        ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(line,lx,yOff);
-        yOff+=fs*1.1;
-      });
-    }
   });
   DXF.polys.forEach(p=>{if(!p.pts||p.pts.length<2) return;ctx.beginPath();p.pts.forEach((pt,i)=>{const[sx,sy]=toS(pt[0],pt[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});if(p.closed) ctx.closePath();ctx.strokeStyle=p.layer==='Contorno'?'#1a1a1a':'#2a3a3b';ctx.lineWidth=(p.pts.length===4&&p.closed)?0.6:1.3;ctx.setLineDash([]);ctx.stroke();});
   DXF.lines.forEach(l=>{const[lx1,ly1]=toS(l.x1,l.y1),[lx2,ly2]=toS(l.x2,l.y2);ctx.beginPath();ctx.moveTo(lx1,ly1);ctx.lineTo(lx2,ly2);ctx.strokeStyle='#2a3a3b';ctx.lineWidth=1;ctx.setLineDash([]);ctx.stroke();});
@@ -618,7 +597,7 @@ function updateList(){
       const m2=(act.pct/100*a.totalArea).toFixed(1);
       const col=isCedido(act.name)?'#a805e0':ACT_COLORS[ai%ACT_COLORS.length];
       const short=act.name.length>22?act.name.slice(0,20)+'..':act.name;
-      return `<div class="act-row"><div class="act-dot" style="background:${col}"></div><div class="act-name" title="${act.name}">${short}</div><div class="act-pct">${act.pct}%</div><div class="act-m2">${m2} m²</div>${act.client?`<div class="act-client" title="${act.client}">${act.client}</div>`:''}</div>`;
+      return `<div class="act-row"><div class="act-dot" style="background:${col}"></div><div class="act-name" title="${act.name}">${short}</div><div class="act-pct">${act.pct}%</div><div class="act-m2">${m2} m²</div>${act.client?`<div class="act-client" title="${act.client}">${getClientDesc(act.client)}</div>`:''}</div>`;
     }).join('');
     const displayName=a.name||('Área '+(i+1));
     return `<div class="sitem${isSel?' selected':''}" id="sitem${i}"><div class="sitem-header" onclick="selectArea(${i})"><div class="scolor-dot" style="background:${a.color}"></div><div class="sname" style="color:${a.color}">${displayName}</div><div class="sarea-badge">${a.totalArea.toFixed(1)} m²</div><button class="sdel sedit" onclick="event.stopPropagation();editArea(${i})" title="Editar">✎</button><button class="sdel" onclick="event.stopPropagation();deleteArea(${i})" title="Eliminar">✕</button></div><div class="sitem-acts">${actHtml}</div></div>`;
