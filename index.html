@@ -747,9 +747,9 @@ function parseDXF(text){
     }
     if(x0!==null&&x1!==null&&y0!==null&&y1!==null)break;
   }
-  if(x0===null)return res;
-const m=Math.max(x1-x0,y1-y0)*0.25;
-  const inR=(x,y)=>x>=x0-m&&x<=x1+m&&y>=y0-m&&y<=y1+m;
+const extValid=x0!==null&&Math.abs(x0)<1e9&&Math.abs(x1)<1e9&&Math.abs(y0)<1e9&&Math.abs(y1)<1e9&&(x1-x0)>0.1&&(y1-y0)>0.1;
+const m=extValid?Math.max(x1-x0,y1-y0)*0.25:0;
+const inR=extValid?(x,y)=>x>=x0-m&&x<=x1+m&&y>=y0-m&&y<=y1+m:()=>true;
   let i=0,n=pairs.length;
   while(i<n){
     const[c,v]=pairs[i];
@@ -773,7 +773,7 @@ if(v==='LINE'){
   let bx0=Infinity,bx1=-Infinity,by0=Infinity,by1=-Infinity;
   res.lines.forEach(l=>{bx0=Math.min(bx0,l.x1,l.x2);bx1=Math.max(bx1,l.x1,l.x2);by0=Math.min(by0,l.y1,l.y2);by1=Math.max(by1,l.y1,l.y2);});
   res.polys.forEach(p=>p.pts.forEach(([px,py])=>{bx0=Math.min(bx0,px);bx1=Math.max(bx1,px);by0=Math.min(by0,py);by1=Math.max(by1,py);}));
-  res.bbox=bx0<Infinity?{min_x:bx0,max_x:bx1,min_y:by0,max_y:by1}:{min_x:x0,max_x:x1,min_y:y0,max_y:y1};
+  res.bbox=extValid?{min_x:x0,max_x:x1,min_y:y0,max_y:y1}:(bx0<Infinity?{min_x:bx0,max_x:bx1,min_y:by0,max_y:by1}:{min_x:0,max_x:100,min_y:0,max_y:100});
   return res;
 }
 </script>
