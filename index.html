@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OCASA — Layout</title>
@@ -764,6 +763,20 @@ if(v==='LINE'){
   while(i<n&&pairs[i][0]!==0){const[gc,gv]=pairs[i++];if(gc===8)layer=gv;else if(gc===70)closed=!!(parseInt(gv)&1);else if(gc===10)xs.push(parseFloat(gv));else if(gc===20)ys.push(parseFloat(gv));else if(gc===67)ps=(parseInt(gv)===1);}
   const pts=xs.map((x,k)=>[x,ys[k]??0]);
   if(!ps&&pts.length>=2)res.polys.push({pts,closed,layer});
+    }else if(v==='POLYLINE'){
+      let layer='',closed=false,ps=false;i++;
+      while(i<n&&pairs[i][0]!==0){const[gc,gv]=pairs[i++];if(gc===8)layer=gv;else if(gc===70)closed=!!(parseInt(gv)&1);else if(gc===67)ps=(parseInt(gv)===1);}
+      const xs=[],ys=[];
+      while(i<n&&!(pairs[i][0]===0&&pairs[i][1]==='SEQEND')){
+        if(pairs[i][0]===0&&pairs[i][1]==='VERTEX'){i++;
+          let vx=0,vy=0;
+          while(i<n&&pairs[i][0]!==0){const[gc,gv]=pairs[i++];if(gc===10)vx=parseFloat(gv);else if(gc===20)vy=parseFloat(gv);}
+          xs.push(vx);ys.push(vy);
+        }else{i++;}
+      }
+      if(i<n)i++;
+      const pts=xs.map((x,k)=>[x,ys[k]??0]);
+      if(!ps&&pts.length>=2)res.polys.push({pts,closed,layer});
     }else if(v==='TEXT'||v==='MTEXT'){
       let txt='',tx=0,ty=0;i++;
       while(i<n&&pairs[i][0]!==0){const[gc,gv]=pairs[i++];if(gc===1)txt=cleanMText(gv);else if(gc===10)tx=parseFloat(gv);else if(gc===20)ty=parseFloat(gv);}
