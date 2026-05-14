@@ -769,6 +769,19 @@ if(v==='LINE'){
       if(txt&&inR(tx,ty))res.labels.push({text:txt,x:tx,y:ty});
     }else{i++;}
   }
+    // IQR outlier filter — remove elements far from the main cluster
+  const allXf=[],allYf=[];
+  res.lines.forEach(l=>{allXf.push(l.x1,l.x2);allYf.push(l.y1,l.y2);});
+  res.polys.forEach(p=>p.pts.forEach(([px,py])=>{allXf.push(px);allYf.push(py);}));
+  if(allXf.length>=8){
+    const qs=arr=>{const s=[...arr].sort((a,b)=>a-b);return{q1:s[Math.floor(s.length*0.25)],q3:s[Math.floor(s.length*0.75)]};};
+    const ix=qs(allXf),iy=qs(allYf);
+    const iqrX=ix.q3-ix.q1,iqrY=iy.q3-iy.q1;
+    const k=3;
+    const xLo=ix.q1-k*iqrX,xHi=ix.q3+k*iqrX,yLo=iy.q1-k*iqrY,yHi=iy.q3+k*iqrY;
+    res.lines=res.lines.filter(l=>l.x1>=xLo&&l.x1<=xHi&&l.y1>=yLo&&l.y1<=yHi&&l.x2>=xLo&&l.x2<=xHi&&l.y2>=yLo&&l.y2<=yHi);
+    res.polys=res.polys.filter(p=>p.pts.every(([px,py])=>px>=xLo&&px<=xHi&&py>=yLo&&py<=yHi));
+  }
     // Compute bbox from LINE/LWPOLYLINE only — $EXTMIN/$EXTMAX includes text far from the real plan
   let bx0=Infinity,bx1=-Infinity,by0=Infinity,by1=-Infinity;
   res.lines.forEach(l=>{bx0=Math.min(bx0,l.x1,l.x2);bx1=Math.max(bx1,l.x1,l.x2);by0=Math.min(by0,l.y1,l.y2);by1=Math.max(by1,l.y1,l.y2);});
