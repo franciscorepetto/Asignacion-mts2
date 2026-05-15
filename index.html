@@ -394,6 +394,7 @@ function goBack(){
   areas=[];curPts=[];selectedArea=null;colIdx=0;canvas._snapPt=null;updateList();
   document.querySelectorAll('.suc-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('enterBtn').disabled=true;
+  document.getElementById('enterBtn').textContent='Ingresar al layout →';
   currentSuc=null;
 }
 
