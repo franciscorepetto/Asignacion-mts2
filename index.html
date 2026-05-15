@@ -318,7 +318,7 @@ const SUCURSALES=[
   {code:'SGO',name:'Santiago del Estero',available:false},
   {code:'SRN',name:'Sarandí',available:false},
   {code:'TOR',name:'Tortuguitas',available:false},
-  {code:'TLW',name:'Trelew',available:false},
+  {code:'REL',name:'Trelew',available:true},
   {code:'TUC',name:'Tucumán',available:true},
   {code:'USH',name:'Ushuaia',available:false},
   {code:'VDM',name:'Viedma',available:false},
@@ -367,7 +367,7 @@ async function enterLayout(){
   const btn=document.getElementById('enterBtn');
   btn.disabled=true;btn.textContent='Cargando plano...';
   try{
-    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',POS:'Posadas mts2.dxf',AEP:'Copia de AEP-ILUM MMTO-R01 (1).dxf',EZE:'Copia de EZE-mod. EZE .PROPUUESTA 2025-01-29 (1).dxf',BAH:'Copia de BHI-Bahia Blanca.V4 - ARQUITECTURA (1).dxf',LCA:'Copia de LCA-2021 09 13 PLANO FINAL LA CARLOTA.dxf',LRJ:'La Rioja mts2.dxf',STV:'Copia de SLT-SALTA - TAVELLA - BASE-r01.dxf',SPY:'Copia de SLW - PARAGUAY - PLANO BASE (1).dxf',CBA:'Copia de COR-LA VOZ-Base xref-04 - CORRECCION CORTINA RAPIDA version 2004.dwg.dxf',TUC:'M2 Tucuman.dxf',IRI:'Iriarte Planta Baja.dxf',IR2:'Iriarte Subsuelo.dxf',IR3:'Iriarte Primer Piso A.dxf',IR4:'Iriarte Primer Piso B.dxf',UAQ:'San Juan mts2.dxf'})[currentSuc.code];
+    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',POS:'Posadas mts2.dxf',AEP:'Copia de AEP-ILUM MMTO-R01 (1).dxf',EZE:'Copia de EZE-mod. EZE .PROPUUESTA 2025-01-29 (1).dxf',BAH:'Copia de BHI-Bahia Blanca.V4 - ARQUITECTURA (1).dxf',LCA:'Copia de LCA-2021 09 13 PLANO FINAL LA CARLOTA.dxf',LRJ:'La Rioja mts2.dxf',STV:'Copia de SLT-SALTA - TAVELLA - BASE-r01.dxf',SPY:'Copia de SLW - PARAGUAY - PLANO BASE (1).dxf',CBA:'Copia de COR-LA VOZ-Base xref-04 - CORRECCION CORTINA RAPIDA version 2004.dwg.dxf',TUC:'M2 Tucuman.dxf',IRI:'Iriarte Planta Baja.dxf',IR2:'Iriarte Subsuelo.dxf',IR3:'Iriarte Primer Piso A.dxf',IR4:'Iriarte Primer Piso B.dxf',UAQ:'San Juan mts2.dxf',REL:'Trelew mts2.dxf'})[currentSuc.code];
     const url=file.startsWith('http')?file:'mapas/planos/'+file.replace(/ /g,'%20');
     const resp=await fetch(url);
     if(!resp.ok) throw new Error('HTTP '+resp.status);
