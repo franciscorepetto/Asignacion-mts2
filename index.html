@@ -490,7 +490,7 @@ function openModal(pts,existing,aIdx){
   document.getElementById('modalTitle').innerHTML=`<input id="areaNameInp" value="${defaultName}" placeholder="Nombre del área">`;
   document.getElementById('modalSub').textContent='Superficie total: '+polyArea(pts).toFixed(2)+' m²';
   setTimeout(()=>document.getElementById('areaNameInp')?.select(),50);
-  modalRows=existing?existing.activities.map(a=>({name:a.name,pct:a.pct,client:a.client||'',piso:a.piso||'PB'})):[{name:'',pct:100,client:'',piso:'PB'}];
+  modalRows=existing?existing.activities.map(a=>({name:a.name,pct:a.pct,client:a.client||'',piso:a.piso||'PB',observacion:a.observacion||''})):[{name:'',pct:100,client:'',piso:'PB',observacion:''}];
   const agrupSel=document.getElementById('agrupSelect');
   agrupSel.innerHTML='<option value="">— seleccionar —</option>'+Object.keys(ACTIVIDADES_ESTRUCTURA).map(a=>`<option value="${a}">${a}</option>`).join('');
   document.getElementById('familiaSelect').innerHTML='<option value="">— seleccionar —</option>';
@@ -524,12 +524,7 @@ function updateActividades(){
 function selectActividad(){
   const act=document.getElementById('actSelect').value;
   if(!act) return;
-  if(modalRows.length===1&&!modalRows[0].name){modalRows[0].name=act;}else{const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:act,pct:Math.max(1,100-used),client:'',piso:'PB'});}
-  document.getElementById('agrupSelect').value='';
-  document.getElementById('familiaSelect').value='';
-  document.getElementById('familiaSelect').disabled=true;
-  document.getElementById('actSelect').value='';
-  document.getElementById('actSelect').disabled=true;
+  if(modalRows.length===1&&!modalRows[0].name){modalRows[0].name=act;}else{const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:act,pct:Math.max(1,100-used),client:'',piso:'PB',observacion:''});}
   renderModalRows();
 }
 
@@ -553,7 +548,11 @@ function renderModalRows(){
           <label class="piso-lbl">Piso</label>
           <select class="sm" onchange="modalRows[${i}].piso=this.value" style="flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;padding:5px 7px;border-radius:6px;outline:none">
             ${['PB','1RO','2DO','3RO','SUBSUELO','ENTREPISO'].map(p=>`<option value="${p}"${p===row.piso?' selected':''}>${p}</option>`).join('')}
-          </select>
+                   </select>
+        </div>
+        <div class="field-row">
+          <label class="piso-lbl">Observación</label>
+          <input type="text" placeholder="Observación..." value="${row.observacion||''}" oninput="modalRows[${i}].observacion=this.value" style="flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;padding:5px 7px;border-radius:6px;outline:none">
         </div>
         ${ced?`<div class="field-row">
           <label class="client-lbl">Cliente</label>
@@ -571,7 +570,16 @@ function renderPctBar(){
   document.getElementById('pctFill').style.background=tot>100?'#e05548':tot===100?'#33c2ca':'#f0a500';
 }
 
-function addActRow(){const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:'',pct:Math.max(1,100-used),client:'',piso:'PB'});renderModalRows();}
+function addActRow(){
+  const used=modalRows.reduce((s,r)=>s+r.pct,0);
+  modalRows.push({name:'',pct:Math.max(1,100-used),client:'',piso:'PB',observacion:''});
+  document.getElementById('agrupSelect').value='';
+  document.getElementById('familiaSelect').innerHTML='<option value="">— seleccionar —</option>';
+  document.getElementById('familiaSelect').disabled=true;
+  document.getElementById('actSelect').innerHTML='<option value="">— seleccionar —</option>';
+  document.getElementById('actSelect').disabled=true;
+  renderModalRows();
+}
 
 function saveModal(){
   const valid=modalRows.filter(r=>r.name.trim());
@@ -707,7 +715,7 @@ function cargarTrabajo(input){
 function exportXLSX(){
   if(!areas.length){alert('No hay áreas para exportar.');return;}
   const wb=XLSX.utils.book_new();
-  const headers=['AF','SECTOR','N°','ETAPA','ACTIVIDAD','Mts2 sin reparto','%','Mts2','PISO','ESPACIOS CEDIDOS','CODIGO CLIENTE','NOMBRE CLIENTE','VALIDACION'];
+ const headers=['AF','SECTOR','N°','ETAPA','ACTIVIDAD','Mts2 sin reparto','%','Mts2','PISO','ESPACIOS CEDIDOS','CODIGO CLIENTE','NOMBRE CLIENTE','OBSERVACION'];
 const fecha=new Date().toLocaleDateString('es-AR');
 const meta=['Sucursal: '+(currentSuc?currentSuc.code:''),'Fecha: '+fecha];
 const rows=[meta,[],headers];
@@ -718,8 +726,7 @@ const rows=[meta,[],headers];
     a.activities.forEach(act=>{
       const m2=(act.pct/100*a.totalArea);
       const cedido=isCedido(act.name)?'SI':'NO';
-      const validacion=masterActs.has(act.name.toUpperCase().trim())?'OK':'NO ENCONTRADA';
-      rows.push([currentSuc?currentSuc.code:'',a.name||('Área '+(i+1)),'A'+(n++),'',act.name,+a.totalArea.toFixed(4),+(act.pct/100).toFixed(6),+m2.toFixed(4),act.piso||'PB',cedido,act.client||'',getClientDesc(act.client||''),validacion]);
+            rows.push([currentSuc?currentSuc.code:'',a.name||('Área '+(i+1)),'A'+(n++),'',act.name,+a.totalArea.toFixed(4),+(act.pct/100).toFixed(6),+m2.toFixed(4),act.piso||'PB',cedido,act.client||'',getClientDesc(act.client||''),act.observacion||'']);
     });
   });
   const ws=XLSX.utils.aoa_to_sheet(rows);
