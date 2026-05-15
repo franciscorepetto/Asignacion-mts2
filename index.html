@@ -795,7 +795,7 @@ if(v==='LINE'){
     const qs=arr=>{const s=[...arr].sort((a,b)=>a-b);return{q1:s[Math.floor(s.length*0.25)],q3:s[Math.floor(s.length*0.75)]};};
     const ix=qs(allXf),iy=qs(allYf);
     const iqrX=ix.q3-ix.q1,iqrY=iy.q3-iy.q1;
-    const k=4.5;
+    const k=6;
     const xLo=ix.q1-k*iqrX,xHi=ix.q3+k*iqrX,yLo=iy.q1-k*iqrY,yHi=iy.q3+k*iqrY;
     res.lines=res.lines.filter(l=>l.x1>=xLo&&l.x1<=xHi&&l.y1>=yLo&&l.y1<=yHi&&l.x2>=xLo&&l.x2<=xHi&&l.y2>=yLo&&l.y2<=yHi);
     res.polys=res.polys.filter(p=>p.pts.every(([px,py])=>px>=xLo&&px<=xHi&&py>=yLo&&py<=yHi));
