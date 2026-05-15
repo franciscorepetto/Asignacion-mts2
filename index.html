@@ -524,7 +524,8 @@ function updateActividades(){
 function selectActividad(){
   const act=document.getElementById('actSelect').value;
   if(!act) return;
-  if(modalRows.length===1&&!modalRows[0].name){modalRows[0].name=act;}else{const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:act,pct:Math.max(1,100-used),client:'',piso:'PB',observacion:''});}
+  const emptyIdx=modalRows.findIndex(r=>!r.name);
+  if(emptyIdx>=0){modalRows[emptyIdx].name=act;}else{const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:act,pct:Math.max(1,100-used),client:'',piso:'PB',observacion:''});}
   renderModalRows();
 }
 
