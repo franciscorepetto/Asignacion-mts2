@@ -451,13 +451,18 @@ function render(){
     ctx.fillStyle=a.color+'40';ctx.fill();
     if(isSel){ctx.strokeStyle=a.color+'55';ctx.lineWidth=10;ctx.stroke();}
     ctx.strokeStyle=a.color;ctx.lineWidth=isSel?3:2;ctx.setLineDash([]);ctx.stroke();
-    const cx=a.pts.reduce((s,p)=>s+p[0],0)/a.pts.length;
+       const cx=a.pts.reduce((s,p)=>s+p[0],0)/a.pts.length;
     const cy=a.pts.reduce((s,p)=>s+p[1],0)/a.pts.length;
-    const[lx,ly]=toS(cx,cy);
+    let[lx,ly]=toS(cx,cy);
     const fs=Math.max(10,Math.min(14,scale*6));
     const label=a.name||('Área '+(i+1));
     ctx.font=`800 ${fs}px 'Montserrat',sans-serif`;
     const tw=ctx.measureText(label).width;
+    const spts=a.pts.map(p=>toS(p[0],p[1]));
+    const sminX=Math.min(...spts.map(p=>p[0])),smaxX=Math.max(...spts.map(p=>p[0]));
+    const sminY=Math.min(...spts.map(p=>p[1])),smaxY=Math.max(...spts.map(p=>p[1]));
+    lx=Math.max(sminX+tw/2+6,Math.min(smaxX-tw/2-6,lx));
+    ly=Math.max(sminY+fs*1.45+4,Math.min(smaxY+fs*0.45-4,ly));
     ctx.fillStyle='rgba(255,255,255,0.88)';
     ctx.beginPath();ctx.roundRect(lx-tw/2-6,ly-fs*1.45-4,tw+12,fs+8,4);ctx.fill();
     ctx.fillStyle=a.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,lx,ly-fs*0.9);
@@ -625,8 +630,36 @@ function deleteArea(i){if(!confirm('¿Eliminar "'+(areas[i].name||'Área '+(i+1)
   
 canvas.addEventListener('click',e=>{if(panning||panMode&&panning) return;if(panMode) return;if(mode==='draw'){const[wx,wy]=toW(e.offsetX,e.offsetY);const snap=snapToVertex(wx,wy);curPts.push(snap||[wx,wy]);canvas._snapPt=null;render();}else{const[wx,wy]=toW(e.offsetX,e.offsetY);let found=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}selectedArea=found;updateList();render();}});
 canvas.addEventListener('dblclick',e=>{if(panMode||mode!=='draw') return;if(curPts.length<3){curPts=[];render();return;}const pts=[...curPts];curPts=[];canvas._snapPt=null;openModal(pts,null,null);});
-canvas.addEventListener('mousemove',e=>{if(!DXF) return;const[wx,wy]=toW(e.offsetX,e.offsetY);const bb=DXF.bbox;document.getElementById('coords').textContent='x: '+(wx-bb.min_x).toFixed(1)+'m  y: '+(wy-bb.min_y).toFixed(1)+'m';if(panning&&panStart){ox=panOff[0]+(e.clientX-panStart[0]);oy=panOff[1]+(e.clientY-panStart[1]);render();}if(mode==='draw'&&!panMode){const snap=snapToVertex(wx,wy);canvas._snapPt=snap||null;render();canvas.style.cursor=snap?'cell':'crosshair';}
-else if(mode==='rect'&&rectStart){rectCurrent=[wx,wy];render();}});
+canvas.addEventListener('mousemove',e=>{if(!DXF) return;const[wx,wy]=toW(e.offsetX,e.offsetY);const bb=DXF.bbox;
+let coordsTxt='x: '+(wx-bb.min_x).toFixed(1)+'m  y: '+(wy-bb.min_y).toFixed(1)+'m';
+if(mode==='rect'&&rectStart){const rw=Math.abs(wx-rectStart[0]),rh=Math.abs(wy-rectStart[1]);coordsTxt+='  —  '+(rw*rh).toFixed(1)+' m²';}
+document.getElementById('coords').textContent=coordsTxt;
+if(panning&&panStart){ox=panOff[0]+(e.clientX-panStart[0]);oy=panOff[1]+(e.clientY-panStart[1]);render();}
+if(mode==='draw'&&!panMode){const snap=snapToVertex(wx,wy);canvas._snapPt=snap||null;render();canvas.style.cursor=snap?'cell':'crosshair';}
+else if(mode==='rect'&&rectStart){rectCurrent=[wx,wy];render();}
+const tip=document.getElementById('areaTooltip');
+if(!panning&&curPts.length===0&&!rectStart&&document.getElementById('modalBg').style.display==='none'){
+  let hov=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){hov=i;break;}}
+  if(hov!==null){
+    const a=areas[hov];
+    let h=`<div style="font-weight:800;font-size:12px;color:${a.color};margin-bottom:3px">${a.name||('Área '+(hov+1))}</div>`;
+    h+=`<div style="font-weight:600;color:var(--text2);margin-bottom:5px;font-size:10px">${a.totalArea.toFixed(2)} m²</div>`;
+    a.activities.forEach(act=>{
+      const m2=(act.pct/100*a.totalArea).toFixed(1);
+      const col=isCedido(act.name)?'#a805e0':'var(--brand-dark)';
+      h+=`<div style="border-top:1px solid var(--border);padding-top:4px;margin-top:4px">`;
+      h+=`<div style="display:flex;justify-content:space-between;gap:10px"><span style="font-weight:600;color:${col};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${act.name}</span><span style="font-weight:700;color:var(--text2);white-space:nowrap">${act.pct}% · ${m2} m²</span></div>`;
+      if(act.client) h+=`<div style="color:#a805e0;font-size:10px;margin-top:2px">${getClientDesc(act.client)}</div>`;
+      if(act.observacion) h+=`<div style="color:var(--text3);font-size:10px;margin-top:1px">${act.observacion}</div>`;
+      h+=`</div>`;
+    });
+    tip.innerHTML=h;tip.style.display='block';
+    const tx=Math.min(e.clientX+16,window.innerWidth-270);
+    const ty=Math.min(e.clientY+16,window.innerHeight-tip.offsetHeight-10);
+    tip.style.left=tx+'px';tip.style.top=ty+'px';
+  } else {tip.style.display='none';}
+} else {tip.style.display='none';}
+});
 canvas.addEventListener('mousedown',e=>{
   if(panMode||e.button===1){panning=true;panStart=[e.clientX,e.clientY];panOff=[ox,oy];canvas.style.cursor='grabbing';}
   else if(mode==='rect'){const[wx,wy]=toW(e.offsetX,e.offsetY);rectStart=[wx,wy];rectCurrent=[wx,wy];}
@@ -815,6 +848,8 @@ if(v==='LINE'){
   res.bbox=extValid?{min_x:x0,max_x:x1,min_y:y0,max_y:y1}:(bx0<Infinity?{min_x:bx0,max_x:bx1,min_y:by0,max_y:by1}:{min_x:0,max_x:100,min_y:0,max_y:100});
   return res;
 }
+canvas.addEventListener('mouseleave',()=>document.getElementById('areaTooltip').style.display='none');
 </script>
+<div id="areaTooltip" style="display:none;position:fixed;z-index:50;pointer-events:none;background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;box-shadow:0 4px 20px rgba(0,0,0,.15);max-width:260px;font-family:'Montserrat',sans-serif;font-size:11px;line-height:1.7"></div>
 </body>
 </html>
