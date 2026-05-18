@@ -136,6 +136,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
   <div class="logo-text">OCASA</div>
   <div class="header-mid" id="headerMid">Layout de Sucursales</div>
   <div class="hmeta" id="coords" style="display:none">x: —  y: —</div>
+  <div class="hmeta" id="rectArea" style="display:none">— m²</div>
   <button class="back-btn" id="backBtn" style="display:none" onclick="goBack()">← Volver</button>
 </header>
 
@@ -631,9 +632,9 @@ function deleteArea(i){if(!confirm('¿Eliminar "'+(areas[i].name||'Área '+(i+1)
 canvas.addEventListener('click',e=>{if(panning||panMode&&panning) return;if(panMode) return;if(mode==='draw'){const[wx,wy]=toW(e.offsetX,e.offsetY);const snap=snapToVertex(wx,wy);curPts.push(snap||[wx,wy]);canvas._snapPt=null;render();}else{const[wx,wy]=toW(e.offsetX,e.offsetY);let found=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}selectedArea=found;updateList();render();}});
 canvas.addEventListener('dblclick',e=>{if(panMode||mode!=='draw') return;if(curPts.length<3){curPts=[];render();return;}const pts=[...curPts];curPts=[];canvas._snapPt=null;openModal(pts,null,null);});
 canvas.addEventListener('mousemove',e=>{if(!DXF) return;const[wx,wy]=toW(e.offsetX,e.offsetY);const bb=DXF.bbox;
-let coordsTxt='x: '+(wx-bb.min_x).toFixed(1)+'m  y: '+(wy-bb.min_y).toFixed(1)+'m';
-if(mode==='rect'&&rectStart){const rw=Math.abs(wx-rectStart[0]),rh=Math.abs(wy-rectStart[1]);coordsTxt+='  —  '+(rw*rh).toFixed(1)+' m²';}
-document.getElementById('coords').textContent=coordsTxt;
+document.getElementById('coords').textContent='x: '+(wx-bb.min_x).toFixed(1)+'m  y: '+(wy-bb.min_y).toFixed(1)+'m';
+if(mode==='rect'&&rectStart){const rw=Math.abs(wx-rectStart[0]),rh=Math.abs(wy-rectStart[1]);document.getElementById('rectArea').textContent=(rw*rh).toFixed(1)+' m²';document.getElementById('rectArea').style.display='block';}
+else{document.getElementById('rectArea').style.display='none';}
 if(panning&&panStart){ox=panOff[0]+(e.clientX-panStart[0]);oy=panOff[1]+(e.clientY-panStart[1]);render();}
 if(mode==='draw'&&!panMode){const snap=snapToVertex(wx,wy);canvas._snapPt=snap||null;render();canvas.style.cursor=snap?'cell':'crosshair';}
 else if(mode==='rect'&&rectStart){rectCurrent=[wx,wy];render();}
@@ -673,7 +674,7 @@ canvas.addEventListener('mouseup',e=>{
       const pts=[[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
       openModal(pts,null,null);
     }
-    rectStart=null;rectCurrent=null;render();
+    rectStart=null;rectCurrent=null;document.getElementById('rectArea').style.display='none';render();
   }
   setTimeout(()=>panning=false,10);
   canvas.style.cursor=panMode?'grab':(mode==='draw'?'crosshair':mode==='rect'?'crosshair':'default');
