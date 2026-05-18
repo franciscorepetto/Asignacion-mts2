@@ -496,7 +496,7 @@ function openModal(pts,existing,aIdx){
   document.getElementById('modalTitle').innerHTML=`<input id="areaNameInp" value="${defaultName}" placeholder="Nombre del área">`;
   document.getElementById('modalSub').textContent='Superficie total: '+polyArea(pts).toFixed(2)+' m²';
   setTimeout(()=>document.getElementById('areaNameInp')?.select(),50);
-  modalRows=existing?existing.activities.map(a=>({name:a.name,pct:a.pct,client:a.client||'',piso:a.piso||'PB',observacion:a.observacion||''})):[{name:'',pct:100,client:'',piso:'PB',observacion:''}];
+  modalRows=existing?existing.activities.map(a=>({name:a.name,pct:a.pct,client:a.client||'',piso:a.piso||'PB',observacion:a.observacion||'',otrosMode:!!(a.client&&!CLIENTES.find(c=>c.codigo===a.client))})):[{name:'',pct:100,client:'',piso:'PB',observacion:'',otrosMode:false}];
   const agrupSel=document.getElementById('agrupSelect');
   agrupSel.innerHTML='<option value="">— seleccionar —</option>'+Object.keys(ACTIVIDADES_ESTRUCTURA).map(a=>`<option value="${a}">${a}</option>`).join('');
   document.getElementById('familiaSelect').innerHTML='<option value="">— seleccionar —</option>';
@@ -531,7 +531,7 @@ function selectActividad(){
   const act=document.getElementById('actSelect').value;
   if(!act) return;
   const emptyIdx=modalRows.findIndex(r=>!r.name);
-  if(emptyIdx>=0){modalRows[emptyIdx].name=act;}else{const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:act,pct:Math.max(1,100-used),client:'',piso:'PB',observacion:''});}
+  if(emptyIdx>=0){modalRows[emptyIdx].name=act;}else{const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:act,pct:Math.max(1,100-used),client:'',piso:'PB',observacion:'',otrosMode:false});}
   renderModalRows();
 }
 
@@ -561,11 +561,19 @@ function renderModalRows(){
           <label class="piso-lbl">Observación</label>
           <input type="text" placeholder="Observación..." value="${row.observacion||''}" oninput="modalRows[${i}].observacion=this.value" style="flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;padding:5px 7px;border-radius:6px;outline:none">
         </div>
-        ${ced?`<div class="field-row">
+                ${ced?`<div class="field-row">
           <label class="client-lbl">Cliente</label>
-          <input class="client-inp" type="text" list="cl-list-${i}" placeholder="Buscar cliente..." value="${CLIENTES.find(c=>c.codigo===row.client)?.descripcion||''}" oninput="const m=CLIENTES.find(c=>c.descripcion===this.value);if(m)modalRows[${i}].client=m.codigo;else if(!this.value)modalRows[${i}].client='';" autocomplete="off">
-          <datalist id="cl-list-${i}">${CLIENTES.map(c=>`<option value="${c.descripcion}"></option>`).join('')}</datalist>
+          <select class="sm" style="flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;padding:5px 7px;border-radius:6px;outline:none" onchange="if(this.value==='__otros__'){modalRows[${i}].client='';modalRows[${i}].otrosMode=true;renderModalRows();}else{modalRows[${i}].client=this.value;modalRows[${i}].otrosMode=false;renderModalRows();}">
+            <option value="">— seleccionar —</option>
+            ${CLIENTES.map(c=>`<option value="${c.codigo}"${c.codigo===row.client?' selected':''}>${c.descripcion}</option>`).join('')}
+            <option value="__otros__"${row.otrosMode?' selected':''}>✏ Otros (escribir a mano)</option>
+          </select>
+        </div>
+        ${row.otrosMode?`<div class="field-row">
+          <label></label>
+          <input class="client-inp" type="text" placeholder="Nombre del cliente..." value="${row.client}" oninput="modalRows[${i}].client=this.value" style="flex:1;background:#fff;border:1.5px solid #a805e0;color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;padding:5px 8px;border-radius:6px;outline:none">
         </div>`:''}
+        `:''}
       </div>`;
     c.appendChild(d);
   });
@@ -579,7 +587,7 @@ function renderPctBar(){
 
 function addActRow(){
   const used=modalRows.reduce((s,r)=>s+r.pct,0);
-  modalRows.push({name:'',pct:Math.max(1,100-used),client:'',piso:'PB',observacion:''});
+  modalRows.push({name:'',pct:Math.max(1,100-used),client:'',piso:'PB',observacion:'',otrosMode:false});
   document.getElementById('agrupSelect').value='';
   document.getElementById('familiaSelect').innerHTML='<option value="">— seleccionar —</option>';
   document.getElementById('familiaSelect').disabled=true;
