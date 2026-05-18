@@ -754,6 +754,15 @@ function cargarTrabajo(input){
   areas=[];colIdx=0;selectedArea=null;
   saveAreas();updateList();render();
 }
+  
+function getFamilia(actName){
+  for(const agrup of Object.values(ACTIVIDADES_ESTRUCTURA)){
+    for(const[fam,acts] of Object.entries(agrup)){
+      if(acts.includes(actName)) return fam;
+    }
+  }
+  return '';
+}
 function exportXLSX(){
   if(!areas.length){alert('No hay áreas para exportar.');return;}
   const wb=XLSX.utils.book_new();
