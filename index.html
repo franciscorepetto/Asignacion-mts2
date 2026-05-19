@@ -273,7 +273,7 @@ const SUCURSALES=[
   {code:'CDN',name:'Centro Dist. Norte',available:false},
   {code:'CRD',name:'Comodoro Rivadavia',available:true},
   {code:'CBA',name:'Córdoba La Voz',available:true},
-  {code:'CO2',name:'Córdoba Circunvalación',available:false},
+  {code:'CO2',name:'Córdoba Circunvalación',available:true},
   {code:'CPR',name:'Córdoba Paraná',available:false},
   {code:'CTE',name:'Corrientes',available:false},
   {code:'CDE',name:'Cruz del Eje',available:false},
@@ -368,7 +368,7 @@ async function enterLayout(){
   const btn=document.getElementById('enterBtn');
   btn.disabled=true;btn.textContent='Cargando plano...';
   try{
-    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',POS:'Posadas mts2.dxf',AEP:'Copia de AEP-ILUM MMTO-R01 (1).dxf',EZE:'Copia de EZE-mod. EZE .PROPUUESTA 2025-01-29 (1).dxf',BAH:'Copia de BHI-Bahia Blanca.V4 - ARQUITECTURA (1).dxf',LRJ:'La Rioja mts2.dxf',STV:'Copia de SLT-SALTA - TAVELLA - BASE-r01.dxf',SPY:'Copia de SLW - PARAGUAY - PLANO BASE (1).dxf',CBA:'Copia de COR-LA VOZ-Base xref-04 - CORRECCION CORTINA RAPIDA version 2004.dwg.dxf',TUC:'M2 Tucuman.dxf',IRI:'Iriarte Planta Baja.dxf',IR2:'Iriarte Subsuelo.dxf',IR3:'Iriarte Primer Piso A.dxf',IR4:'Iriarte Primer Piso B.dxf',UAQ:'San Juan mts2.dxf',REL:'Trelew mts2.dxf',RCU:'Rio Cuarto mts2.dxf',SGO:'SDE - Mudanza sucursal Obras (1).dxf',FMA:'FMA-Formosa - Plantas 09-Ago-2019.dxf',RAF:'RAF-JUAN JOSE PASO 2277 RAFAELA SANTA FE V2 15-ENE-2021.dxf',ZUL:'ZUL-AZUL ETAPA 2 ARQ.dxf',CRD:'CRD-Mterio Salud Chubut-R03.dxf'})[currentSuc.code];
+    const file=({MDQ:'Layout MDQ - Marzo 2026.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',POS:'Posadas mts2.dxf',AEP:'Copia de AEP-ILUM MMTO-R01 (1).dxf',EZE:'Copia de EZE-mod. EZE .PROPUUESTA 2025-01-29 (1).dxf',BAH:'Copia de BHI-Bahia Blanca.V4 - ARQUITECTURA (1).dxf',LRJ:'La Rioja mts2.dxf',STV:'Copia de SLT-SALTA - TAVELLA - BASE-r01.dxf',SPY:'Copia de SLW - PARAGUAY - PLANO BASE (1).dxf',CBA:'Copia de COR-LA VOZ-Base xref-04 - CORRECCION CORTINA RAPIDA version 2004.dwg.dxf',TUC:'M2 Tucuman.dxf',IRI:'Iriarte Planta Baja.dxf',IR2:'Iriarte Subsuelo.dxf',IR3:'Iriarte Primer Piso A.dxf',IR4:'Iriarte Primer Piso B.dxf',UAQ:'San Juan mts2.dxf',REL:'Trelew mts2.dxf',RCU:'Rio Cuarto mts2.dxf',SGO:'SDE - Mudanza sucursal Obras (1).dxf',FMA:'FMA-Formosa - Plantas 09-Ago-2019.dxf',RAF:'RAF-JUAN JOSE PASO 2277 RAFAELA SANTA FE V2 15-ENE-2021.dxf',ZUL:'ZUL-AZUL ETAPA 2 ARQ.dxf',CRD:'CRD-Mterio Salud Chubut-R03.dxf',CO2:'CBA_CIRCUNVALACION.dxf'})[currentSuc.code];
     const url=file.startsWith('http')?file:'mapas/planos/'+file.replace(/ /g,'%20');
     const resp=await fetch(url);
     if(!resp.ok) throw new Error('HTTP '+resp.status);
