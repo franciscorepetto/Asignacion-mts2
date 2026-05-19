@@ -240,7 +240,7 @@ let ACTIVIDADES_ESTRUCTURA={};
 function _parseCSVEstructura(csv){
   const struct={};
   csv.trim().split('\n').slice(1).forEach(line=>{
-    const parts=line.split(',');
+    const sep=line.includes(';')?';':',';const parts=line.split(sep);
     const actividad=(parts[0]||'').trim();
     const agrupacion=(parts[1]||'').trim();
     const familia=(parts[2]||'').trim();
