@@ -181,6 +181,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
     </div>
     <div class="cwrap" id="cwrap">
       <canvas id="fp"></canvas>
+      <div id="floorTabs" style="display:none;position:absolute;top:14px;left:14px;z-index:10;gap:6px;flex-wrap:wrap"></div>
       <div class="tbar">
         <div class="tbtn" onclick="zoom(1.2)" title="Zoom in">+</div>
         <div class="tbtn" onclick="zoom(0.83)" title="Zoom out">−</div>
@@ -196,6 +197,13 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
   </div>
 </div>
 
+<div class="modal-bg" id="floorSelBg" style="display:none">
+  <div class="modal" style="min-width:300px;max-width:360px;text-align:center">
+    <h3 id="floorSelTitle" style="margin-bottom:16px">Seleccioná el piso</h3>
+    <div id="floorSelBtns" style="display:flex;flex-direction:column;gap:8px"></div>
+    <button class="btn-secondary" style="width:100%;margin-top:14px" onclick="closeFSel()">← Volver</button>
+  </div>
+</div>
 <div class="modal-bg" id="modalBg" style="display:none" onclick="if(event.target===this)closeModal(true)">
   <div class="modal">
     <h3 id="modalTitle">Área</h3>
@@ -288,7 +296,7 @@ const SUCURSALES=[
   {code:'LCA',name:'La Carlota',available:true},
   {code:'LRJ',name:'La Rioja',available:true},
   {code:'MDQ',name:'Mar del Plata',available:true},
-  {code:'MTZ',name:'Martínez',available:false},
+  {code:'MTZ',name:'Martínez',available:true},
   {code:'MDZ',name:'Mendoza',available:false},
   {code:'NQN',name:'Neuquén',available:true},
   {code:'OTT',name:'Malvinas Argentinas',available:false},
@@ -324,7 +332,16 @@ const SUCURSALES=[
 const AREA_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0','#b5341a','#057a3a','#c45c00','#1a4db5'];
 const ACT_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0'];
 
-let currentSuc=null,DXF=null;
+let currentSuc=null,DXF=null,currentFloor=null;
+const MULTI_FLOOR={
+  MTZ:[
+    {id:'SS',name:'Subsuelo',file:'MTZ ss mts2.dxf'},
+    {id:'PB',name:'Planta Baja',file:'MTZ pb mts2.dxf'},
+    {id:'EP',name:'Entrepiso',file:'MTZ ep mts2.dxf'},
+    {id:'P1',name:'Piso 1',file:'MTZ  p1 mts2.dxf'},
+    {id:'P2',name:'Piso 2',file:'MTZ p2 mts2.dxf'},
+  ]
+};
 let scale=1,ox=0,oy=0,baseScale=1;
 let mode='draw',panMode=false;
 let curPts=[],areas=[],colIdx=0,selectedArea=null;
@@ -357,8 +374,80 @@ const wrap=document.getElementById('cwrap');
   window.filterSucursales=renderList;
 })();
 
+function closeFSel(){
+  document.getElementById('floorSelBg').style.display='none';
+  const btn=document.getElementById('enterBtn');
+  btn.disabled=false;btn.textContent='Ingresar al layout →';
+}
+function showFloorSelector(){
+  const floors=MULTI_FLOOR[currentSuc.code];
+  document.getElementById('floorSelTitle').textContent=currentSuc.name+' — Seleccioná el piso';
+  const btnsDiv=document.getElementById('floorSelBtns');
+  btnsDiv.innerHTML='';
+  floors.forEach(f=>{
+    const b=document.createElement('button');
+    b.className='enter-btn';b.style.margin='0';b.textContent=f.name;
+    b.onclick=()=>enterFloor(f);
+    btnsDiv.appendChild(b);
+  });
+  document.getElementById('floorSelBg').style.display='flex';
+}
+function renderFloorTabs(){
+  const floors=currentSuc?MULTI_FLOOR[currentSuc.code]:null;
+  const div=document.getElementById('floorTabs');
+  if(!floors){div.style.display='none';return;}
+  div.style.display='flex';
+  div.innerHTML=floors.map(f=>{
+    const active=currentFloor&&currentFloor.id===f.id;
+    return `<button onclick="switchFloor('${f.id}')" style="padding:6px 14px;border:1.5px solid ${active?'var(--brand)':'var(--border)'};background:${active?'var(--brand)':'#fff'};color:${active?'#fff':'var(--text2)'};font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;border-radius:8px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.06)">${f.name}</button>`;
+  }).join('');
+}
+async function enterFloor(floor){
+  document.getElementById('floorSelBg').style.display='none';
+  const btn=document.getElementById('enterBtn');
+  btn.disabled=true;btn.textContent='Cargando plano...';
+  try{
+    const url='mapas/planos/'+floor.file.replace(/ /g,'%20');
+    const resp=await fetch(url);
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    DXF=parseDXF(await resp.text());
+  }catch(e){
+    alert('No se pudo cargar el plano: '+e.message);
+    btn.disabled=false;btn.textContent='Ingresar al layout →';
+    document.getElementById('floorSelBg').style.display='flex';
+    return;
+  }
+  currentFloor=floor;
+  document.getElementById('splash').style.display='none';
+  const app=document.getElementById('app');
+  app.style.display='flex';app.style.flexDirection='column';
+  document.getElementById('headerMid').innerHTML=`Layout · <span>${currentSuc.name}</span> — ${floor.name}`;
+  document.getElementById('coords').style.display='block';
+  document.getElementById('backBtn').style.display='flex';
+  areas=[];colIdx=0;selectedArea=null;
+  try{const saved=localStorage.getItem(`areas_${currentSuc.code}_${floor.id}`);if(saved){areas=JSON.parse(saved);colIdx=areas.length;updateList();}}catch(e){}
+  renderFloorTabs();initCanvas();
+}
+async function switchFloor(floorId){
+  if(currentFloor&&currentFloor.id===floorId) return;
+  saveAreas();
+  const floor=MULTI_FLOOR[currentSuc.code].find(f=>f.id===floorId);
+  if(!floor) return;
+  try{
+    const url='mapas/planos/'+floor.file.replace(/ /g,'%20');
+    const resp=await fetch(url);
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    DXF=parseDXF(await resp.text());
+  }catch(e){alert('No se pudo cargar el plano: '+e.message);return;}
+  currentFloor=floor;
+  document.getElementById('headerMid').innerHTML=`Layout · <span>${currentSuc.name}</span> — ${floor.name}`;
+  areas=[];colIdx=0;selectedArea=null;curPts=[];canvas._snapPt=null;
+  try{const saved=localStorage.getItem(`areas_${currentSuc.code}_${floor.id}`);if(saved){areas=JSON.parse(saved);colIdx=areas.length;}}catch(e){}
+  renderFloorTabs();updateList();resetView();
+}
 async function enterLayout(){
   if(!currentSuc) return;
+  if(MULTI_FLOOR[currentSuc.code]){showFloorSelector();return;}
   const btn=document.getElementById('enterBtn');
   btn.disabled=true;btn.textContent='Cargando plano...';
   try{
@@ -389,7 +478,7 @@ function goBack(){
   document.getElementById('coords').style.display='none';
   document.getElementById('backBtn').style.display='none';
   document.getElementById('headerMid').innerHTML='Layout de Sucursales';
-  areas=[];curPts=[];selectedArea=null;colIdx=0;canvas._snapPt=null;updateList();
+  areas=[];curPts=[];selectedArea=null;colIdx=0;canvas._snapPt=null;currentFloor=null;document.getElementById('floorTabs').style.display='none';updateList();
   document.querySelectorAll('.suc-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('enterBtn').disabled=true;
   document.getElementById('enterBtn').textContent='Ingresar al layout →';
@@ -604,7 +693,7 @@ function saveModal(){
   updateList();saveAreas();render();
 }
 
-function saveAreas(){if(currentSuc)localStorage.setItem('areas_'+currentSuc.code,JSON.stringify(areas));}
+function saveAreas(){if(!currentSuc)return;const key=currentFloor?`areas_${currentSuc.code}_${currentFloor.id}`:`areas_${currentSuc.code}`;localStorage.setItem(key,JSON.stringify(areas));}
   
 function closeModal(cancel){if(cancel) curPts=[];pendingPts=null;editingIdx=-1;canvas._snapPt=null;document.getElementById('modalBg').style.display='none';render();}
 
@@ -720,8 +809,18 @@ async function cargarTrabajoSplash(input){
 }
   
   function guardarTrabajo(){
-  if(!areas.length){alert('No hay áreas para guardar.');return;}
-  const data=JSON.stringify({suc:currentSuc.code,areas},null,2);
+  saveAreas();
+  const floors=currentSuc?MULTI_FLOOR[currentSuc.code]:null;
+  let data;
+  if(floors){
+    const fd={};
+    floors.forEach(f=>{try{const saved=localStorage.getItem(`areas_${currentSuc.code}_${f.id}`);if(saved)fd[f.id]=JSON.parse(saved);}catch(e){}});
+    if(!Object.values(fd).some(a=>a&&a.length)){alert('No hay áreas para guardar.');return;}
+    data=JSON.stringify({suc:currentSuc.code,multiFloor:true,floors:fd},null,2);
+  }else{
+    if(!areas.length){alert('No hay áreas para guardar.');return;}
+    data=JSON.stringify({suc:currentSuc.code,areas},null,2);
+  }
   const a=document.createElement('a');
   a.href='data:application/json;charset=utf-8,'+encodeURIComponent(data);
   a.download='trabajo_'+(currentSuc?currentSuc.code:'SUC')+'_'+new Date().toISOString().slice(0,10)+'.json';
@@ -758,7 +857,13 @@ function getFamilia(actName){
   return '';
 }
 function exportXLSX(){
-  if(!areas.length){alert('No hay áreas para exportar.');return;}
+  saveAreas();
+  const floors=currentSuc?MULTI_FLOOR[currentSuc.code]:null;
+  let exportAreas=[];
+  if(floors){
+    floors.forEach(f=>{try{const saved=localStorage.getItem(`areas_${currentSuc.code}_${f.id}`);if(saved)exportAreas.push(...JSON.parse(saved));}catch(e){}});
+  }else{exportAreas=[...areas];}
+  if(!exportAreas.length){alert('No hay áreas para exportar.');return;}
   const wb=XLSX.utils.book_new();
  const headers=['AF','SECTOR','N°','ETAPA','ACTIVIDAD','Mts2 sin reparto','%','Mts2','PISO','ESPACIOS CEDIDOS','CODIGO CLIENTE','NOMBRE CLIENTE','OBSERVACION'];
 const fecha=new Date().toLocaleDateString('es-AR');
@@ -767,7 +872,7 @@ const rows=[meta,[],headers];
   const allActs=[];Object.values(ACTIVIDADES_ESTRUCTURA).forEach(agrup=>Object.values(agrup).forEach(fam=>allActs.push(...fam)));
   const masterActs=new Set(allActs.map(a=>a.toUpperCase().trim()));
   let n=1;
-  areas.forEach((a,i)=>{
+  exportAreas.forEach((a,i)=>{
     a.activities.forEach(act=>{
       const m2=(act.pct/100*a.totalArea);
       const cedido=isCedido(act.name)?'SI':'NO';
