@@ -335,11 +335,11 @@ const ACT_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#
 let currentSuc=null,DXF=null,currentFloor=null;
 const MULTI_FLOOR={
   MTZ:[
-    {id:'SS',name:'Subsuelo',file:'MTZ ss mts2.dxf'},
-    {id:'PB',name:'Planta Baja',file:'MTZ pb mts2.dxf'},
-    {id:'EP',name:'Entrepiso',file:'MTZ ep mts2.dxf'},
-    {id:'P1',name:'Piso 1',file:'MTZ  p1 mts2.dxf'},
-    {id:'P2',name:'Piso 2',file:'MTZ p2 mts2.dxf'},
+    {id:'SS',name:'Subsuelo',file:'MTZ ss mts2.dxf',piso:'SUBSUELO'},
+    {id:'PB',name:'Planta Baja',file:'MTZ pb mts2.dxf',piso:'PB'},
+    {id:'EP',name:'Entrepiso',file:'MTZ ep mts2.dxf',piso:'ENTREPISO'},
+    {id:'P1',name:'Piso 1',file:'MTZ  p1 mts2.dxf',piso:'1RO'},
+    {id:'P2',name:'Piso 2',file:'MTZ p2 mts2.dxf',piso:'2DO'},
   ]
 };
 let scale=1,ox=0,oy=0,baseScale=1;
@@ -814,7 +814,7 @@ async function cargarTrabajoSplash(input){
   let data;
   if(floors){
     const fd={};
-    floors.forEach(f=>{try{const saved=localStorage.getItem(`areas_${currentSuc.code}_${f.id}`);if(saved)fd[f.id]=JSON.parse(saved);}catch(e){}});
+       floors.forEach(f=>{try{const saved=localStorage.getItem(`areas_${currentSuc.code}_${f.id}`);if(saved)exportAreas.push(...JSON.parse(saved).map(a=>({...a,_piso:f.piso})));}catch(e){}});
     if(!Object.values(fd).some(a=>a&&a.length)){alert('No hay áreas para guardar.');return;}
     data=JSON.stringify({suc:currentSuc.code,multiFloor:true,floors:fd},null,2);
   }else{
@@ -878,7 +878,7 @@ const rows=[meta,[],headers];
       const cedido=isCedido(act.name)?'SI':'NO';
             const clientCod=CLIENTES.find(c=>c.codigo===act.client)?act.client:'';
 const familia=getFamilia(act.name);
-rows.push([currentSuc?currentSuc.code:'',a.name||('Área '+(i+1)),'A'+(n++),familia,act.name,+a.totalArea.toFixed(4),+(act.pct/100).toFixed(6),+m2.toFixed(4),act.piso||'PB',cedido,clientCod,getClientDesc(act.client||''),act.observacion||'']);
+rows.push([currentSuc?currentSuc.code:'',a.name||('Área '+(i+1)),'A'+(n++),familia,act.name,+a.totalArea.toFixed(4),+(act.pct/100).toFixed(6),+m2.toFixed(4),a._piso||act.piso||'PB',cedido,clientCod,getClientDesc(act.client||''),act.observacion||'']);
     });
   });
   const ws=XLSX.utils.aoa_to_sheet(rows);
