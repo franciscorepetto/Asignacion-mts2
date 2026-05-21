@@ -42,6 +42,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 .suc-item-name{font-size:12px;font-weight:500;color:var(--text);flex:1}
 .suc-item-badge{font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:var(--brand-mid);color:var(--brand-dark)}
 .suc-item-badge.soon{background:#f0eeee;color:var(--text3)}
+.suc-item-badge.has-data{background:#d4f5e9;color:#0a7a4a}
 .enter-btn{width:100%;padding:13px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.04em;box-shadow:0 2px 12px rgba(51,194,202,.35)}
 .enter-btn:hover{background:var(--brand-dark)}
 .enter-btn:disabled{background:var(--text3);box-shadow:none;cursor:not-allowed}
@@ -367,7 +368,10 @@ const wrap=document.getElementById('cwrap');
     SUCURSALES.filter(s=>!q||s.name.toLowerCase().includes(q)||s.code.toLowerCase().includes(q)).forEach(s=>{
       const item=document.createElement('div');
       item.className='suc-item'+(s.available?'':' unavailable');
-      item.innerHTML=`<span class="suc-item-code">${s.code}</span><span class="suc-item-name">${s.name}</span><span class="suc-item-badge${s.available?'':' soon'}">${s.available?'Disponible':'Próx.'}</span>`;
+      const _fl=MULTI_FLOOR[s.code];let _n=0;if(_fl){_fl.forEach(f=>{try{const d=localStorage.getItem(`areas_${s.code}_${f.id}`);if(d)_n+=JSON.parse(d).length;}catch(e){}});}else{try{const d=localStorage.getItem(`areas_${s.code}`);if(d)_n=JSON.parse(d).length;}catch(e){}}
+      const _bc=!s.available?' soon':_n>0?' has-data':'';
+      const _bt=!s.available?'Próx.':_n>0?`${_n} área${_n>1?'s':''}`:'Disponible';
+      item.innerHTML=`<span class="suc-item-code">${s.code}</span><span class="suc-item-name">${s.name}</span><span class="suc-item-badge${_bc}">${_bt}</span>`;
       if(s.available) item.onclick=()=>{
         document.querySelectorAll('.suc-item').forEach(i=>i.classList.remove('active'));
         item.classList.add('active');
