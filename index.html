@@ -962,14 +962,6 @@ if(v==='LINE'){
       let layer='',cx=0,cy=0,r=0,ps=false;i++;
       while(i<n&&pairs[i][0]!==0){const[gc,gv]=pairs[i++];if(gc===8)layer=gv;else if(gc===10)cx=parseFloat(gv);else if(gc===20)cy=parseFloat(gv);else if(gc===40)r=parseFloat(gv);else if(gc===67)ps=(parseInt(gv)===1);}
       if(!ps){const segs=Math.max(12,Math.ceil(r*6));const pts=[];for(let k=0;k<segs;k++)pts.push([cx+r*Math.cos(k*2*Math.PI/segs),cy+r*Math.sin(k*2*Math.PI/segs)]);res.polys.push({pts,closed:true,layer});}
-    }else if(v==='ARC'){
-      let layer='',cx=0,cy=0,r=0,sa=0,ea=360,ps=false;i++;
-      while(i<n&&pairs[i][0]!==0){const[gc,gv]=pairs[i++];if(gc===8)layer=gv;else if(gc===10)cx=parseFloat(gv);else if(gc===20)cy=parseFloat(gv);else if(gc===40)r=parseFloat(gv);else if(gc===50)sa=parseFloat(gv);else if(gc===51)ea=parseFloat(gv);else if(gc===67)ps=(parseInt(gv)===1);}
-      if(!ps){const span=ea>sa?ea-sa:360-sa+ea;const segs=Math.max(12,Math.ceil(span/5));const pts=[];for(let k=0;k<=segs;k++)pts.push([cx+r*Math.cos((sa+span*k/segs)*Math.PI/180),cy+r*Math.sin((sa+span*k/segs)*Math.PI/180)]);res.polys.push({pts,closed:false,layer});}
-    }else if(v==='CIRCLE'){
-      let layer='',cx=0,cy=0,r=0,ps=false;i++;
-      while(i<n&&pairs[i][0]!==0){const[gc,gv]=pairs[i++];if(gc===8)layer=gv;else if(gc===10)cx=parseFloat(gv);else if(gc===20)cy=parseFloat(gv);else if(gc===40)r=parseFloat(gv);else if(gc===67)ps=(parseInt(gv)===1);}
-      if(!ps){const segs=Math.max(12,Math.ceil(r*6));const pts=[];for(let k=0;k<segs;k++)pts.push([cx+r*Math.cos(k*2*Math.PI/segs),cy+r*Math.sin(k*2*Math.PI/segs)]);res.polys.push({pts,closed:true,layer});}
     }else if(v==='TEXT'||v==='MTEXT'){
       let txt='',tx=0,ty=0;i++;
       while(i<n&&pairs[i][0]!==0){const[gc,gv]=pairs[i++];if(gc===1)txt=cleanMText(gv);else if(gc===10)tx=parseFloat(gv);else if(gc===20)ty=parseFloat(gv);}
