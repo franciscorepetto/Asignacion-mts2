@@ -913,7 +913,13 @@ function parseDXF(text){
 const extValid=x0!==null&&Math.abs(x0)<1e9&&Math.abs(x1)<1e9&&Math.abs(y0)<1e9&&Math.abs(y1)<1e9&&(x1-x0)>0.1&&(y1-y0)>0.1;
 const m=extValid?Math.max(x1-x0,y1-y0)*0.25:0;
 const inR=extValid?(x,y)=>x>=x0-m&&x<=x1+m&&y>=y0-m&&y<=y1+m:()=>true;
-  let i=0,n=pairs.length;
+  // Restrict parsing to the ENTITIES section only (skip BLOCKS and other sections)
+let entStart=0,entEnd=pairs.length;
+for(let j=0;j<pairs.length-1;j++){
+  if(pairs[j][0]===0&&pairs[j][1]==='SECTION'&&pairs[j+1][0]===2&&pairs[j+1][1]==='ENTITIES'){entStart=j+2;}
+  if(entStart>0&&pairs[j][0]===0&&pairs[j][1]==='ENDSEC'){entEnd=j;break;}
+}
+let i=entStart,n=entEnd;
   while(i<n){
     const[c,v]=pairs[i];
     if(c!==0){i++;continue;}
