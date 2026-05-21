@@ -778,7 +778,7 @@ canvas.addEventListener('mouseup',e=>{
 });
 canvas.addEventListener('wheel',e=>{if(!DXF) return;e.preventDefault();const f=e.deltaY<0?1.12:0.9;ox=e.offsetX-(e.offsetX-ox)*f;oy=e.offsetY-(e.offsetY-oy)*f;scale*=f;render();},{passive:false});
 
-document.addEventListener('keydown',e=>{if(!DXF) return;if(e.code==='Space'&&mode!=='pan'){e.preventDefault();setMode('pan');}if(e.code==='Escape'){curPts=[];canvas._snapPt=null;selectedArea=null;updateList();render();}if((e.code==='Delete'||e.code==='Backspace')&&selectedArea!==null&&document.getElementById('modalBg').style.display==='none') deleteArea(selectedArea);});
+document.addEventListener('keydown',e=>{if(!DXF) return;if(e.code==='Space'&&mode!=='pan'){e.preventDefault();setMode('pan');}if(e.code==='Escape'){curPts=[];canvas._snapPt=null;selectedArea=null;updateList();render();}if((e.code==='Delete'||e.code==='Backspace')&&selectedArea!==null&&document.getElementById('modalBg').style.display==='none') deleteArea(selectedArea);if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();const modalOpen=document.getElementById('modalBg').style.display!=='none';if(modalOpen&&editingIdx===-1){curPts=pendingPts?[...pendingPts]:[];closeModal(false);}else if(curPts.length>0){undoVertex();}else if(areas.length>0){areas.pop();selectedArea=null;updateList();saveAreas();render();}}});
 document.addEventListener('keyup',e=>{if(e.code==='Space'){setMode('draw');}});
 
 function setMode(m){
