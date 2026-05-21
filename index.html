@@ -272,7 +272,7 @@ function getClientDesc(cod){const c=CLIENTES.find(c=>c.codigo===cod);return c?c.
 const ESPACIOS_CEDIDOS=['ESPACIOS CEDIDOS AG','ESPACIOS CEDIDOS AS','ESPACIOS CEDIDOS SE'];
 const SUCURSALES=[
   {code:'AEP',name:'Aeroparque',available:true},
-  {code:'AVE',name:'Avellaneda',available:false},
+  {code:'AVE',name:'Avellaneda',available:true},
   {code:'ZUL',name:'Azul',available:true},
   {code:'BHI',name:'Bahía Blanca',available:true},
   {code:'BEL',name:'Belgrano',available:true},
@@ -331,6 +331,10 @@ const ACT_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#
 
 let currentSuc=null,DXF=null,currentFloor=null;
 const MULTI_FLOOR={
+  AVE:[
+    {id:'PB',name:'Planta Baja',file:'Ave. Planta Bajadxf.dxf',piso:'PB'},
+    {id:'PA',name:'Planta Alta',file:'AVE planta alta.dxf',piso:'PLANTA ALTA'},
+  ],
   MTZ:[
     {id:'SS',name:'Subsuelo',file:'MTZ ss mts2.dxf',piso:'SUBSUELO'},
     {id:'PB',name:'Planta Baja',file:'MTZ pb mts2.dxf',piso:'PB'},
