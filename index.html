@@ -1015,23 +1015,76 @@ function exportSVG(){
   if(!DXF||!DXF.bbox){alert('No hay plano cargado.');return;}
   const{min_x,max_x,min_y,max_y}=DXF.bbox;
   const W=max_x-min_x,H=max_y-min_y;
-  const sc=1500/Math.max(W,H);
+  const PANEL=230,sc=1500/Math.max(W,H);
+  const svgW=(W*sc)+PANEL,svgH=Math.max(H*sc,areas.length*42+60);
   const tx=x=>((x-min_x)*sc).toFixed(1);
   const ty=y=>((max_y-y)*sc).toFixed(1);
   const fs=Math.max(6,Math.min(14,W*sc/80)).toFixed(1);
-  let svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${(W*sc).toFixed(1)} ${(H*sc).toFixed(1)}" style="background:#f5f5f5">`;
+  const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  let svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW.toFixed(1)} ${svgH.toFixed(1)}" style="background:#f5f5f5;font-family:Montserrat,sans-serif">`;
+  svg+=`<defs><style>
+    .ag{cursor:pointer}.ag polygon{transition:fill-opacity .15s}.ag:hover polygon{fill-opacity:0.65!important}
+    .pb{cursor:pointer}.pb:hover rect{opacity:.75}
+  </style></defs>`;
+  svg+=`<rect width="${(W*sc).toFixed(1)}" height="${svgH.toFixed(1)}" fill="#f5f5f5"/>`;
   svg+=`<g stroke="#2a3a3b" fill="none" stroke-width="0.5">`;
   DXF.lines.forEach(l=>svg+=`<line x1="${tx(l.x1)}" y1="${ty(l.y1)}" x2="${tx(l.x2)}" y2="${ty(l.y2)}"/>`);
   DXF.polys.forEach(p=>{const pts=p.pts.map(([x,y])=>`${tx(x)},${ty(y)}`).join(' ');svg+=p.closed?`<polygon points="${pts}"/>`:`<polyline points="${pts}"/>`;});
-  svg+=`</g><g>`;
-  areas.forEach(a=>{
+  svg+=`</g><g id="agroup">`;
+  areas.forEach((a,i)=>{
     const pts=a.pts.map(([x,y])=>`${tx(x)},${ty(y)}`).join(' ');
     const cx=tx(a.pts.reduce((s,p)=>s+p[0],0)/a.pts.length);
     const cy=ty(a.pts.reduce((s,p)=>s+p[1],0)/a.pts.length);
+    const info=esc(JSON.stringify({name:a.name||'Área '+(i+1),area:(a.totalArea||0).toFixed(1),acts:a.activities||[]}));
+    svg+=`<g class="ag" id="a${i}" data-i="${info}">`;
     svg+=`<polygon points="${pts}" fill="${a.color}" fill-opacity="0.3" stroke="${a.color}" stroke-width="1.5"/>`;
-    if(a.name)svg+=`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-family="Montserrat,sans-serif" font-size="${fs}" fill="${a.color}" font-weight="700">${a.name}</text>`;
+    if(a.name)svg+=`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-size="${fs}" fill="${a.color}" font-weight="700" pointer-events="none">${esc(a.name)}</text>`;
+    svg+=`</g>`;
   });
-  svg+=`</g></svg>`;
+  svg+=`</g>`;
+  const px=W*sc;
+  svg+=`<rect x="${px.toFixed(1)}" y="0" width="${PANEL}" height="${svgH.toFixed(1)}" fill="#fff" stroke="#e0e0e0"/>`;
+  svg+=`<text x="${(px+PANEL/2).toFixed(1)}" y="30" text-anchor="middle" font-size="13" font-weight="700" fill="#1a2a3a">Áreas</text>`;
+  areas.forEach((a,i)=>{
+    const by=50+i*42;
+    svg+=`<g class="pb" id="pb${i}" onclick="tog(${i})">`;
+    svg+=`<rect x="${(px+10).toFixed(1)}" y="${by}" width="${PANEL-20}" height="34" rx="7" fill="${a.color}" fill-opacity="0.13" stroke="${a.color}" stroke-width="1.2"/>`;
+    svg+=`<rect x="${(px+16).toFixed(1)}" y="${by+11}" width="12" height="12" rx="2" fill="${a.color}" id="dot${i}"/>`;
+    svg+=`<text x="${(px+34).toFixed(1)}" y="${by+21}" font-size="10" font-weight="600" fill="${a.color}">${esc(a.name||'Área '+(i+1))}</text>`;
+    svg+=`<text x="${(px+PANEL-14).toFixed(1)}" y="${by+21}" text-anchor="end" font-size="9" fill="#888">${(a.totalArea||0).toFixed(1)}m²</text>`;
+    svg+=`</g>`;
+  });
+  svg+=`<g id="tt" style="display:none" transform="translate(0,0)" pointer-events="none">
+    <rect id="ttbg" rx="8" fill="white" stroke="#ccc" stroke-width="1"/>
+    <text id="ttc" font-size="10" fill="#1a2a3a"></text>
+  </g>`;
+  svg+=`<script>//<![CDATA[
+const tt=document.getElementById('tt'),ttbg=document.getElementById('ttbg'),ttc=document.getElementById('ttc');
+const hidden={};
+function tog(i){
+  hidden[i]=!hidden[i];
+  document.getElementById('a'+i).style.display=hidden[i]?'none':'';
+  document.getElementById('dot'+i).setAttribute('fill-opacity',hidden[i]?'0.25':'1');
+  document.getElementById('pb'+i).style.opacity=hidden[i]?'0.45':'1';
+}
+document.querySelectorAll('.ag').forEach(g=>{
+  g.addEventListener('mouseenter',function(){
+    const d=JSON.parse(this.getAttribute('data-i'));
+    ttc.innerHTML='';
+    const rows=[d.name+' · '+d.area+'m²',...(d.acts||[]).map(a=>a.name+': '+a.pct+'%')];
+    rows.forEach((r,i)=>{const t=document.createElementNS('http://www.w3.org/2000/svg','tspan');t.setAttribute('x','10');t.setAttribute('dy',i===0?'16':'14');t.setAttribute('font-weight',i===0?'700':'400');t.textContent=r;ttc.appendChild(t);});
+    const h=rows.length*14+12,w=Math.max(...rows.map(r=>r.length))*6+20;
+    ttbg.setAttribute('width',w);ttbg.setAttribute('height',h);tt.style.display='';
+  });
+  g.addEventListener('mousemove',function(e){
+    const s=document.querySelector('svg'),p=s.createSVGPoint();
+    p.x=e.clientX;p.y=e.clientY;
+    const sp=p.matrixTransform(s.getScreenCTM().inverse());
+    tt.setAttribute('transform','translate('+(sp.x+14)+','+(sp.y+14)+')');
+  });
+  g.addEventListener('mouseleave',()=>tt.style.display='none');
+});
+//]]></script></svg>`;
   const blob=new Blob([svg],{type:'image/svg+xml'});
   const url=URL.createObjectURL(blob);
   const el=document.createElement('a');el.href=url;
