@@ -175,6 +175,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
       <button class="expbtn" style="background:#e05548;margin-bottom:4px" onclick="limpiarAreas()">🗑 Limpiar todas las áreas</button>
       <button class="expbtn" onclick="exportXLSX()">↓ Exportar tabla BASE (.xlsx)</button>
 <button class="expbtn" style="background:var(--brand-dark);margin-top:4px" onclick="guardarTrabajo()">↓ Exportar actividades (.json)</button>
+<button class="expbtn" style="background:#7c3aed;margin-top:4px" onclick="exportSVG()">↓ Exportar plano (.svg)</button>
       <div class="summary">
         <div class="srow"><span class="skey">Total asignado</span><span class="sval" id="totArea">0.00 m²</span></div>
         <div class="srow"><span class="skey">Áreas</span><span class="sval" id="totN">0</span></div>
@@ -1009,6 +1010,33 @@ if(v==='LINE'){
   res.polys.forEach(p=>p.pts.forEach(([px,py])=>{bx0=Math.min(bx0,px);bx1=Math.max(bx1,px);by0=Math.min(by0,py);by1=Math.max(by1,py);}));
   res.bbox=extValid?{min_x:x0,max_x:x1,min_y:y0,max_y:y1}:(bx0<Infinity?{min_x:bx0,max_x:bx1,min_y:by0,max_y:by1}:{min_x:0,max_x:100,min_y:0,max_y:100});
   return res;
+}
+function exportSVG(){
+  if(!DXF||!DXF.bbox){alert('No hay plano cargado.');return;}
+  const{min_x,max_x,min_y,max_y}=DXF.bbox;
+  const W=max_x-min_x,H=max_y-min_y;
+  const sc=1500/Math.max(W,H);
+  const tx=x=>((x-min_x)*sc).toFixed(1);
+  const ty=y=>((max_y-y)*sc).toFixed(1);
+  const fs=Math.max(6,Math.min(14,W*sc/80)).toFixed(1);
+  let svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${(W*sc).toFixed(1)} ${(H*sc).toFixed(1)}" style="background:#f5f5f5">`;
+  svg+=`<g stroke="#2a3a3b" fill="none" stroke-width="0.5">`;
+  DXF.lines.forEach(l=>svg+=`<line x1="${tx(l.x1)}" y1="${ty(l.y1)}" x2="${tx(l.x2)}" y2="${ty(l.y2)}"/>`);
+  DXF.polys.forEach(p=>{const pts=p.pts.map(([x,y])=>`${tx(x)},${ty(y)}`).join(' ');svg+=p.closed?`<polygon points="${pts}"/>`:`<polyline points="${pts}"/>`;});
+  svg+=`</g><g>`;
+  areas.forEach(a=>{
+    const pts=a.pts.map(([x,y])=>`${tx(x)},${ty(y)}`).join(' ');
+    const cx=tx(a.pts.reduce((s,p)=>s+p[0],0)/a.pts.length);
+    const cy=ty(a.pts.reduce((s,p)=>s+p[1],0)/a.pts.length);
+    svg+=`<polygon points="${pts}" fill="${a.color}" fill-opacity="0.3" stroke="${a.color}" stroke-width="1.5"/>`;
+    if(a.name)svg+=`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-family="Montserrat,sans-serif" font-size="${fs}" fill="${a.color}" font-weight="700">${a.name}</text>`;
+  });
+  svg+=`</g></svg>`;
+  const blob=new Blob([svg],{type:'image/svg+xml'});
+  const url=URL.createObjectURL(blob);
+  const el=document.createElement('a');el.href=url;
+  el.download=`${currentSuc.code}${currentFloor?'_'+currentFloor.id:''}.svg`;
+  el.click();URL.revokeObjectURL(url);
 }
 canvas.addEventListener('mouseleave',()=>document.getElementById('areaTooltip').style.display='none');
 </script>
