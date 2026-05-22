@@ -295,7 +295,7 @@ const SUCURSALES=[
   {code:'LRJ',name:'La Rioja',available:true},
   {code:'MDQ',name:'Mar del Plata',available:true},
   {code:'MTZ',name:'Martínez',available:true},
-  {code:'MDZ',name:'Mendoza',available:false},
+  {code:'MDZ',name:'Mendoza',available:true},
   {code:'NQN',name:'Neuquén',available:true},
   {code:'OTT',name:'Malvinas Argentinas (Otto)',available:true},
   {code:'PRA',name:'Paraná',available:true},
@@ -362,7 +362,11 @@ const MULTI_FLOOR={
     {id:'S3',name:'Subnave 3',file:'SL3 Subnave 3.dxf',piso:'SN3'},
     {id:'S4',name:'Subnave 4',file:'SL3 Subnave 4.dxf',piso:'SN4'},
     {id:'S5',name:'Subnave 5',file:'SL3 Subnave 5.dxf',piso:'SN5'},
-  ]
+  ],
+  MDZ:[
+    {id:'PB',name:'Planta Baja',file:'Mendoza Planta Baja.dxf',piso:'PB'},
+    {id:'EP',name:'Entrepiso',file:'Mendoza Entrepiso.dxf',piso:'ENTREPISO'},
+  ],
 };
 let scale=1,ox=0,oy=0,baseScale=1;
 let mode='draw',panMode=false;
