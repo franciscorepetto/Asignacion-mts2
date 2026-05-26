@@ -129,6 +129,19 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 .dropdown-section select{width:100%;padding:8px;border:1.5px solid var(--border);border-radius:6px;font-family:'Montserrat',sans-serif;font-size:11px;background:#fff;outline:none}
 .dropdown-section select:focus{border-color:var(--brand)}
 .dropdown-section select:disabled{background:var(--bg);color:var(--text3);cursor:not-allowed}
+.sidebar-tabs{display:flex;border-bottom:2px solid var(--border);flex-shrink:0}
+.stab{flex:1;padding:9px 0;text-align:center;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);cursor:pointer;border:none;border-bottom:3px solid transparent;background:none;font-family:'Montserrat',sans-serif;transition:all .15s}
+.stab.active{color:var(--brand-dark);border-bottom-color:var(--brand)}
+.act-check-item{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:8px;margin-bottom:3px;border:1.5px solid var(--border);background:#fff}
+.act-check-item.covered{background:#f0fdf4;border-color:#86efac}
+.act-check-item.fte-warn{background:#fff8e5;border-color:#f0a500}
+.act-check-icon{width:16px;height:16px;border-radius:4px;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800}
+.act-check-item.covered .act-check-icon{border-color:#22c55e;background:#22c55e;color:#fff}
+.act-check-item.fte-warn .act-check-icon{border-color:#f0a500;color:#f0a500}
+.act-check-name{font-size:10px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.act-check-fte{font-size:9px;font-weight:700;color:var(--text3);white-space:nowrap}
+.act-check-fte.has-fte{color:#f0a500}
+.act-panel-head{font-size:10px;font-weight:700;color:var(--text2);padding:4px 2px 8px;display:flex;justify-content:space-between}
 </style>
 </head>
 <body>
@@ -170,8 +183,13 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
           3. Asigná actividades y %
         </div>
       </div>
-      <div class="slabel" style="padding:12px 14px 4px">Áreas definidas</div>
+      <div class="sidebar-tabs">
+  <button class="stab active" id="tabAreas" onclick="switchTab('areas')">Áreas</button>
+  <button class="stab" id="tabActs" onclick="switchTab('acts')">Actividades</button>
+</div>
+<div class="slabel" style="padding:8px 14px 4px" id="panelAreasLabel">Áreas definidas</div>
       <div class="slist" id="sList"><div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin áreas aún.</div></div>
+<div class="slist" id="actPanel" style="display:none;padding:8px"></div>
       <button class="expbtn" style="background:#e05548;margin-bottom:4px" onclick="limpiarAreas()">🗑 Limpiar todas las áreas</button>
       <button class="expbtn" onclick="exportXLSX()">↓ Exportar tabla BASE (.xlsx)</button>
 <button class="expbtn" style="background:var(--brand-dark);margin-top:4px" onclick="guardarTrabajo()">↓ Exportar actividades (.json)</button>
@@ -331,6 +349,81 @@ const AREA_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','
 const ACT_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0'];
 
 let currentSuc=null,DXF=null,currentFloor=null;
+  let actData={};
+const EXCLUDED_ACT=['STV','SPY','ST3','EES'];
+(async function loadActData(){
+  try{
+    const r=await fetch('datos-act_sucursales.csv');
+    if(!r.ok) return;
+    const txt=await r.text();
+    const lines=txt.replace(/^\uFEFF/,'').split('\n').filter(l=>l.trim());
+    for(let i=1;i<lines.length;i++){
+      const c=lines[i].split(';');
+      if(c.length<6) continue;
+      const code=c[0].trim(),act=c[1].trim();
+      const tieneMts2=c[4].trim().toUpperCase()==='SI';
+      const tieneFte=c[5].trim().toUpperCase()==='SI';
+      const fteVal=parseFloat((c[3]||'').replace(',','.').trim())||0;
+      if(!code||!act) continue;
+      if(!actData[code]) actData[code]=[];
+      actData[code].push({actividad:act,fteVal,tieneMts2,tieneFte});
+    }
+  }catch(e){console.warn('No se pudo cargar datos-act_sucursales.csv',e);}
+})();
+
+function switchTab(tab){
+  const isAreas=tab==='areas';
+  document.getElementById('tabAreas').classList.toggle('active',isAreas);
+  document.getElementById('tabActs').classList.toggle('active',!isAreas);
+  document.getElementById('panelAreasLabel').style.display=isAreas?'':'none';
+  document.getElementById('sList').style.display=isAreas?'':'none';
+  document.getElementById('actPanel').style.display=isAreas?'none':'';
+  if(!isAreas) renderActPanel();
+}
+
+function getAssignedActivities(){
+  const assigned=new Set();
+  areas.forEach(a=>a.activities.forEach(act=>assigned.add(act.name.toUpperCase())));
+  const floors=currentSuc?MULTI_FLOOR[currentSuc.code]:null;
+  if(floors) floors.forEach(f=>{try{const d=localStorage.getItem(`areas_${currentSuc.code}_${f.id}`);if(d) JSON.parse(d).forEach(a=>a.activities.forEach(act=>assigned.add(act.name.toUpperCase())));}catch(e){}});
+  return assigned;
+}
+
+function renderActPanel(){
+  const panel=document.getElementById('actPanel');
+  if(!currentSuc||EXCLUDED_ACT.includes(currentSuc.code)){
+    panel.innerHTML='<div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin datos para esta sucursal.</div>';return;
+  }
+  const data=actData[currentSuc.code];
+  if(!data||!data.length){
+    panel.innerHTML='<div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin actividades registradas para esta sucursal.</div>';return;
+  }
+  const assigned=getAssignedActivities();
+  const covered=data.filter(d=>assigned.has(d.actividad.toUpperCase())).length;
+  const warns=data.filter(d=>d.tieneFte&&!assigned.has(d.actividad.toUpperCase())).length;
+  const warnBadge=warns>0?`<span style="background:#fff3cd;color:#856404;padding:1px 7px;border-radius:10px;font-size:9px;font-weight:700">${warns} pendientes con FTE</span>`:'';
+  panel.innerHTML=`<div class="act-panel-head"><span>${covered}/${data.length} asignadas</span>${warnBadge}</div>`+
+    data.map(d=>{
+      const isCov=assigned.has(d.actividad.toUpperCase());
+      const isWarn=d.tieneFte&&!isCov;
+      const cls=isCov?'covered':isWarn?'fte-warn':'';
+      const icon=isCov?'✓':isWarn?'!':'';
+      const short=d.actividad.length>26?d.actividad.slice(0,24)+'..':d.actividad;
+      const fteStr=d.fteVal>0?`${d.fteVal} FTE`:'';
+      return `<div class="act-check-item ${cls}"><div class="act-check-icon">${icon}</div><div class="act-check-name" title="${d.actividad}">${short}</div><div class="act-check-fte ${d.fteVal>0?'has-fte':''}">${fteStr}</div></div>`;
+    }).join('');
+}
+
+function checkBeforeExport(){
+  if(!currentSuc||EXCLUDED_ACT.includes(currentSuc.code)) return true;
+  const data=actData[currentSuc.code];
+  if(!data||!data.length) return true;
+  const assigned=getAssignedActivities();
+  const ftePend=data.filter(d=>d.tieneFte&&!assigned.has(d.actividad.toUpperCase()));
+  if(!ftePend.length) return true;
+  const list=ftePend.map(d=>`• ${d.actividad}${d.fteVal>0?' ('+d.fteVal+' FTE)':''}`).join('\n');
+  return confirm(`⚠ Estas actividades tienen FTE asignado pero no están en el dibujo:\n\n${list}\n\n¿Exportar igual?`);
+}
 const MULTI_FLOOR={
   AVE:[
     {id:'PB',name:'Planta Baja',file:'Ave. Planta Bajadxf.dxf',piso:'PB'},
@@ -742,6 +835,7 @@ function updateList(){
   }).join('');
   document.getElementById('totArea').textContent=areas.reduce((s,a)=>s+a.totalArea,0).toFixed(2)+' m²';
   document.getElementById('totN').textContent=areas.length;
+    if(document.getElementById('actPanel').style.display!=='none') renderActPanel();
 }
 
 function selectArea(i){selectedArea=selectedArea===i?null:i;updateList();render();}
@@ -886,6 +980,7 @@ function getFamilia(actName){
   return '';
 }
 function exportXLSX(){
+    if(!checkBeforeExport()) return;
   saveAreas();
   const floors=currentSuc?MULTI_FLOOR[currentSuc.code]:null;
   let exportAreas=[];
@@ -1011,6 +1106,7 @@ if(v==='LINE'){
   return res;
 }
 function exportSVG(){
+  if(!checkBeforeExport()) return;
   if(!DXF||!DXF.bbox){alert('No hay plano cargado.');return;}
   const{min_x,max_x,min_y,max_y}=DXF.bbox;
   const W=max_x-min_x,H=max_y-min_y;
