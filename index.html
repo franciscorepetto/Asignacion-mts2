@@ -15,7 +15,7 @@
 }
 body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:auto}
 header{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;border-bottom:2px solid var(--brand);background:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(51,194,202,.12)}
-.logo-text{font-size:22px;font-weight:800;letter-spacing:-.5px;color:#1a1a1a}
+.logo-text{font-size:22px;font-weight:800;letter-spacing:-.5px;color:#1a1a1a;cursor:pointer}
 .header-mid{font-size:13px;font-weight:600;color:var(--text2)}
 .header-mid span{color:var(--brand);font-weight:700}
 .hmeta{font-size:11px;font-weight:600;color:var(--text3);background:var(--brand-light);padding:4px 10px;border-radius:20px;border:1px solid var(--brand-mid);font-family:monospace}
@@ -161,7 +161,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 <body>
 
 <header>
-  <div class="logo-text">OCASA</div>
+  <div class="logo-text" onclick="goBack()">OCASA</div>
   <div class="header-mid" id="headerMid">Layout de Sucursales</div>
   <div class="hmeta" id="coords" style="display:none">x: —  y: —</div>
   <div class="hmeta" id="rectArea" style="display:none">— m²</div>
@@ -204,10 +204,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 <div class="slabel" style="padding:8px 14px 4px" id="panelAreasLabel">Áreas definidas</div>
       <div class="slist" id="sList"><div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin áreas aún.</div></div>
 <div class="slist" id="actPanel" style="display:none;padding:8px"></div>
-      <button class="expbtn" style="background:#e05548;margin-bottom:4px" onclick="limpiarAreas()">🗑 Limpiar todas las áreas</button>
-      <button class="expbtn" onclick="exportXLSX()">↓ Exportar tabla BASE (.xlsx)</button>
-<button class="expbtn" style="background:var(--brand-dark);margin-top:4px" onclick="guardarTrabajo()">↓ Exportar actividades (.json)</button>
-<button class="expbtn" style="background:#7c3aed;margin-top:4px" onclick="exportSVG()">↓ Exportar plano (.svg)</button>
+     <button class="expbtn" style="background:#e05548" onclick="limpiarAreas()">🗑 Limpiar todas las áreas</button>
+<button class="expbtn" onclick="exportXLSX()">↓ Exportar tabla BASE (.xlsx)</button>
+<button class="expbtn" style="background:var(--brand-dark)" onclick="guardarTrabajo()">↓ Exportar actividades (.json)</button>
+<button class="expbtn" style="background:#7c3aed" onclick="exportSVG()">↓ Exportar plano (.svg)</button>
       <div class="summary">
         <div class="srow"><span class="skey">Total asignado</span><span class="sval" id="totArea">0.00 m²</span></div>
         <div class="srow"><span class="skey">Áreas</span><span class="sval" id="totN">0</span></div>
@@ -783,6 +783,14 @@ function updateActividades(){
 function selectActividad(){
   const act=document.getElementById('actSelect').value;
   if(!act) return;
+  if(currentSuc&&!EXCLUDED_ACT.includes(currentSuc.code)){
+    const data=actData[currentSuc.code]||[];
+    const entry=data.find(d=>d.actividad.toUpperCase()===act.toUpperCase());
+    if(!entry||!entry.tieneFte){
+      const motivo=!entry?'no figura en la nómina de esta sucursal':'no tiene FTE asignado en la nómina';
+      alert(`⚠ "${act}" ${motivo}.\nVerificá si corresponde incluirla en el dibujo.`);
+    }
+  }
   const emptyIdx=modalRows.findIndex(r=>!r.name);
   if(emptyIdx>=0){modalRows[emptyIdx].name=act;}else{const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:act,pct:Math.max(1,100-used),client:'',piso:'PB',observacion:'',otrosMode:false});}
   renderModalRows();
