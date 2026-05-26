@@ -277,15 +277,14 @@ const SUCURSALES=[
   {code:'AVE',name:'Avellaneda',available:true},
   {code:'ZUL',name:'Azul',available:true},
   {code:'BHI',name:'Bahía Blanca',available:true},
-  {code:'BEL',name:'Belgrano',available:true},
-  {code:'CAT',name:'Catamarca',available:false},
+  {code:'BLG',name:'Belgrano',available:true},
+  {code:'CTC',name:'Catamarca',available:false},
   {code:'CDN',name:'Centro Dist. Norte',available:false},
   {code:'CRD',name:'Comodoro Rivadavia',available:true},
-  {code:'CBA',name:'Córdoba La Voz',available:true},
+  {code:'COR',name:'Córdoba La Voz',available:true},
   {code:'CO2',name:'Córdoba Circunvalación',available:true},
-  {code:'CPR',name:'Córdoba Paraná',available:false},
-  {code:'CTE',name:'Corrientes',available:false},
-  {code:'ESQ',name:'Esquel',available:true},
+  {code:'CNQ',name:'Corrientes',available:false},
+  {code:'EQS',name:'Esquel',available:true},
   {code:'EES',name:'Esteban Echeverría',available:true},
   {code:'EZE',name:'Ezeiza',available:true},
   {code:'FLO',name:'Flores',available:true},
@@ -293,40 +292,40 @@ const SUCURSALES=[
   {code:'IRI',name:'Iriarte',available:true},
   {code:'JUJ',name:'Jujuy',available:false},
   {code:'LCA',name:'La Carlota',available:true},
-  {code:'LRJ',name:'La Rioja',available:true},
+  {code:'IRJ',name:'La Rioja',available:true},
   {code:'MDQ',name:'Mar del Plata',available:true},
   {code:'MTZ',name:'Martínez',available:true},
   {code:'MDZ',name:'Mendoza',available:true},
   {code:'NQN',name:'Neuquén',available:true},
-  {code:'OTT',name:'Malvinas Argentinas (Otto)',available:true},
+  {code:'MVA',name:'Malvinas Argentinas (Otto)',available:true},
   {code:'PRA',name:'Paraná',available:true},
   {code:'PIL',name:'Pilar',available:false},
   {code:'PLO',name:'Plaza Logística',available:true},
-  {code:'POS',name:'Posadas',available:true},
+  {code:'PSS',name:'Posadas',available:true},
   {code:'RAF',name:'Rafaela',available:true},
   {code:'RAW',name:'Rawson',available:false},
   {code:'RES',name:'Resistencia',available:false},
   {code:'RCU',name:'Río Cuarto',available:true},
   {code:'RGL',name:'Río Gallegos',available:false},
-  {code:'RGR',name:'Río Grande',available:false},
+  {code:'RGA',name:'Río Grande',available:false},
   {code:'ROS',name:'Rosario',available:true},
   {code:'SPY',name:'Salta Paraguay',available:true},
   {code:'SRA',name:'Salta Ragone',available:false},
   {code:'STV',name:'Salta Tavella',available:true},
   {code:'ST3',name:'Salta Tavella III',available:true},
-  {code:'SFC',name:'San Francisco',available:false},
+  {code:'FCO',name:'San Francisco',available:false},
   {code:'UAQ',name:'San Juan',available:true},
   {code:'LUQ',name:'San Luis',available:true},
   {code:'SFE',name:'Santa Fe (Santo Tomé)',available:true},
   {code:'RSA',name:'Santa Rosa',available:true},
-  {code:'SGO',name:'Santiago del Estero',available:true},
+  {code:'SDE',name:'Santiago del Estero',available:true},
   {code:'RDI',name:'Sarandí',available:true},
-  {code:'TOR',name:'Tortuguitas',available:false},
+  {code:'MV2',name:'Tortuguitas',available:false},
   {code:'REL',name:'Trelew',available:true},
   {code:'TUC',name:'Tucumán',available:true},
   {code:'USH',name:'Ushuaia',available:false},
   {code:'VDM',name:'Viedma',available:false},
-  {code:'VMR',name:'Villa María',available:false}
+  {code:'VMA',name:'Villa María',available:false}
 ];
 const AREA_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0','#b5341a','#057a3a','#c45c00','#1a4db5'];
 const ACT_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0'];
@@ -481,7 +480,7 @@ async function enterLayout(){
   const btn=document.getElementById('enterBtn');
   btn.disabled=true;btn.textContent='Cargando plano...';
   try{
-    const file=({MDQ:'Galpon 21.1+2.2_MDQ_v2013 (1) - Mar del Plata.dxf',RDI:'RDI Sarandi mts2.dxf',RSA:'RSA La Pampa mts2.dxf',SFE:'Santa fe - Santo tome mts2.dxf',LUQ:'San Luis mts2.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',LCA:'LCA-2021 09 13 PLANO FINAL LA CARLOTA.dxf',ESQ:'Copia de EQS-ESQUEL Lay Out-r05.dxf',BHI:'Bahia Blanca mts2.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',POS:'Posadas mts2.dxf',AEP:'Copia de AEP-ILUM MMTO-R01 (1).dxf',EZE:'EZE-mod. EZE .PROPUUESTA 2025-01-29..dxf',BAH:'Copia de BHI-Bahia Blanca.V4 - ARQUITECTURA (1).dxf',LRJ:'La Rioja mts2.dxf',STV:'SLT.dxf',SPY:'',CBA:'Copia de COR-LA VOZ-Base xref-04 - CORRECCION CORTINA RAPIDA version 2004.dwg.dxf',TUC:'M2 Tucuman.dxf',IRI:'Iriarte Planta Baja.dxf',IR2:'Iriarte Subsuelo.dxf',IR3:'Iriarte Primer Piso A.dxf',IR4:'Iriarte Primer Piso B.dxf',UAQ:'San Juan mts2.dxf',REL:'Trelew mts2.dxf',RCU:'Rio Cuarto mts2.dxf',SGO:'SDE - Mudanza sucursal Obras (1).dxf',FMA:'FMA-Formosa - Plantas 09-Ago-2019.dxf',OTT:'MVA-OTTO- BASE.dxf',PRA:'PRA-Layout OCASA.dxf',PLO:'Soldati.dxf',RAF:'RAF-JUAN JOSE PASO 2277 RAFAELA SANTA FE V2 15-ENE-2021.dxf',ZUL:'ZUL-AZUL ETAPA 2 ARQ.dxf',CRD:'CRD-Mterio Salud Chubut-R03.dxf',CO2:'CBA_CIRCUNVALACION.dxf',BEL:'BLG-Echeverria 1217 - TABLEROS ELECTRICOS - R01.dxf',EES:'EEV-Plaza Logistica Echeverria - Interiorismo Etapas 1 y 2.dxf',ROS:'Rosario mts2.dxf'})[currentSuc.code];
+    const file=({MDQ:'Galpon 21.1+2.2_MDQ_v2013 (1) - Mar del Plata.dxf',RDI:'RDI Sarandi mts2.dxf',RSA:'RSA La Pampa mts2.dxf',SFE:'Santa fe - Santo tome mts2.dxf',LUQ:'San Luis mts2.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',LCA:'LCA-2021 09 13 PLANO FINAL LA CARLOTA.dxf',EQS:'Copia de EQS-ESQUEL Lay Out-r05.dxf',BHI:'Bahia Blanca mts2.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',PSS:'Posadas mts2.dxf',AEP:'Copia de AEP-ILUM MMTO-R01 (1).dxf',EZE:'EZE-mod. EZE .PROPUUESTA 2025-01-29..dxf',BAH:'Copia de BHI-Bahia Blanca.V4 - ARQUITECTURA (1).dxf',IRJ:'La Rioja mts2.dxf',STV:'SLT.dxf',SPY:'',COR:'Copia de COR-LA VOZ-Base xref-04 - CORRECCION CORTINA RAPIDA version 2004.dwg.dxf',TUC:'M2 Tucuman.dxf',IRI:'Iriarte Planta Baja.dxf',IR2:'Iriarte Subsuelo.dxf',IR3:'Iriarte Primer Piso A.dxf',IR4:'Iriarte Primer Piso B.dxf',UAQ:'San Juan mts2.dxf',REL:'Trelew mts2.dxf',RCU:'Rio Cuarto mts2.dxf',SDE:'SDE - Mudanza sucursal Obras (1).dxf',FMA:'FMA-Formosa - Plantas 09-Ago-2019.dxf',MVA:'MVA-OTTO- BASE.dxf',PRA:'PRA-Layout OCASA.dxf',PLO:'Soldati.dxf',RAF:'RAF-JUAN JOSE PASO 2277 RAFAELA SANTA FE V2 15-ENE-2021.dxf',ZUL:'ZUL-AZUL ETAPA 2 ARQ.dxf',CRD:'CRD-Mterio Salud Chubut-R03.dxf',CO2:'CBA_CIRCUNVALACION.dxf',BLG:'BLG-Echeverria 1217 - TABLEROS ELECTRICOS - R01.dxf',EES:'EEV-Plaza Logistica Echeverria - Interiorismo Etapas 1 y 2.dxf',ROS:'Rosario mts2.dxf'})[currentSuc.code];
     const url=file.startsWith('http')?file:'mapas/planos/'+file.replace(/ /g,'%20');
     const resp=await fetch(url);
     if(!resp.ok) throw new Error('HTTP '+resp.status);
