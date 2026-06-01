@@ -441,12 +441,13 @@ function renderActOverlay(){
   if(!data||!data.length){ov.style.display='none';return;}
   ov.style.display='flex';
   const assigned=getAssignedActivities();
-  const covered=data.filter(d=>assigned.has(d.actividad.toUpperCase())).length;
-  document.getElementById('actOvTitle').textContent=`Actividades (${covered}/${data.length})`;
-  document.getElementById('actOvBody').innerHTML=data.map(d=>{
+  const visible=data.filter(d=>d.tieneFte||assigned.has(d.actividad.toUpperCase()));
+  const fteTotal=data.filter(d=>d.tieneFte).length;
+  const fteCov=data.filter(d=>d.tieneFte&&assigned.has(d.actividad.toUpperCase())).length;
+  document.getElementById('actOvTitle').textContent=`Actividades (${fteCov}/${fteTotal})`;
+  document.getElementById('actOvBody').innerHTML=visible.map(d=>{
     const isCov=assigned.has(d.actividad.toUpperCase());
-    const isWarn=d.tieneFte&&!isCov;
-    const dotCol=isCov?(d.tieneFte?'#22c55e':'#e05548'):isWarn?'#f0a500':'#d1d5db';
+    const dotCol=isCov?(d.tieneFte?'#22c55e':'#e05548'):d.tieneFte?'#f0a500':'#d1d5db';
     const short=d.actividad.length>22?d.actividad.slice(0,20)+'..':d.actividad;
     const fteStr=d.fteVal>0?`${d.fteVal} FTE`:'';
     return `<div class="act-ov-row"><div class="act-ov-dot" style="background:${dotCol}"></div><div class="act-ov-name" title="${d.actividad}">${short}</div>${fteStr?`<div class="act-ov-fte">— ${fteStr}</div>`:''}</div>`;
