@@ -872,7 +872,7 @@ function saveModal(){
   updateList();saveAreas();render();
 }
 
-function saveAreas(){if(!currentSuc)return;const key=currentFloor?`areas_${currentSuc.code}_${currentFloor.id}`:`areas_${currentSuc.code}`;localStorage.setItem(key,JSON.stringify(areas));}
+function saveAreas(){if(!currentSuc)return;const key=currentFloor?`areas_${currentSuc.code}_${currentFloor.id}`:`areas_${currentSuc.code}`;localStorage.setItem(key,JSON.stringify(areas));if(window.filterSucursales)window.filterSucursales(document.getElementById('sucSearch')?.value||'');}
   
 function closeModal(cancel){if(cancel) curPts=[];pendingPts=null;editingIdx=-1;canvas._snapPt=null;document.getElementById('modalBg').style.display='none';render();}
 
