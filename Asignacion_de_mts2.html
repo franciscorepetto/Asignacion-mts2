@@ -156,14 +156,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 .act-ov-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .act-ov-name{flex:1;font-weight:600;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .act-ov-fte{font-weight:500;color:var(--text2);font-size:9px;white-space:nowrap;flex-shrink:0}
-.pasillo-table{width:100%;border-collapse:collapse;font-size:10px}
-.pasillo-table th{background:var(--brand-light);color:var(--brand-dark);font-weight:700;padding:5px 8px;text-align:left;border:1px solid var(--border);white-space:nowrap;position:sticky;top:0}
-.pasillo-table td{padding:4px 8px;border:1px solid var(--border);color:var(--text);white-space:nowrap}
-.pasillo-table tr:nth-child(even) td{background:var(--surface2)}
-.pasillo-table-wrap{max-height:360px;overflow:auto;border:1px solid var(--border);border-radius:6px;margin-top:10px}
-.pasillo-stat{background:var(--brand-light);border:1px solid var(--brand-mid);border-radius:8px;padding:6px 14px;font-size:11px;font-weight:500;color:var(--text2)}
-.pasillo-stat strong{font-weight:800;color:var(--brand-dark);font-size:15px;display:block}
-.pasillo-summary{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
 </style>
 </head>
 <body>
@@ -215,7 +207,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
      <button class="expbtn" style="background:#e05548" onclick="limpiarAreas()">🗑 Limpiar todas las áreas</button>
 <button class="expbtn" onclick="exportXLSX()">↓ Exportar tabla BASE (.xlsx)</button>
 <button class="expbtn" style="background:var(--brand-dark)" onclick="guardarTrabajo()">↓ Exportar actividades (.json)</button>
-<button class="expbtn" style="background:#7c3aed" onclick="exportSVG()">↓ Exportar plano (.svg)</button>
       <div class="summary">
         <div class="srow"><span class="skey">Total asignado</span><span class="sval" id="totArea">0.00 m²</span></div>
         <div class="srow"><span class="skey">Áreas</span><span class="sval" id="totN">0</span></div>
@@ -240,9 +231,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
         <div class="tbtn" id="btnR" onclick="setMode('rect')" title="Rectángulo">▭</div>
         <div class="tbtn" id="btnPan" onclick="setMode('pan')" title="Mover (Espacio)">✋</div>
         <div class="tbtn" onclick="undoVertex()" title="Deshacer vértice">↩</div>
-                <div style="height:1px;background:var(--border);margin:2px 4px"></div>
-        <div class="tbtn" id="btnPin" onclick="setMode('pin')" title="Marcar pasillo">⊕</div>
-        <div class="tbtn" id="btnPasVis" onclick="togglePasillos()" title="Ver/ocultar pasillos">◉</div>
       </div>
       <div class="scalebar" id="scalebar">—</div>
     </div>
@@ -254,28 +242,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
     <h3 id="floorSelTitle" style="margin-bottom:16px">Seleccioná el piso</h3>
     <div id="floorSelBtns" style="display:flex;flex-direction:column;gap:8px"></div>
     <button class="btn-secondary" style="width:100%;margin-top:14px" onclick="closeFSel()">← Volver</button>
-  </div>
-</div>
-<div class="modal-bg" id="pinSelBg" style="display:none" onclick="if(event.target===this)closePinSel()">
-  <div class="modal" style="min-width:280px;max-width:340px">
-    <h3>Marcar pasillo</h3>
-    <div class="sub">Seleccioná el pasillo para este punto del plano</div>
-    <select id="pinSelSelect" style="width:100%;padding:9px;border:1.5px solid var(--border);border-radius:6px;font-family:'Montserrat',sans-serif;font-size:12px;margin-bottom:14px;outline:none"></select>
-    <div class="modal-footer">
-      <button class="btn-primary" onclick="confirmPin()">Colocar pin</button>
-      <button class="btn-secondary" onclick="closePinSel()">Cancelar</button>
-    </div>
-  </div>
-</div>
-<div class="modal-bg" id="pasilloInfoBg" style="display:none" onclick="if(event.target===this)closePasilloInfo()">
-  <div class="modal" style="min-width:min(820px,92vw);max-width:92vw">
-    <h3 id="pasilloInfoTitle" style="font-size:20px;letter-spacing:-.5px">Pasillo</h3>
-    <div class="pasillo-summary" id="pasilloInfoSummary"></div>
-    <div class="pasillo-table-wrap"><table class="pasillo-table" id="pasilloInfoTable"></table></div>
-    <div class="modal-footer" style="margin-top:14px">
-      <button class="btn-secondary" onclick="closePasilloInfo()">Cerrar</button>
-      <button class="btn-secondary" style="background:#fef2f2;border-color:#fca5a5;color:#e05548" onclick="deletePinPrompt()">🗑 Eliminar pin</button>
-    </div>
   </div>
 </div>
   <div class="modal-bg" id="modalBg" style="display:none" onclick="if(event.target===this)closeModal(true)">
@@ -404,66 +370,6 @@ const ACT_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#
 
 let currentSuc=null,DXF=null,currentFloor=null;
   let actData={};
-  let pasillosData={},pasilloHeaders=[],pins=[],showPasillos=true,pendingPinCoords=null,activePinIdx=null;
-async function loadPasillosData(){
-  if(!currentSuc||pasillosData[currentSuc.code]) return;
-  try{
-    const r=await fetch(`pasillos_${currentSuc.code.toLowerCase()}.csv`);
-    if(!r.ok) return;
-    const txt=await r.text();
-    const lines=txt.replace(/^\uFEFF/,'').split('\n').filter(l=>l.trim());
-    pasilloHeaders=lines[0].split(',').map(h=>h.trim());
-    const iP=pasilloHeaders.indexOf('Pasillo');
-    pasillosData[currentSuc.code]={};
-    for(let i=1;i<lines.length;i++){const cols=lines[i].split(',').map(c=>c.trim());const p=cols[iP];if(!p)continue;if(!pasillosData[currentSuc.code][p])pasillosData[currentSuc.code][p]=[];pasillosData[currentSuc.code][p].push(cols);}
-  }catch(e){console.warn('No se pudo cargar pasillos',e);}
-}
-function savePins(){if(!currentSuc)return;localStorage.setItem((currentFloor?`pins_${currentSuc.code}_${currentFloor.id}`:`pins_${currentSuc.code}`),JSON.stringify(pins));}
-function loadPins(){if(!currentSuc)return;try{const d=localStorage.getItem(currentFloor?`pins_${currentSuc.code}_${currentFloor.id}`:`pins_${currentSuc.code}`);pins=d?JSON.parse(d):[];}catch(e){pins=[];}}
-function renderPins(){
-  if(!showPasillos||!DXF) return;
-  pins.forEach(pin=>{
-    const[sx,sy]=toS(pin.wx,pin.wy);
-    if(sx<-60||sx>canvas.width+60||sy<-60||sy>canvas.height+60) return;
-    const fs=Math.max(9,Math.min(12,scale*4));
-    ctx.font=`700 ${fs}px 'Montserrat',sans-serif`;
-    const tw=ctx.measureText(pin.name).width,pw=tw+14,ph=fs+10;
-    ctx.shadowColor='rgba(0,0,0,.25)';ctx.shadowBlur=5;
-    ctx.fillStyle='#7c3aed';ctx.beginPath();ctx.roundRect(sx-pw/2,sy-ph/2,pw,ph,5);ctx.fill();
-    ctx.shadowBlur=0;
-    ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(pin.name,sx,sy);
-    ctx.fillStyle='#7c3aed';ctx.beginPath();ctx.arc(sx,sy+ph/2+3,3,0,Math.PI*2);ctx.fill();
-  });
-  ctx.shadowBlur=0;ctx.textAlign='left';ctx.textBaseline='alphabetic';
-}
-function togglePasillos(){showPasillos=!showPasillos;document.getElementById('btnPasVis').classList.toggle('active-tool',showPasillos);render();}
-function openPinSelector(wx,wy){
-  const pd=pasillosData[currentSuc?.code];
-  if(!pd||!Object.keys(pd).length){alert('No hay datos de pasillos para esta sucursal.');return;}
-  pendingPinCoords=[wx,wy];
-  const sel=document.getElementById('pinSelSelect');
-  sel.innerHTML='<option value="">— seleccionar pasillo —</option>'+Object.keys(pd).sort().map(p=>`<option value="${p}">${p} (${pd[p].length} posiciones)</option>`).join('');
-  document.getElementById('pinSelBg').style.display='flex';
-}
-function closePinSel(){document.getElementById('pinSelBg').style.display='none';pendingPinCoords=null;}
-function confirmPin(){const sel=document.getElementById('pinSelSelect');if(!sel.value){alert('Seleccioná un pasillo');return;}if(!pendingPinCoords)return;pins.push({name:sel.value,wx:pendingPinCoords[0],wy:pendingPinCoords[1]});savePins();closePinSel();render();}
-function showPasilloInfo(idx){
-  activePinIdx=idx;
-  const pin=pins[idx];
-  const pd=pasillosData[currentSuc?.code];
-  if(!pd||!pd[pin.name]){alert('Sin datos para este pasillo');return;}
-  const rows=pd[pin.name];
-  document.getElementById('pasilloInfoTitle').textContent=`Pasillo ${pin.name}`;
-  const iTipo=pasilloHeaders.indexOf('Tipo de Almacenamiento');
-  const tipos=[...new Set(rows.map(r=>r[iTipo]).filter(Boolean))];
-  document.getElementById('pasilloInfoSummary').innerHTML=`<div class="pasillo-stat"><strong>${rows.length}</strong>Posiciones totales</div>`+tipos.map(t=>`<div class="pasillo-stat"><strong>${rows.filter(r=>r[iTipo]===t).length}</strong>${t}</div>`).join('');
-  const skip=new Set([0,1,pasilloHeaders.indexOf('Pasillo')]);
-  const showIdx=pasilloHeaders.map((_,i)=>i).filter(i=>!skip.has(i));
-  document.getElementById('pasilloInfoTable').innerHTML=`<thead><tr>${showIdx.map(i=>`<th>${pasilloHeaders[i]}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${showIdx.map(i=>`<td>${r[i]||'—'}</td>`).join('')}</tr>`).join('')}</tbody>`;
-  document.getElementById('pasilloInfoBg').style.display='flex';
-}
-function closePasilloInfo(){document.getElementById('pasilloInfoBg').style.display='none';activePinIdx=null;}
-function deletePinPrompt(){if(activePinIdx===null)return;if(!confirm(`¿Eliminar el pin "${pins[activePinIdx].name}"?`))return;pins.splice(activePinIdx,1);savePins();closePasilloInfo();render();}
 const EXCLUDED_ACT=['STV','SPY','ST3','EES'];
 (async function loadActData(){
   try{
@@ -552,19 +458,6 @@ function toggleActOverlay(){
   const hide=body.style.display!=='none';
   body.style.display=hide?'none':'';
   btn.textContent=hide?'▸':'▾';
-}
-function checkBeforeExport(){
-  if(!currentSuc||EXCLUDED_ACT.includes(currentSuc.code)) return true;
-  const data=actData[currentSuc.code];
-  if(!data||!data.length) return true;
-  const assigned=getAssignedActivities();
-   const ftePend=data.filter(d=>d.tieneFte&&!assigned.has(d.actividad.toUpperCase()));
-  const drawnNoFte=data.filter(d=>!d.tieneFte&&assigned.has(d.actividad.toUpperCase()));
-  if(!ftePend.length&&!drawnNoFte.length) return true;
-  let msg='';
-  if(ftePend.length) msg+=`⚠ Actividades con FTE no incluidas en el dibujo:\n${ftePend.map(d=>`• ${d.actividad}${d.fteVal>0?' ('+d.fteVal+' FTE)':''}`).join('\n')}\n\n`;
-  if(drawnNoFte.length) msg+=`⚠ Actividades dibujadas sin FTE en la nómina:\n${drawnNoFte.map(d=>`• ${d.actividad}`).join('\n')}\n\n`;
-  return confirm(msg+'¿Exportar igual?');;
 }
 const MULTI_FLOOR={
   AVE:[
@@ -690,7 +583,7 @@ async function enterFloor(floor){
   document.getElementById('backBtn').style.display='flex';
   areas=[];colIdx=0;selectedArea=null;
   try{const saved=localStorage.getItem(`areas_${currentSuc.code}_${floor.id}`);if(saved){areas=JSON.parse(saved);colIdx=areas.length;updateList();}}catch(e){}
-    renderFloorTabs();initCanvas();renderActOverlay();loadPins();loadPasillosData();
+    renderFloorTabs();initCanvas();renderActOverlay();
 }
 async function switchFloor(floorId){
   if(currentFloor&&currentFloor.id===floorId) return;
@@ -733,7 +626,7 @@ async function enterLayout(){
   document.getElementById('backBtn').style.display='flex';
   areas=[];colIdx=0;selectedArea=null;
   try{const saved=localStorage.getItem('areas_'+currentSuc.code);if(saved){areas=JSON.parse(saved);colIdx=areas.length;updateList();}}catch(e){}
-    initCanvas();renderActOverlay();loadPins();loadPasillosData();
+    initCanvas();renderActOverlay();
 }
 
 function goBack(){
@@ -742,7 +635,7 @@ function goBack(){
   document.getElementById('coords').style.display='none';
   document.getElementById('backBtn').style.display='none';
   document.getElementById('headerMid').innerHTML='Layout de Sucursales';
-  areas=[];curPts=[];selectedArea=null;colIdx=0;canvas._snapPt=null;currentFloor=null;pins=[];document.getElementById('floorTabs').style.display='none';updateList();
+  areas=[];curPts=[];selectedArea=null;colIdx=0;canvas._snapPt=null;currentFloor=null;document.getElementById('floorTabs').style.display='none';updateList();
   document.querySelectorAll('.suc-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('enterBtn').disabled=true;
   document.getElementById('enterBtn').textContent='Ingresar al layout →';
@@ -834,7 +727,6 @@ if(_la>0){
   if(curPts.length>0){ctx.beginPath();curPts.forEach((p,i)=>{const[sx,sy]=toS(p[0],p[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});ctx.strokeStyle='#33c2ca';ctx.lineWidth=2;ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);curPts.forEach(p=>{const[sx,sy]=toS(p[0],p[1]);ctx.beginPath();ctx.arc(sx,sy,5,0,Math.PI*2);ctx.fillStyle='#33c2ca';ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.fill();ctx.stroke();});}
   if(canvas._snapPt&&mode==='draw'){const[sx,sy]=toS(canvas._snapPt[0],canvas._snapPt[1]);ctx.beginPath();ctx.arc(sx,sy,9,0,Math.PI*2);ctx.strokeStyle='#33c2ca';ctx.lineWidth=2.5;ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.arc(sx,sy,3,0,Math.PI*2);ctx.fillStyle='#33c2ca';ctx.fill();}
   document.getElementById('scalebar').textContent=(10/scale).toFixed(1)+'m = 10px';
-  renderPins();
 }
 
 function openModal(pts,existing,aIdx){
@@ -994,9 +886,9 @@ function selectArea(i){selectedArea=selectedArea===i?null:i;updateList();render(
 function editArea(i){selectedArea=i;openModal(areas[i].pts,areas[i],i);updateList();render();}
 function deleteArea(i){if(!confirm('¿Eliminar "'+(areas[i].name||'Área '+(i+1))+'"?')) return;areas.splice(i,1);if(selectedArea===i) selectedArea=null;else if(selectedArea>i) selectedArea--;updateList();saveAreas();render();}
   
-canvas.addEventListener('click',e=>{if(!panning&&showPasillos){for(let i=pins.length-1;i>=0;i--){const[sx,sy]=toS(pins[i].wx,pins[i].wy);const dx=e.offsetX-sx,dy=e.offsetY-sy;if(dx*dx+dy*dy<625){showPasilloInfo(i);return;}}}if(panning||panMode&&panning) return;if(panMode) return;if(mode==='pin'){const[wx,wy]=toW(e.offsetX,e.offsetY);openPinSelector(wx,wy);return;}if(mode==='draw'){const[wx,wy]=toW(e.offsetX,e.offsetY);const snap=snapToVertex(wx,wy);curPts.push(snap||[wx,wy]);canvas._snapPt=null;render();}else{const[wx,wy]=toW(e.offsetX,e.offsetY);let found=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}selectedArea=found;updateList();render();}});
+canvas.addEventListener('click',e=>{if(panning||panMode&&panning) return;if(panMode) return;if(mode==='draw'){const[wx,wy]=toW(e.offsetX,e.offsetY);const snap=snapToVertex(wx,wy);curPts.push(snap||[wx,wy]);canvas._snapPt=null;render();}else{const[wx,wy]=toW(e.offsetX,e.offsetY);let found=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}selectedArea=found;updateList();render();}});
 canvas.addEventListener('dblclick',e=>{if(panMode||mode!=='draw') return;if(curPts.length<3){curPts=[];render();return;}const pts=[...curPts];curPts=[];canvas._snapPt=null;openModal(pts,null,null);});
-canvas.addEventListener('mousemove',e=>{if(!DXF) return;if(showPasillos&&pins.length){let onPin=false;for(const pin of pins){const[sx,sy]=toS(pin.wx,pin.wy);const dx=e.offsetX-sx,dy=e.offsetY-sy;if(dx*dx+dy*dy<625){onPin=true;break;}}if(onPin){canvas.style.cursor='pointer';return;}}const[wx,wy]=toW(e.offsetX,e.offsetY);const bb=DXF.bbox;
+canvas.addEventListener('mousemove',e=>{if(!DXF) return;const[wx,wy]=toW(e.offsetX,e.offsetY);const bb=DXF.bbox;
 document.getElementById('coords').textContent='x: '+(wx-bb.min_x).toFixed(1)+'m  y: '+(wy-bb.min_y).toFixed(1)+'m';
 if(mode==='rect'&&rectStart){const rw=Math.abs(wx-rectStart[0]),rh=Math.abs(wy-rectStart[1]);document.getElementById('rectArea').textContent=(rw*rh).toFixed(1)+' m²';document.getElementById('rectArea').style.display='block';}
 else{document.getElementById('rectArea').style.display='none';}
@@ -1057,8 +949,7 @@ function setMode(m){
   document.getElementById('btnD').classList.toggle('active-tool',m==='draw');
   document.getElementById('btnR').classList.toggle('active-tool',m==='rect');
   document.getElementById('btnPan').classList.toggle('active-tool',m==='pan');
-  document.getElementById('btnPin').classList.toggle('active-tool',m==='pin');
-  canvas.style.cursor=m==='pan'?'grab':m==='pin'?'cell':m==='draw'||m==='rect'?'crosshair':'default';
+  canvas.style.cursor=m==='pan'?'grab':m==='draw'||m==='rect'?'crosshair':'default';
   document.getElementById('instrTxt').innerHTML=m==='draw'?'<strong>Modo polígono:</strong><br>1. Clic = vértice del área<br>2. Doble clic = cerrar polígono<br>3. Asigná actividades y %':m==='rect'?'<strong>Modo rectángulo:</strong><br>1. Clic y arrastrá para dibujar<br>2. Soltá para confirmar':'<strong>Modo mover:</strong><br>Clic y arrastrá para mover el plano<br><kbd>Espacio</kbd> también activa este modo';
   updateList();render();
 }
@@ -1265,87 +1156,6 @@ if(v==='LINE'){
   res.polys.forEach(p=>p.pts.forEach(([px,py])=>{bx0=Math.min(bx0,px);bx1=Math.max(bx1,px);by0=Math.min(by0,py);by1=Math.max(by1,py);}));
   res.bbox=extValid?{min_x:x0,max_x:x1,min_y:y0,max_y:y1}:(bx0<Infinity?{min_x:bx0,max_x:bx1,min_y:by0,max_y:by1}:{min_x:0,max_x:100,min_y:0,max_y:100});
   return res;
-}
-function exportSVG(){
-  if(!checkBeforeExport()) return;
-  if(!DXF||!DXF.bbox){alert('No hay plano cargado.');return;}
-  const{min_x,max_x,min_y,max_y}=DXF.bbox;
-  const W=max_x-min_x,H=max_y-min_y;
-  const PANEL=230,sc=1500/Math.max(W,H);
-  const svgW=(W*sc)+PANEL,svgH=Math.max(H*sc,areas.length*42+60);
-  const tx=x=>((x-min_x)*sc).toFixed(1);
-  const ty=y=>((max_y-y)*sc).toFixed(1);
-  const fs=Math.max(6,Math.min(14,W*sc/80)).toFixed(1);
-  const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-   let svg=`<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW.toFixed(1)} ${svgH.toFixed(1)}" style="background:#f5f5f5;font-family:Montserrat,sans-serif">`;
-  svg+=`<defs><style><![CDATA[
-    .ag{cursor:pointer}.ag polygon{transition:fill-opacity .15s}.ag:hover polygon{fill-opacity:0.65!important}
-    .pb{cursor:pointer}.pb:hover rect{opacity:.75}
-  ]]></style></defs>`;
-  svg+=`<rect width="${(W*sc).toFixed(1)}" height="${svgH.toFixed(1)}" fill="#f5f5f5"/>`;
-  svg+=`<g stroke="#2a3a3b" fill="none" stroke-width="0.5">`;
-  DXF.lines.forEach(l=>svg+=`<line x1="${tx(l.x1)}" y1="${ty(l.y1)}" x2="${tx(l.x2)}" y2="${ty(l.y2)}"/>`);
-  DXF.polys.forEach(p=>{const pts=p.pts.map(([x,y])=>`${tx(x)},${ty(y)}`).join(' ');svg+=p.closed?`<polygon points="${pts}"/>`:`<polyline points="${pts}"/>`;});
-  svg+=`</g><g id="agroup">`;
-  areas.forEach((a,i)=>{
-    const pts=a.pts.map(([x,y])=>`${tx(x)},${ty(y)}`).join(' ');
-    const cx=tx(a.pts.reduce((s,p)=>s+p[0],0)/a.pts.length);
-    const cy=ty(a.pts.reduce((s,p)=>s+p[1],0)/a.pts.length);
-    const info=esc(JSON.stringify({name:a.name||'Área '+(i+1),area:(a.totalArea||0).toFixed(1),acts:a.activities||[]}));
-    svg+=`<g class="ag" id="a${i}" data-i="${info}">`;
-    svg+=`<polygon points="${pts}" fill="${a.color}" fill-opacity="0.3" stroke="${a.color}" stroke-width="1.5"/>`;
-    if(a.name)svg+=`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-size="${fs}" fill="${a.color}" font-weight="700" pointer-events="none">${esc(a.name)}</text>`;
-    svg+=`</g>`;
-  });
-  svg+=`</g>`;
-  const px=W*sc;
-  svg+=`<rect x="${px.toFixed(1)}" y="0" width="${PANEL}" height="${svgH.toFixed(1)}" fill="#fff" stroke="#e0e0e0"/>`;
-  svg+=`<text x="${(px+PANEL/2).toFixed(1)}" y="30" text-anchor="middle" font-size="13" font-weight="700" fill="#1a2a3a">Áreas</text>`;
-  areas.forEach((a,i)=>{
-    const by=50+i*42;
-    svg+=`<g class="pb" id="pb${i}" onclick="tog(${i})">`;
-    svg+=`<rect x="${(px+10).toFixed(1)}" y="${by}" width="${PANEL-20}" height="34" rx="7" fill="${a.color}" fill-opacity="0.13" stroke="${a.color}" stroke-width="1.2"/>`;
-    svg+=`<rect x="${(px+16).toFixed(1)}" y="${by+11}" width="12" height="12" rx="2" fill="${a.color}" id="dot${i}"/>`;
-    svg+=`<text x="${(px+34).toFixed(1)}" y="${by+21}" font-size="10" font-weight="600" fill="${a.color}">${esc(a.name||'Área '+(i+1))}</text>`;
-    svg+=`<text x="${(px+PANEL-14).toFixed(1)}" y="${by+21}" text-anchor="end" font-size="9" fill="#888">${(a.totalArea||0).toFixed(1)}m²</text>`;
-    svg+=`</g>`;
-  });
-  svg+=`<g id="tt" style="display:none" transform="translate(0,0)" pointer-events="none">
-    <rect id="ttbg" rx="8" fill="white" stroke="#ccc" stroke-width="1"/>
-    <text id="ttc" font-size="10" fill="#1a2a3a"></text>
-  </g>`;
-  svg+=`<script>//<![CDATA[
-const tt=document.getElementById('tt'),ttbg=document.getElementById('ttbg'),ttc=document.getElementById('ttc');
-const hidden={};
-function tog(i){
-  hidden[i]=!hidden[i];
-  document.getElementById('a'+i).style.display=hidden[i]?'none':'';
-  document.getElementById('dot'+i).setAttribute('fill-opacity',hidden[i]?'0.25':'1');
-  document.getElementById('pb'+i).style.opacity=hidden[i]?'0.45':'1';
-}
-document.querySelectorAll('.ag').forEach(g=>{
-  g.addEventListener('mouseenter',function(){
-    const d=JSON.parse(this.getAttribute('data-i'));
-    ttc.innerHTML='';
-    const rows=[d.name+' · '+d.area+'m²',...(d.acts||[]).map(a=>a.name+': '+a.pct+'%')];
-    rows.forEach((r,i)=>{const t=document.createElementNS('http://www.w3.org/2000/svg','tspan');t.setAttribute('x','10');t.setAttribute('dy',i===0?'16':'14');t.setAttribute('font-weight',i===0?'700':'400');t.textContent=r;ttc.appendChild(t);});
-    const h=rows.length*14+12,w=Math.max(...rows.map(r=>r.length))*6+20;
-    ttbg.setAttribute('width',w);ttbg.setAttribute('height',h);tt.style.display='';
-  });
-  g.addEventListener('mousemove',function(e){
-    const s=document.querySelector('svg'),p=s.createSVGPoint();
-    p.x=e.clientX;p.y=e.clientY;
-    const sp=p.matrixTransform(s.getScreenCTM().inverse());
-    tt.setAttribute('transform','translate('+(sp.x+14)+','+(sp.y+14)+')');
-  });
-  g.addEventListener('mouseleave',()=>tt.style.display='none');
-});
-//]]><\/script></svg>`;
-  const blob=new Blob([svg],{type:'image/svg+xml'});
-  const url=URL.createObjectURL(blob);
-  const el=document.createElement('a');el.href=url;
-  el.download=`${currentSuc.code}${currentFloor?'_'+currentFloor.id:''}.svg`;
-  el.click();URL.revokeObjectURL(url);
 }
 canvas.addEventListener('mouseleave',()=>document.getElementById('areaTooltip').style.display='none');
 </script>
