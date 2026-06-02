@@ -140,6 +140,7 @@ canvas{display:block}
     <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0">
       <div class="cwrap" id="cwrap">
         <div class="toolbar">
+          <div class="tbtn" id="btnSel" onclick="setMode('select')" title="Seleccionar">↖</div>
           <div class="tbtn active-tool" id="btnD" onclick="setMode('draw')" title="Polígono">▷</div>
           <div class="tbtn" id="btnR" onclick="setMode('rect')" title="Rectángulo">▭</div>
           <div class="tbtn" id="btnPan" onclick="setMode('pan')" title="Mover">✋</div>
@@ -483,6 +484,7 @@ function setType(t){
 }
 function setMode(m){
   mode=m;panMode=(m==='pan');curPts=[];canvas._snapPt=null;rectStart=null;rectCurrent=null;selectedArea=null;
+  document.getElementById('btnSel').classList.toggle('active-tool',m==='select');
   document.getElementById('btnD').classList.toggle('active-tool',m==='draw');
   document.getElementById('btnR').classList.toggle('active-tool',m==='rect');
   document.getElementById('btnPan').classList.toggle('active-tool',m==='pan');
@@ -501,8 +503,9 @@ function openAssignModal(pts){
   document.getElementById('atBtnCol').classList.remove('active');
   document.getElementById('assignConfirmBtn').className='btn-pas';
   // Llenar opciones de pasillo
-  fillPasilloOptions();
+   fillPasilloOptions();
   showAssignFields();
+  autoDetectParentPasillo(pts);
   document.getElementById('assignBg').style.display='flex';
 }
 function setAssignType(t){
@@ -517,7 +520,7 @@ function showAssignFields(){
   document.getElementById('assignPasilloField').style.display=isPas?'block':'none';
   document.getElementById('assignParentField').style.display=isPas?'none':'block';
   document.getElementById('assignColumnaField').style.display=isPas?'none':'block';
-  if(!isPas){fillParentOptions();fillColumnaOptions();}
+  if(!isPas){fillParentOptions();fillColumnaOptions();autoDetectParentPasillo(assignPendingPts);}
 }
 function fillPasilloOptions(){
   const sel=document.getElementById('assignPasilloSel');sel.innerHTML='';
@@ -594,7 +597,20 @@ function openInfoModal(i){
   document.getElementById('infoBg').style.display='flex';
 }
 function closeInfo(){document.getElementById('infoBg').style.display='none';}
-  
+function autoDetectParentPasillo(pts){
+  if(assignType!=='columna') return;
+  const cx=pts.reduce((s,p)=>s+p[0],0)/pts.length;
+  const cy=pts.reduce((s,p)=>s+p[1],0)/pts.length;
+  const pasillosDibujados=areas.filter(a=>a.type==='pasillo');
+  for(let i=0;i<pasillosDibujados.length;i++){
+    if(pip([cx,cy],pasillosDibujados[i].pts)){
+      const sel=document.getElementById('assignParentSel');
+      sel.value=pasillosDibujados[i].name;
+      fillColumnaOptions();
+      return;
+    }
+  }
+}
 function saveAreas(){if(!currentSuc)return;const key=currentFloor?`pc_areas_${currentSuc.code}_${currentFloor.id}`:`pc_areas_${currentSuc.code}`;localStorage.setItem(key,JSON.stringify(areas));if(window.filterSucursales)window.filterSucursales(document.getElementById('sucSearch')?.value||'');}
 function updateList(){
   const list=document.getElementById('sList');
