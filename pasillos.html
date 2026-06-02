@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--brand:#33c2ca;--brand-dark:#1fa8b0;--brand-light:#e8f9fa;--brand-mid:#b2e8eb;--bg:#f4f6f7;--surface:#fff;--surface2:#f0f8f9;--border:#d8eef0;--text:#1a1a1a;--text2:#5a6a6b;--text3:#a0b4b5;--pas:#ef4444;--col:#f59e0b;}
+:root{--brand:#33c2ca;--brand-dark:#1fa8b0;--brand-light:#e8f9fa;--brand-mid:#b2e8eb;--bg:#f4f6f7;--surface:#fff;--surface2:#f0f8f9;--border:#d8eef0;--text:#1a1a1a;--text2:#5a6a6b;--text3:#a0b4b5;--pas:#009CA3;--col:#97BF0D;}
 body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:auto}
 header{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;border-bottom:2px solid var(--brand);background:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(51,194,202,.12)}
 .logo-text{font-size:22px;font-weight:800;letter-spacing:-.5px;color:#1a1a1a;cursor:pointer}
@@ -292,7 +292,7 @@ let currentType='pasillo';
 let pasillosCSV={};   // { IATA: { PASILLO: [rows...] } }
 let assignPendingPts=null, assignType='pasillo';
 let pendingPts=null;
-const PAS_COLOR='#ef4444',COL_COLOR='#f59e0b';
+const PAS_COLOR='#009CA3',COL_COLOR='#97BF0D';
 const canvas=document.getElementById('fp');
 const ctx=canvas.getContext('2d');
 const wrap=document.getElementById('cwrap');
@@ -580,12 +580,12 @@ canvas.addEventListener('click',e=>{
   if(panning||panMode&&panning) return;if(panMode) return;
   if(mode==='draw'){const[wx,wy]=toW(e.offsetX,e.offsetY);const snap=snapToVertex(wx,wy);curPts.push(snap||[wx,wy]);canvas._snapPt=null;render();}
   else{
-  const[wx,wy]=toW(e.offsetX,e.offsetY);
-  let found=null;
-  for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}
-  if(found!==null&&found===selectedArea){openInfoModal(found);}
-  else{selectedArea=found;updateList();render();}
-}
+    const[wx,wy]=toW(e.offsetX,e.offsetY);
+    let found=null;
+    for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}
+    if(found!==null){selectedArea=found;updateList();render();openInfoModal(found);}
+    else{selectedArea=null;updateList();render();}
+  }
 });
 canvas.addEventListener('dblclick',e=>{if(panMode||mode!=='draw') return;if(curPts.length<3){curPts=[];render();return;}openAssignModal([...curPts]);});
 canvas.addEventListener('mousemove',e=>{
