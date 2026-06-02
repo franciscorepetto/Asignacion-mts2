@@ -129,13 +129,6 @@ canvas{display:block}
 <div id="app" style="display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0">
   <div class="app-body">
     <div id="sidebar">
-      <div class="sb-section">
-        <div class="sb-title">Tipo de marcado</div>
-        <div class="type-row">
-          <button class="type-btn pasillo active-type" id="btnPasillo" onclick="setType('pasillo')">🟥 Pasillo</button>
-          <button class="type-btn columna" id="btnColumna" onclick="setType('columna')">🟨 Columna</button>
-        </div>
-      </div>
       <div id="floorTabs" style="display:none"></div>
       <div class="sb-scroll" id="sList"><div style="padding:6px;color:var(--text3);font-size:11px;font-weight:500">Sin marcas aún.</div></div>
       <div class="sb-summary" id="sbSummary"></div>
@@ -586,10 +579,9 @@ function openInfoModal(i){
   if(rows.length){
     const cedido=rows.filter(r=>r['Tipo de Almacenamiento']==='Espacio Cedido').length;
     statsDiv.innerHTML=`<div class="stat-chip"><span class="stat-val">${rows.length}</span><span class="stat-lbl">Posiciones totales</span></div>`+
-      (cedido?`<div class="stat-chip"><span class="stat-val">${cedido}</span><span class="stat-lbl">Espacio Cedido</span></div>`:'')+
-      `<div class="stat-chip"><span class="stat-val">${a.totalArea.toFixed(1)} m²</span><span class="stat-lbl">Superficie</span></div>`;
+      (cedido?`<div class="stat-chip"><span class="stat-val">${cedido}</span><span class="stat-lbl">Espacio Cedido</span></div>`:'');
   } else {
-    statsDiv.innerHTML=`<div class="stat-chip"><span class="stat-val">${a.totalArea.toFixed(1)} m²</span><span class="stat-lbl">Superficie</span></div>`;
+    statsDiv.innerHTML='';
   }
   const tbl=document.getElementById('infoTable');
   if(rows.length){
@@ -610,7 +602,7 @@ function updateList(){
   list.innerHTML=areas.map((a,i)=>{
     const isSel=selectedArea===i;
     const parentInfo=a.type==='columna'&&a.pasilloParent?`<div class="sitem-parent">↳ Pasillo ${a.pasilloParent}</div>`:'';
-return `<div class="sitem${isSel?' selected':''}" onclick="selectArea(${i})" ondblclick="openInfoModal(${i})"><div class="sitem-header"><div class="scolor-dot" style="background:${a.color}"></div><div class="sname">${a.name}</div><span class="stype-badge ${a.type}">${a.type==='pasillo'?'Pasillo':'Columna'}</span><div class="sarea-badge">${a.totalArea.toFixed(1)} m²</div><button class="sdel" onclick="event.stopPropagation();deleteArea(${i})" title="Eliminar">✕</button></div>${parentInfo}</div>`;
+return `<div class="sitem${isSel?' selected':''}" onclick="selectArea(${i})" ondblclick="openInfoModal(${i})"><div class="sitem-header"><div class="scolor-dot" style="background:${a.color}"></div><div class="sname">${a.name}</div><span class="stype-badge ${a.type}">${a.type==='pasillo'?'Pasillo':'Columna'}</span><button class="sdel" onclick="event.stopPropagation();deleteArea(${i})" title="Eliminar">✕</button></div>${parentInfo}</div>`;
   }).join('');
   const nPas=areas.filter(a=>a.type==='pasillo').length;
   const nCol=areas.filter(a=>a.type==='columna').length;
@@ -624,7 +616,7 @@ function deleteArea(i){if(!confirm('¿Eliminar "'+areas[i].name+'"?')) return;ar
 function limpiarAreas(){if(!areas.length) return;if(!confirm('¿Borrar todas las marcas?')) return;areas=[];selectedArea=null;saveAreas();updateList();render();}
 
 canvas.addEventListener('click',e=>{
-  if(panning||panMode&&panning) return;if(panMode) return;
+  if(panning||panMode&&panning) return;if(panMode) return;if(mode==='rect') return;
   if(mode==='draw'){const[wx,wy]=toW(e.offsetX,e.offsetY);const snap=snapToVertex(wx,wy);curPts.push(snap||[wx,wy]);canvas._snapPt=null;render();}
   else{
     const[wx,wy]=toW(e.offsetX,e.offsetY);
