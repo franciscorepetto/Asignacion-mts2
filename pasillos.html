@@ -570,6 +570,39 @@ function cancelAssign(){
   assignPendingPts=null;curPts=[];canvas._snapPt=null;render();
 }
 
+function openInfoModal(i){
+  const a=areas[i];
+  const iata=currentSuc?.code;
+  let rows=[];
+  if(a.type==='pasillo'&&iata&&pasillosCSV[iata]){
+    rows=pasillosCSV[iata][a.name]||[];
+  } else if(a.type==='columna'&&iata&&pasillosCSV[iata]&&a.pasilloParent){
+    rows=(pasillosCSV[iata][a.pasilloParent]||[]).filter(r=>r['Columna']===a.name);
+  }
+  const title=document.getElementById('infoTitle');
+  title.textContent=(a.type==='pasillo'?'Pasillo ':'Columna ')+a.name+(a.pasilloParent?' — Pasillo '+a.pasilloParent:'');
+  title.style.color=a.color;
+  const statsDiv=document.getElementById('infoStats');
+  if(rows.length){
+    const cedido=rows.filter(r=>r['Tipo de Almacenamiento']==='Espacio Cedido').length;
+    statsDiv.innerHTML=`<div class="stat-chip"><span class="stat-val">${rows.length}</span><span class="stat-lbl">Posiciones totales</span></div>`+
+      (cedido?`<div class="stat-chip"><span class="stat-val">${cedido}</span><span class="stat-lbl">Espacio Cedido</span></div>`:'')+
+      `<div class="stat-chip"><span class="stat-val">${a.totalArea.toFixed(1)} m²</span><span class="stat-lbl">Superficie</span></div>`;
+  } else {
+    statsDiv.innerHTML=`<div class="stat-chip"><span class="stat-val">${a.totalArea.toFixed(1)} m²</span><span class="stat-lbl">Superficie</span></div>`;
+  }
+  const tbl=document.getElementById('infoTable');
+  if(rows.length){
+    const cols=['Nave','Tipo de Almacenamiento','Posicion','Tipo de Posicion','Division Horizontal','Piso','Columna','Altura','Largo','Alto','Ancho','Peso'];
+    tbl.innerHTML='<thead><tr>'+cols.map(c=>`<th>${c}</th>`).join('')+'</tr></thead><tbody>'+
+      rows.map(r=>'<tr>'+cols.map(c=>`<td>${r[c]||''}</td>`).join('')+'</tr>').join('')+'</tbody>';
+  } else {
+    tbl.innerHTML='<tr><td style="padding:20px;color:var(--text3);font-size:12px;text-align:center">Sin datos CSV para esta área.</td></tr>';
+  }
+  document.getElementById('infoBg').style.display='flex';
+}
+function closeInfo(){document.getElementById('infoBg').style.display='none';}
+  
 function saveAreas(){if(!currentSuc)return;const key=currentFloor?`pc_areas_${currentSuc.code}_${currentFloor.id}`:`pc_areas_${currentSuc.code}`;localStorage.setItem(key,JSON.stringify(areas));if(window.filterSucursales)window.filterSucursales(document.getElementById('sucSearch')?.value||'');}
 function updateList(){
   const list=document.getElementById('sList');
