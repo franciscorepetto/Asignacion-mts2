@@ -206,7 +206,21 @@ canvas{display:block}
     </div>
   </div>
 </div>
-
+<!-- Modal: info pasillo/columna -->
+<div class="modal-bg" id="infoBg" style="display:none" onclick="if(event.target===this)closeInfo()">
+  <div class="modal info-modal">
+    <div class="info-modal-head">
+      <h3 id="infoTitle">—</h3>
+      <div class="info-stats" id="infoStats"></div>
+    </div>
+    <div class="info-table-wrap">
+      <table class="info-table" id="infoTable"></table>
+    </div>
+    <div style="padding:12px 28px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn-secondary" onclick="closeInfo()">Cerrar</button>
+    </div>
+  </div>
+</div>
 <!-- Modal: seleccionar piso -->
 <div class="modal-bg" id="floorSelBg" style="display:none" onclick="if(event.target===this)closeFSel()">
   <div class="modal">
