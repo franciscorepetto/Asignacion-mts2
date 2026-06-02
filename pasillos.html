@@ -82,6 +82,26 @@ canvas{display:block}
 .btn-secondary:hover{border-color:var(--brand);color:var(--brand)}
 .btn-pas{padding:10px 18px;border:none;background:var(--pas);color:#fff;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;cursor:pointer}
 .btn-col{padding:10px 18px;border:none;background:var(--col);color:#fff;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;cursor:pointer}
+.info-modal{max-width:860px;width:95vw;max-height:85vh;display:flex;flex-direction:column;padding:0;overflow:hidden}
+.info-modal-head{padding:24px 28px 16px;border-bottom:1px solid var(--border)}
+.info-modal-head h3{font-size:20px;font-weight:800;margin-bottom:10px}
+.info-stats{display:flex;gap:12px;flex-wrap:wrap}
+.stat-chip{background:var(--brand-light);border:1.5px solid var(--brand-mid);border-radius:10px;padding:8px 16px;text-align:center}
+.stat-chip .stat-val{font-size:22px;font-weight:800;color:var(--brand-dark);display:block}
+.stat-chip .stat-lbl{font-size:10px;font-weight:600;color:var(--text2)}
+.info-table-wrap{overflow:auto;flex:1;padding:0 28px 20px}
+.info-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:14px}
+.info-table th{background:var(--brand-light);color:var(--brand-dark);font-weight:700;padding:7px 10px;text-align:left;border-bottom:2px solid var(--brand-mid);white-space:nowrap;position:sticky;top:0}
+.info-table td{padding:6px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+.info-table tr:hover td{background:var(--surface2)}
+.assign-field{margin-bottom:14px}
+.assign-field label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-dark);display:block;margin-bottom:5px}
+.assign-field select,.assign-field input[type=text]{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;outline:none}
+.assign-field select:focus,.assign-field input[type=text]:focus{border-color:var(--brand)}
+.assign-type-row{display:flex;gap:10px;margin-bottom:16px}
+.assign-type-btn{flex:1;padding:10px;border:2px solid var(--border);background:#fff;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;border-radius:10px;cursor:pointer;transition:all .15s;color:var(--text2)}
+.assign-type-btn.active.pasillo{border-color:var(--pas);background:#fef2f2;color:var(--pas)}
+.assign-type-btn.active.columna{border-color:var(--col);background:#fffbeb;color:#b45309}
 </style>
 </head>
 <body>
@@ -143,15 +163,46 @@ canvas{display:block}
   </div>
 </div>
 
-<!-- Modal: seleccionar tipo al cerrar polígono -->
-<div class="modal-bg" id="typeBg" style="display:none">
+<!-- Modal: asignar área -->
+<div class="modal-bg" id="assignBg" style="display:none" onclick="if(event.target===this)cancelAssign()">
   <div class="modal">
-    <h3>¿Qué tipo de área es?</h3>
-    <p style="font-size:12px;color:var(--text2);margin-top:6px">Superficie: <strong id="typeModalArea">—</strong></p>
-    <div class="modal-footer" style="justify-content:center;gap:16px;margin-top:20px">
-      <button class="btn-pas" onclick="confirmType('pasillo')">🟥 Pasillo</button>
-      <button class="btn-col" onclick="confirmType('columna')">🟨 Columna</button>
-      <button class="btn-secondary" onclick="cancelType()">Cancelar</button>
+    <h3>Configurar área</h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Superficie: <strong id="assignAreaVal">—</strong></p>
+    <div class="assign-type-row">
+      <button class="assign-type-btn pasillo active" id="atBtnPas" onclick="setAssignType('pasillo')">🟥 Pasillo</button>
+      <button class="assign-type-btn columna" id="atBtnCol" onclick="setAssignType('columna')">🟨 Columna</button>
+    </div>
+    <div class="assign-field" id="assignPasilloField">
+      <label>Código de pasillo</label>
+      <select id="assignPasilloSel"></select>
+    </div>
+    <div class="assign-field" id="assignParentField" style="display:none">
+      <label>Pasillo al que pertenece</label>
+      <select id="assignParentSel" onchange="fillColumnaOptions()"></select>
+    </div>
+    <div class="assign-field" id="assignColumnaField" style="display:none">
+      <label>Columna</label>
+      <select id="assignColSel"></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="cancelAssign()">Cancelar</button>
+      <button class="btn-pas" id="assignConfirmBtn" onclick="confirmAssign()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: info pasillo/columna -->
+<div class="modal-bg" id="infoBg" style="display:none" onclick="if(event.target===this)closeInfo()">
+  <div class="modal info-modal">
+    <div class="info-modal-head">
+      <h3 id="infoTitle">—</h3>
+      <div class="info-stats" id="infoStats"></div>
+    </div>
+    <div class="info-table-wrap">
+      <table class="info-table" id="infoTable"></table>
+    </div>
+    <div style="padding:12px 28px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn-secondary" onclick="closeInfo()">Cerrar</button>
     </div>
   </div>
 </div>
@@ -238,11 +289,33 @@ let curPts=[],areas=[],selectedArea=null;
 let panning=false,panStart=null,panOff=null;
 let rectStart=null,rectCurrent=null;
 let currentType='pasillo';
+let pasillosCSV={};   // { IATA: { PASILLO: [rows...] } }
+let assignPendingPts=null, assignType='pasillo';
 let pendingPts=null;
 const PAS_COLOR='#ef4444',COL_COLOR='#f59e0b';
 const canvas=document.getElementById('fp');
 const ctx=canvas.getContext('2d');
 const wrap=document.getElementById('cwrap');
+
+async function loadPasillosCSV(){
+  try{
+    const r=await fetch('pasillos_rdi.csv');if(!r.ok)return;
+    const lines=(await r.text()).split(/\r?\n/);
+    const headers=lines[0].split(',').map(h=>h.trim());
+    pasillosCSV={};
+    for(let i=1;i<lines.length;i++){
+      const vals=lines[i].split(',').map(v=>v.trim());
+      if(vals.length<headers.length)continue;
+      const row={};headers.forEach((h,j)=>row[h]=vals[j]||'');
+      const iata=row['IATA'],pas=row['Pasillo'];
+      if(!iata||!pas||pas==='Pasillo')continue;
+      if(!pasillosCSV[iata])pasillosCSV[iata]={};
+      if(!pasillosCSV[iata][pas])pasillosCSV[iata][pas]=[];
+      pasillosCSV[iata][pas].push(row);
+    }
+  }catch(e){console.warn('CSV no cargado:',e);}
+}
+loadPasillosCSV();
 
 (function buildSplash(){
   const list=document.getElementById('sucGrid');
@@ -412,22 +485,76 @@ function setMode(m){
 }
 function undoVertex(){if(curPts.length){curPts.pop();render();}}
 
-function openTypeModal(pts){
-  pendingPts=pts;
-  document.getElementById('typeModalArea').textContent=polyArea(pts).toFixed(2)+' m²';
-  document.getElementById('typeBg').style.display='flex';
+function openAssignModal(pts){
+  assignPendingPts=pts;
+  assignType='pasillo';
+  document.getElementById('assignAreaVal').textContent=polyArea(pts).toFixed(2)+' m²';
+  // Tipo activo
+  document.getElementById('atBtnPas').classList.add('active');
+  document.getElementById('atBtnCol').classList.remove('active');
+  document.getElementById('assignConfirmBtn').className='btn-pas';
+  // Llenar opciones de pasillo
+  fillPasilloOptions();
+  showAssignFields();
+  document.getElementById('assignBg').style.display='flex';
 }
-function confirmType(type){
-  document.getElementById('typeBg').style.display='none';
-  if(!pendingPts) return;
-  const col=type==='pasillo'?PAS_COLOR:COL_COLOR;
-  const counts=areas.filter(a=>a.type===type).length;
-  const label=(type==='pasillo'?'Pasillo':'Columna')+' '+(counts+1);
-  areas.push({pts:pendingPts,totalArea:polyArea(pendingPts),type,color:col,name:label});
-  pendingPts=null;curPts=[];canvas._snapPt=null;
+function setAssignType(t){
+  assignType=t;
+  document.getElementById('atBtnPas').classList.toggle('active',t==='pasillo');
+  document.getElementById('atBtnCol').classList.toggle('active',t==='columna');
+  document.getElementById('assignConfirmBtn').className=t==='pasillo'?'btn-pas':'btn-col';
+  showAssignFields();
+}
+function showAssignFields(){
+  const isPas=assignType==='pasillo';
+  document.getElementById('assignPasilloField').style.display=isPas?'block':'none';
+  document.getElementById('assignParentField').style.display=isPas?'none':'block';
+  document.getElementById('assignColumnaField').style.display=isPas?'none':'block';
+  if(!isPas){fillParentOptions();fillColumnaOptions();}
+}
+function fillPasilloOptions(){
+  const sel=document.getElementById('assignPasilloSel');sel.innerHTML='';
+  const iata=currentSuc?.code;
+  const csvPas=iata&&pasillosCSV[iata]?Object.keys(pasillosCSV[iata]).sort():[];
+  if(csvPas.length){csvPas.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;sel.appendChild(o);});}
+  else{const o=document.createElement('option');o.value='P'+(areas.filter(a=>a.type==='pasillo').length+1);o.textContent=o.value;sel.appendChild(o);}
+}
+function fillParentOptions(){
+  const sel=document.getElementById('assignParentSel');sel.innerHTML='';
+  const pasillosDibujados=areas.filter(a=>a.type==='pasillo');
+  pasillosDibujados.forEach(a=>{const o=document.createElement('option');o.value=a.name;o.textContent=a.name;sel.appendChild(o);});
+  if(!pasillosDibujados.length){const o=document.createElement('option');o.value='';o.textContent='— Primero dibujá un pasillo —';sel.appendChild(o);}
+}
+function fillColumnaOptions(){
+  const sel=document.getElementById('assignColSel');sel.innerHTML='';
+  const parent=document.getElementById('assignParentSel').value;
+  const iata=currentSuc?.code;
+  const rows=iata&&pasillosCSV[iata]&&pasillosCSV[iata][parent]?pasillosCSV[iata][parent]:[];
+  const cols=[...new Set(rows.map(r=>r['Columna']))].sort();
+  if(cols.length){cols.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});}
+  else{const o=document.createElement('option');o.value='COL'+(areas.filter(a=>a.type==='columna').length+1);o.textContent=o.value;sel.appendChild(o);}
+}
+function confirmAssign(){
+  const pts=assignPendingPts;if(!pts)return;
+  let name,pasilloParent=null;
+  if(assignType==='pasillo'){
+    name=document.getElementById('assignPasilloSel').value||'P'+(areas.filter(a=>a.type==='pasillo').length+1);
+  } else {
+    pasilloParent=document.getElementById('assignParentSel').value;
+    const colVal=document.getElementById('assignColSel').value;
+    if(!pasilloParent){alert('Seleccioná un pasillo primero.');return;}
+    name=colVal;
+  }
+  const col=assignType==='pasillo'?PAS_COLOR:COL_COLOR;
+  areas.push({pts,totalArea:polyArea(pts),type:assignType,color:col,name,pasilloParent});
+  assignPendingPts=null;curPts=[];canvas._snapPt=null;
+  document.getElementById('assignBg').style.display='none';
   saveAreas();updateList();render();
 }
-function cancelType(){document.getElementById('typeBg').style.display='none';pendingPts=null;curPts=[];canvas._snapPt=null;render();}
+function cancelAssign(){
+  document.getElementById('assignBg').style.display='none';
+  assignPendingPts=null;curPts=[];canvas._snapPt=null;render();
+}
 
 function saveAreas(){if(!currentSuc)return;const key=currentFloor?`pc_areas_${currentSuc.code}_${currentFloor.id}`:`pc_areas_${currentSuc.code}`;localStorage.setItem(key,JSON.stringify(areas));if(window.filterSucursales)window.filterSucursales(document.getElementById('sucSearch')?.value||'');}
 function updateList(){
@@ -435,22 +562,32 @@ function updateList(){
   if(!areas.length){list.innerHTML='<div style="padding:6px;color:var(--text3);font-size:11px;font-weight:500">Sin marcas aún.</div>';document.getElementById('sbSummary').innerHTML='';return;}
   list.innerHTML=areas.map((a,i)=>{
     const isSel=selectedArea===i;
-    return `<div class="sitem${isSel?' selected':''}" onclick="selectArea(${i})"><div class="sitem-header"><div class="scolor-dot" style="background:${a.color}"></div><div class="sname">${a.name}</div><span class="stype-badge ${a.type}">${a.type==='pasillo'?'Pasillo':'Columna'}</span><div class="sarea-badge">${a.totalArea.toFixed(1)} m²</div><button class="sdel" onclick="event.stopPropagation();deleteArea(${i})" title="Eliminar">✕</button></div></div>`;
+    const parentInfo=a.type==='columna'&&a.pasilloParent?`<div class="sitem-parent">↳ Pasillo ${a.pasilloParent}</div>`:'';
+return `<div class="sitem${isSel?' selected':''}" onclick="selectArea(${i})" ondblclick="openInfoModal(${i})"><div class="sitem-header"><div class="scolor-dot" style="background:${a.color}"></div><div class="sname">${a.name}</div><span class="stype-badge ${a.type}">${a.type==='pasillo'?'Pasillo':'Columna'}</span><div class="sarea-badge">${a.totalArea.toFixed(1)} m²</div><button class="sdel" onclick="event.stopPropagation();deleteArea(${i})" title="Eliminar">✕</button></div>${parentInfo}</div>`;
   }).join('');
   const nPas=areas.filter(a=>a.type==='pasillo').length;
   const nCol=areas.filter(a=>a.type==='columna').length;
   document.getElementById('sbSummary').innerHTML=`<div class="sum-chip"><div class="sum-dot" style="background:${PAS_COLOR}"></div>${nPas} pasillo${nPas!==1?'s':''}</div><div class="sum-chip"><div class="sum-dot" style="background:${COL_COLOR}"></div>${nCol} columna${nCol!==1?'s':''}</div>`;
 }
-function selectArea(i){selectedArea=selectedArea===i?null:i;updateList();render();}
+function selectArea(i){
+  if(selectedArea===i){openInfoModal(i);return;}
+  selectedArea=i;updateList();render();
+}
 function deleteArea(i){if(!confirm('¿Eliminar "'+areas[i].name+'"?')) return;areas.splice(i,1);if(selectedArea===i) selectedArea=null;else if(selectedArea>i) selectedArea--;updateList();saveAreas();render();}
 function limpiarAreas(){if(!areas.length) return;if(!confirm('¿Borrar todas las marcas?')) return;areas=[];selectedArea=null;saveAreas();updateList();render();}
 
 canvas.addEventListener('click',e=>{
   if(panning||panMode&&panning) return;if(panMode) return;
   if(mode==='draw'){const[wx,wy]=toW(e.offsetX,e.offsetY);const snap=snapToVertex(wx,wy);curPts.push(snap||[wx,wy]);canvas._snapPt=null;render();}
-  else{const[wx,wy]=toW(e.offsetX,e.offsetY);let found=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}selectedArea=found;updateList();render();}
+  else{
+  const[wx,wy]=toW(e.offsetX,e.offsetY);
+  let found=null;
+  for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}
+  if(found!==null&&found===selectedArea){openInfoModal(found);}
+  else{selectedArea=found;updateList();render();}
+}
 });
-canvas.addEventListener('dblclick',e=>{if(panMode||mode!=='draw') return;if(curPts.length<3){curPts=[];render();return;}openTypeModal([...curPts]);});
+canvas.addEventListener('dblclick',e=>{if(panMode||mode!=='draw') return;if(curPts.length<3){curPts=[];render();return;}openAssignModal([...curPts]);});
 canvas.addEventListener('mousemove',e=>{
   if(!DXF) return;
   const[wx,wy]=toW(e.offsetX,e.offsetY);const bb=DXF.bbox;
@@ -465,42 +602,99 @@ canvas.addEventListener('mouseup',e=>{
     const[wx,wy]=toW(e.offsetX,e.offsetY);
     const x0=Math.min(rectStart[0],wx),x1=Math.max(rectStart[0],wx);
     const y0=Math.min(rectStart[1],wy),y1=Math.max(rectStart[1],wy);
-    if(Math.abs(x1-x0)>0.1&&Math.abs(y1-y0)>0.1) openTypeModal([[x0,y0],[x1,y0],[x1,y1],[x0,y1]]);
+    if(Math.abs(x1-x0)>0.1&&Math.abs(y1-y0)>0.1) openAssignModal([[x0,y0],[x1,y0],[x1,y1],[x0,y1]]);
     rectStart=null;rectCurrent=null;render();
   }
   setTimeout(()=>panning=false,10);
   canvas.style.cursor=panMode?'grab':(mode==='draw'||mode==='rect'?'crosshair':'default');
 });
 canvas.addEventListener('wheel',e=>{if(!DXF) return;e.preventDefault();const f=e.deltaY<0?1.12:0.9;ox=e.offsetX-(e.offsetX-ox)*f;oy=e.offsetY-(e.offsetY-oy)*f;scale*=f;render();},{passive:false});
-document.addEventListener('keydown',e=>{if(!DXF) return;if(e.code==='Space'&&mode!=='pan'){e.preventDefault();setMode('pan');}if(e.code==='Escape'){curPts=[];canvas._snapPt=null;selectedArea=null;document.getElementById('typeBg').style.display='none';pendingPts=null;updateList();render();}if((e.code==='Delete'||e.code==='Backspace')&&selectedArea!==null) deleteArea(selectedArea);if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();if(curPts.length>0) undoVertex();}});
+document.addEventListener('keydown',e=>{if(!DXF) return;if(e.code==='Space'&&mode!=='pan'){e.preventDefault();setMode('pan');}if(e.code==='Escape'){curPts=[];canvas._snapPt=null;selectedArea=null;document.getElementById('assignBg').style.display='none';assignPendingPts=null;updateList();render();}if((e.code==='Delete'||e.code==='Backspace')&&selectedArea!==null) deleteArea(selectedArea);if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();if(curPts.length>0) undoVertex();}});
 document.addEventListener('keyup',e=>{if(e.code==='Space') setMode('draw');});
 
 function exportSVG(){
   if(!DXF||!DXF.bbox){alert('No hay plano cargado.');return;}
   const{min_x,max_x,min_y,max_y}=DXF.bbox;
   const W=max_x-min_x,H=max_y-min_y;
-  const sc=1400/Math.max(W,H);
+  const sc=1200/Math.max(W,H);
   const svgW=W*sc,svgH=H*sc;
+  const panelW=190,totalW=svgW+panelW;
   const tx=x=>((x-min_x)*sc).toFixed(1);
   const ty=y=>((max_y-y)*sc).toFixed(1);
   const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  let svg=`<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW.toFixed(1)} ${svgH.toFixed(1)}" style="background:#fff;font-family:Montserrat,sans-serif">`;
-  svg+=`<rect width="${svgW.toFixed(1)}" height="${svgH.toFixed(1)}" fill="#fff"/>`;
-  DXF.polys.forEach(p=>{if(!p.pts||p.pts.length<2) return;const d=p.pts.map((pt,i)=>`${i?'L':'M'}${tx(pt[0])},${ty(pt[1])}`).join(' ')+(p.closed?' Z':'');svg+=`<path d="${d}" fill="none" stroke="#2a3a3b" stroke-width="0.8"/>`;});
-  DXF.lines.forEach(l=>{svg+=`<line x1="${tx(l.x1)}" y1="${ty(l.y1)}" x2="${tx(l.x2)}" y2="${ty(l.y2)}" stroke="#2a3a3b" stroke-width="0.7"/>`;});
+  let dxfLayer='';
+  DXF.polys.forEach(p=>{if(!p.pts||p.pts.length<2)return;const d=p.pts.map((pt,i)=>`${i?'L':'M'}${tx(pt[0])},${ty(pt[1])}`).join(' ')+(p.closed?' Z':'');dxfLayer+=`<path d="${d}" fill="none" stroke="#2a3a3b" stroke-width="0.8"/>`;});
+  DXF.lines.forEach(l=>{dxfLayer+=`<line x1="${tx(l.x1)}" y1="${ty(l.y1)}" x2="${tx(l.x2)}" y2="${ty(l.y2)}" stroke="#2a3a3b" stroke-width="0.7"/>`;});
+  let pasLayer='',colLayer='';
   areas.forEach(a=>{
     const col=a.type==='pasillo'?PAS_COLOR:COL_COLOR;
     const d=a.pts.map((p,i)=>`${i?'L':'M'}${tx(p[0])},${ty(p[1])}`).join(' ')+' Z';
-    svg+=`<path d="${d}" fill="${col}" fill-opacity="0.35" stroke="${col}" stroke-width="1.5"/>`;
     const cx=a.pts.reduce((s,p)=>s+parseFloat(tx(p[0])),0)/a.pts.length;
     const cy=a.pts.reduce((s,p)=>s+parseFloat(ty(p[1])),0)/a.pts.length;
-    svg+=`<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="10" font-weight="800" fill="${col}">${esc(a.name)}</text>`;
+    const label=a.type==='columna'&&a.pasilloParent?`${esc(a.pasilloParent)}·${esc(a.name)}`:esc(a.name);
+    const shape=`<path d="${d}" fill="${col}" fill-opacity="0.35" stroke="${col}" stroke-width="1.5"/>`+
+      `<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="9" font-weight="800" fill="${col}">${label}</text>`;
+    if(a.type==='pasillo') pasLayer+=shape; else colLayer+=shape;
   });
-  const legY=svgH-28,legX=14;
-  svg+=`<rect x="${legX}" y="${legY-16}" width="130" height="24" rx="5" fill="rgba(255,255,255,0.9)" stroke="#ddd"/>`;
-  svg+=`<rect x="${legX+6}" y="${legY-8}" width="10" height="10" rx="2" fill="${PAS_COLOR}" fill-opacity="0.7"/><text x="${legX+20}" y="${legY}" font-size="9" fill="#333" font-weight="600">Pasillo</text>`;
-  svg+=`<rect x="${legX+65}" y="${legY-8}" width="10" height="10" rx="2" fill="${COL_COLOR}" fill-opacity="0.7"/><text x="${legX+79}" y="${legY}" font-size="9" fill="#333" font-weight="600">Columna</text>`;
-  svg+='</svg>';
+  const layers=[
+    {id:'layer-dxf',label:'Plano DXF',color:'#2a3a3b'},
+    {id:'layer-pas',label:'Pasillos',color:PAS_COLOR},
+    {id:'layer-col',label:'Columnas',color:COL_COLOR},
+  ];
+  let panelSVG=`<rect x="${svgW}" y="0" width="${panelW}" height="${svgH}" fill="#f8fafa" stroke="#d8eef0" stroke-width="1"/>`;
+  panelSVG+=`<text x="${(svgW+panelW/2).toFixed(1)}" y="26" text-anchor="middle" font-size="11" font-weight="800" fill="#1a1a1a" font-family="Montserrat,sans-serif">CAPAS</text>`;
+  layers.forEach((item,idx)=>{
+    const by=44+idx*50;
+    panelSVG+=`<rect id="btn-${item.id}" x="${svgW+10}" y="${by}" width="${panelW-20}" height="38" rx="8" fill="${item.color}22" stroke="${item.color}" stroke-width="1.5" cursor="pointer" onclick="toggleLayer('${item.id}',this)"/>`;
+    panelSVG+=`<rect x="${svgW+20}" y="${by+13}" width="12" height="12" rx="3" fill="${item.color}" pointer-events="none"/>`;
+    panelSVG+=`<text x="${svgW+40}" y="${by+22}" font-size="12" font-weight="700" fill="${item.color}" font-family="Montserrat,sans-serif" pointer-events="none">${item.label}</text>`;
+  });
+  panelSVG+=`<text x="${(svgW+panelW/2).toFixed(1)}" y="${svgH-20}" text-anchor="middle" font-size="9" fill="#a0b4b5" font-family="Montserrat,sans-serif">Rueda = zoom · Drag = mover</text>`;
+  const script=`<![CDATA[
+(function(){
+  var svg=document.querySelector('svg');
+  var main=document.getElementById('svg-main');
+  var ptx=0,pty=0,sc=1;
+  function applyT(){main.setAttribute('transform','translate('+ptx+','+pty+') scale('+sc+')');}
+  svg.addEventListener('wheel',function(e){
+    var rect=svg.getBoundingClientRect();
+    var mx=e.clientX-rect.left,my=e.clientY-rect.top;
+    if(mx>${svgW.toFixed(0)}) return;
+    var f=e.deltaY<0?1.12:0.89;
+    ptx=mx-(mx-ptx)*f; pty=my-(my-pty)*f; sc*=f;
+    applyT(); e.preventDefault();
+  },{passive:false});
+  var dragging=false,dx=0,dy=0,dtx=0,dty=0;
+  svg.addEventListener('mousedown',function(e){
+    if(e.target.hasAttribute('onclick')) return;
+    if(e.clientX-svg.getBoundingClientRect().left>${svgW.toFixed(0)}) return;
+    dragging=true;dx=e.clientX;dy=e.clientY;dtx=ptx;dty=pty;svg.style.cursor='grabbing';
+  });
+  window.addEventListener('mousemove',function(e){if(!dragging)return;ptx=dtx+(e.clientX-dx);pty=dty+(e.clientY-dy);applyT();});
+  window.addEventListener('mouseup',function(){dragging=false;svg.style.cursor='';});
+  window.toggleLayer=function(id,btn){
+    var el=document.getElementById(id);if(!el)return;
+    var hidden=el.getAttribute('visibility')==='hidden';
+    el.setAttribute('visibility',hidden?'visible':'hidden');
+    btn.setAttribute('fill-opacity',hidden?'0.13':'0.05');
+    btn.setAttribute('stroke-opacity',hidden?'1':'0.4');
+  };
+})();
+]]>`;
+  const svg=`<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${totalW.toFixed(0)}" height="${svgH.toFixed(0)}" viewBox="0 0 ${totalW.toFixed(0)} ${svgH.toFixed(0)}" style="background:#fff;font-family:Montserrat,sans-serif;cursor:grab">
+<script>${script}</script>
+<rect width="${totalW.toFixed(0)}" height="${svgH.toFixed(0)}" fill="#fff"/>
+<clipPath id="map-clip"><rect width="${svgW.toFixed(0)}" height="${svgH.toFixed(0)}"/></clipPath>
+<g clip-path="url(#map-clip)">
+  <g id="svg-main">
+    <g id="layer-dxf">${dxfLayer}</g>
+    <g id="layer-pas">${pasLayer}</g>
+    <g id="layer-col">${colLayer}</g>
+  </g>
+</g>
+${panelSVG}
+</svg>`;
   const blob=new Blob([svg],{type:'image/svg+xml'});
   const url=URL.createObjectURL(blob);
   const el=document.createElement('a');el.href=url;el.download=`pasillos_${currentSuc.code}${currentFloor?'_'+currentFloor.id:''}.svg`;el.click();URL.revokeObjectURL(url);
