@@ -156,6 +156,14 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 .act-ov-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .act-ov-name{flex:1;font-weight:600;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .act-ov-fte{font-weight:500;color:var(--text2);font-size:9px;white-space:nowrap;flex-shrink:0}
+.pasillo-table{width:100%;border-collapse:collapse;font-size:10px}
+.pasillo-table th{background:var(--brand-light);color:var(--brand-dark);font-weight:700;padding:5px 8px;text-align:left;border:1px solid var(--border);white-space:nowrap;position:sticky;top:0}
+.pasillo-table td{padding:4px 8px;border:1px solid var(--border);color:var(--text);white-space:nowrap}
+.pasillo-table tr:nth-child(even) td{background:var(--surface2)}
+.pasillo-table-wrap{max-height:360px;overflow:auto;border:1px solid var(--border);border-radius:6px;margin-top:10px}
+.pasillo-stat{background:var(--brand-light);border:1px solid var(--brand-mid);border-radius:8px;padding:6px 14px;font-size:11px;font-weight:500;color:var(--text2)}
+.pasillo-stat strong{font-weight:800;color:var(--brand-dark);font-size:15px;display:block}
+.pasillo-summary{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
 </style>
 </head>
 <body>
@@ -232,6 +240,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
         <div class="tbtn" id="btnR" onclick="setMode('rect')" title="Rectángulo">▭</div>
         <div class="tbtn" id="btnPan" onclick="setMode('pan')" title="Mover (Espacio)">✋</div>
         <div class="tbtn" onclick="undoVertex()" title="Deshacer vértice">↩</div>
+                <div style="height:1px;background:var(--border);margin:2px 4px"></div>
+        <div class="tbtn" id="btnPin" onclick="setMode('pin')" title="Marcar pasillo">⊕</div>
+        <div class="tbtn" id="btnPasVis" onclick="togglePasillos()" title="Ver/ocultar pasillos">◉</div>
       </div>
       <div class="scalebar" id="scalebar">—</div>
     </div>
@@ -245,7 +256,29 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
     <button class="btn-secondary" style="width:100%;margin-top:14px" onclick="closeFSel()">← Volver</button>
   </div>
 </div>
-<div class="modal-bg" id="modalBg" style="display:none" onclick="if(event.target===this)closeModal(true)">
+<div class="modal-bg" id="pinSelBg" style="display:none" onclick="if(event.target===this)closePinSel()">
+  <div class="modal" style="min-width:280px;max-width:340px">
+    <h3>Marcar pasillo</h3>
+    <div class="sub">Seleccioná el pasillo para este punto del plano</div>
+    <select id="pinSelSelect" style="width:100%;padding:9px;border:1.5px solid var(--border);border-radius:6px;font-family:'Montserrat',sans-serif;font-size:12px;margin-bottom:14px;outline:none"></select>
+    <div class="modal-footer">
+      <button class="btn-primary" onclick="confirmPin()">Colocar pin</button>
+      <button class="btn-secondary" onclick="closePinSel()">Cancelar</button>
+    </div>
+  </div>
+</div>
+<div class="modal-bg" id="pasilloInfoBg" style="display:none" onclick="if(event.target===this)closePasilloInfo()">
+  <div class="modal" style="min-width:min(820px,92vw);max-width:92vw">
+    <h3 id="pasilloInfoTitle" style="font-size:20px;letter-spacing:-.5px">Pasillo</h3>
+    <div class="pasillo-summary" id="pasilloInfoSummary"></div>
+    <div class="pasillo-table-wrap"><table class="pasillo-table" id="pasilloInfoTable"></table></div>
+    <div class="modal-footer" style="margin-top:14px">
+      <button class="btn-secondary" onclick="closePasilloInfo()">Cerrar</button>
+      <button class="btn-secondary" style="background:#fef2f2;border-color:#fca5a5;color:#e05548" onclick="deletePinPrompt()">🗑 Eliminar pin</button>
+    </div>
+  </div>
+</div>
+  <div class="modal-bg" id="modalBg" style="display:none" onclick="if(event.target===this)closeModal(true)">
   <div class="modal">
     <h3 id="modalTitle">Área</h3>
     <div class="sub" id="modalSub"></div>
@@ -371,6 +404,66 @@ const ACT_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#
 
 let currentSuc=null,DXF=null,currentFloor=null;
   let actData={};
+  let pasillosData={},pasilloHeaders=[],pins=[],showPasillos=true,pendingPinCoords=null,activePinIdx=null;
+async function loadPasillosData(){
+  if(!currentSuc||pasillosData[currentSuc.code]) return;
+  try{
+    const r=await fetch(`pasillos_${currentSuc.code.toLowerCase()}.csv`);
+    if(!r.ok) return;
+    const txt=await r.text();
+    const lines=txt.replace(/^\uFEFF/,'').split('\n').filter(l=>l.trim());
+    pasilloHeaders=lines[0].split(',').map(h=>h.trim());
+    const iP=pasilloHeaders.indexOf('Pasillo');
+    pasillosData[currentSuc.code]={};
+    for(let i=1;i<lines.length;i++){const cols=lines[i].split(',').map(c=>c.trim());const p=cols[iP];if(!p)continue;if(!pasillosData[currentSuc.code][p])pasillosData[currentSuc.code][p]=[];pasillosData[currentSuc.code][p].push(cols);}
+  }catch(e){console.warn('No se pudo cargar pasillos',e);}
+}
+function savePins(){if(!currentSuc)return;localStorage.setItem((currentFloor?`pins_${currentSuc.code}_${currentFloor.id}`:`pins_${currentSuc.code}`),JSON.stringify(pins));}
+function loadPins(){if(!currentSuc)return;try{const d=localStorage.getItem(currentFloor?`pins_${currentSuc.code}_${currentFloor.id}`:`pins_${currentSuc.code}`);pins=d?JSON.parse(d):[];}catch(e){pins=[];}}
+function renderPins(){
+  if(!showPasillos||!DXF) return;
+  pins.forEach(pin=>{
+    const[sx,sy]=toS(pin.wx,pin.wy);
+    if(sx<-60||sx>canvas.width+60||sy<-60||sy>canvas.height+60) return;
+    const fs=Math.max(9,Math.min(12,scale*4));
+    ctx.font=`700 ${fs}px 'Montserrat',sans-serif`;
+    const tw=ctx.measureText(pin.name).width,pw=tw+14,ph=fs+10;
+    ctx.shadowColor='rgba(0,0,0,.25)';ctx.shadowBlur=5;
+    ctx.fillStyle='#7c3aed';ctx.beginPath();ctx.roundRect(sx-pw/2,sy-ph/2,pw,ph,5);ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(pin.name,sx,sy);
+    ctx.fillStyle='#7c3aed';ctx.beginPath();ctx.arc(sx,sy+ph/2+3,3,0,Math.PI*2);ctx.fill();
+  });
+  ctx.shadowBlur=0;ctx.textAlign='left';ctx.textBaseline='alphabetic';
+}
+function togglePasillos(){showPasillos=!showPasillos;document.getElementById('btnPasVis').classList.toggle('active-tool',showPasillos);render();}
+function openPinSelector(wx,wy){
+  const pd=pasillosData[currentSuc?.code];
+  if(!pd||!Object.keys(pd).length){alert('No hay datos de pasillos para esta sucursal.');return;}
+  pendingPinCoords=[wx,wy];
+  const sel=document.getElementById('pinSelSelect');
+  sel.innerHTML='<option value="">— seleccionar pasillo —</option>'+Object.keys(pd).sort().map(p=>`<option value="${p}">${p} (${pd[p].length} posiciones)</option>`).join('');
+  document.getElementById('pinSelBg').style.display='flex';
+}
+function closePinSel(){document.getElementById('pinSelBg').style.display='none';pendingPinCoords=null;}
+function confirmPin(){const sel=document.getElementById('pinSelSelect');if(!sel.value){alert('Seleccioná un pasillo');return;}if(!pendingPinCoords)return;pins.push({name:sel.value,wx:pendingPinCoords[0],wy:pendingPinCoords[1]});savePins();closePinSel();render();}
+function showPasilloInfo(idx){
+  activePinIdx=idx;
+  const pin=pins[idx];
+  const pd=pasillosData[currentSuc?.code];
+  if(!pd||!pd[pin.name]){alert('Sin datos para este pasillo');return;}
+  const rows=pd[pin.name];
+  document.getElementById('pasilloInfoTitle').textContent=`Pasillo ${pin.name}`;
+  const iTipo=pasilloHeaders.indexOf('Tipo de Almacenamiento');
+  const tipos=[...new Set(rows.map(r=>r[iTipo]).filter(Boolean))];
+  document.getElementById('pasilloInfoSummary').innerHTML=`<div class="pasillo-stat"><strong>${rows.length}</strong>Posiciones totales</div>`+tipos.map(t=>`<div class="pasillo-stat"><strong>${rows.filter(r=>r[iTipo]===t).length}</strong>${t}</div>`).join('');
+  const skip=new Set([0,1,pasilloHeaders.indexOf('Pasillo')]);
+  const showIdx=pasilloHeaders.map((_,i)=>i).filter(i=>!skip.has(i));
+  document.getElementById('pasilloInfoTable').innerHTML=`<thead><tr>${showIdx.map(i=>`<th>${pasilloHeaders[i]}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${showIdx.map(i=>`<td>${r[i]||'—'}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  document.getElementById('pasilloInfoBg').style.display='flex';
+}
+function closePasilloInfo(){document.getElementById('pasilloInfoBg').style.display='none';activePinIdx=null;}
+function deletePinPrompt(){if(activePinIdx===null)return;if(!confirm(`¿Eliminar el pin "${pins[activePinIdx].name}"?`))return;pins.splice(activePinIdx,1);savePins();closePasilloInfo();render();}
 const EXCLUDED_ACT=['STV','SPY','ST3','EES'];
 (async function loadActData(){
   try{
@@ -597,7 +690,7 @@ async function enterFloor(floor){
   document.getElementById('backBtn').style.display='flex';
   areas=[];colIdx=0;selectedArea=null;
   try{const saved=localStorage.getItem(`areas_${currentSuc.code}_${floor.id}`);if(saved){areas=JSON.parse(saved);colIdx=areas.length;updateList();}}catch(e){}
-    renderFloorTabs();initCanvas();renderActOverlay();
+    renderFloorTabs();initCanvas();renderActOverlay();loadPins();loadPasillosData();
 }
 async function switchFloor(floorId){
   if(currentFloor&&currentFloor.id===floorId) return;
@@ -640,7 +733,7 @@ async function enterLayout(){
   document.getElementById('backBtn').style.display='flex';
   areas=[];colIdx=0;selectedArea=null;
   try{const saved=localStorage.getItem('areas_'+currentSuc.code);if(saved){areas=JSON.parse(saved);colIdx=areas.length;updateList();}}catch(e){}
-    initCanvas();renderActOverlay();
+    initCanvas();renderActOverlay();loadPins();loadPasillosData();
 }
 
 function goBack(){
@@ -649,7 +742,7 @@ function goBack(){
   document.getElementById('coords').style.display='none';
   document.getElementById('backBtn').style.display='none';
   document.getElementById('headerMid').innerHTML='Layout de Sucursales';
-  areas=[];curPts=[];selectedArea=null;colIdx=0;canvas._snapPt=null;currentFloor=null;document.getElementById('floorTabs').style.display='none';updateList();
+  areas=[];curPts=[];selectedArea=null;colIdx=0;canvas._snapPt=null;currentFloor=null;pins=[];document.getElementById('floorTabs').style.display='none';updateList();
   document.querySelectorAll('.suc-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('enterBtn').disabled=true;
   document.getElementById('enterBtn').textContent='Ingresar al layout →';
@@ -741,6 +834,7 @@ if(_la>0){
   if(curPts.length>0){ctx.beginPath();curPts.forEach((p,i)=>{const[sx,sy]=toS(p[0],p[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});ctx.strokeStyle='#33c2ca';ctx.lineWidth=2;ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);curPts.forEach(p=>{const[sx,sy]=toS(p[0],p[1]);ctx.beginPath();ctx.arc(sx,sy,5,0,Math.PI*2);ctx.fillStyle='#33c2ca';ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.fill();ctx.stroke();});}
   if(canvas._snapPt&&mode==='draw'){const[sx,sy]=toS(canvas._snapPt[0],canvas._snapPt[1]);ctx.beginPath();ctx.arc(sx,sy,9,0,Math.PI*2);ctx.strokeStyle='#33c2ca';ctx.lineWidth=2.5;ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.arc(sx,sy,3,0,Math.PI*2);ctx.fillStyle='#33c2ca';ctx.fill();}
   document.getElementById('scalebar').textContent=(10/scale).toFixed(1)+'m = 10px';
+  renderPins();
 }
 
 function openModal(pts,existing,aIdx){
@@ -900,7 +994,7 @@ function selectArea(i){selectedArea=selectedArea===i?null:i;updateList();render(
 function editArea(i){selectedArea=i;openModal(areas[i].pts,areas[i],i);updateList();render();}
 function deleteArea(i){if(!confirm('¿Eliminar "'+(areas[i].name||'Área '+(i+1))+'"?')) return;areas.splice(i,1);if(selectedArea===i) selectedArea=null;else if(selectedArea>i) selectedArea--;updateList();saveAreas();render();}
   
-canvas.addEventListener('click',e=>{if(panning||panMode&&panning) return;if(panMode) return;if(mode==='draw'){const[wx,wy]=toW(e.offsetX,e.offsetY);const snap=snapToVertex(wx,wy);curPts.push(snap||[wx,wy]);canvas._snapPt=null;render();}else{const[wx,wy]=toW(e.offsetX,e.offsetY);let found=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}selectedArea=found;updateList();render();}});
+canvas.addEventListener('click',e=>{if(panning||panMode&&panning) return;if(panMode) return;if(mode==='pin'){const[wx,wy]=toW(e.offsetX,e.offsetY);openPinSelector(wx,wy);return;}if(showPasillos){for(let i=pins.length-1;i>=0;i--){const[sx,sy]=toS(pins[i].wx,pins[i].wy);const dx=e.offsetX-sx,dy=e.offsetY-sy;if(dx*dx+dy*dy<625){showPasilloInfo(i);return;}}}if(mode==='draw'){const[wx,wy]=toW(e.offsetX,e.offsetY);const snap=snapToVertex(wx,wy);curPts.push(snap||[wx,wy]);canvas._snapPt=null;render();}else{const[wx,wy]=toW(e.offsetX,e.offsetY);let found=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}selectedArea=found;updateList();render();}});
 canvas.addEventListener('dblclick',e=>{if(panMode||mode!=='draw') return;if(curPts.length<3){curPts=[];render();return;}const pts=[...curPts];curPts=[];canvas._snapPt=null;openModal(pts,null,null);});
 canvas.addEventListener('mousemove',e=>{if(!DXF) return;const[wx,wy]=toW(e.offsetX,e.offsetY);const bb=DXF.bbox;
 document.getElementById('coords').textContent='x: '+(wx-bb.min_x).toFixed(1)+'m  y: '+(wy-bb.min_y).toFixed(1)+'m';
@@ -963,7 +1057,8 @@ function setMode(m){
   document.getElementById('btnD').classList.toggle('active-tool',m==='draw');
   document.getElementById('btnR').classList.toggle('active-tool',m==='rect');
   document.getElementById('btnPan').classList.toggle('active-tool',m==='pan');
-  canvas.style.cursor=m==='pan'?'grab':m==='draw'||m==='rect'?'crosshair':'default';
+  document.getElementById('btnPin').classList.toggle('active-tool',m==='pin');
+  canvas.style.cursor=m==='pan'?'grab':m==='pin'?'cell':m==='draw'||m==='rect'?'crosshair':'default';
   document.getElementById('instrTxt').innerHTML=m==='draw'?'<strong>Modo polígono:</strong><br>1. Clic = vértice del área<br>2. Doble clic = cerrar polígono<br>3. Asigná actividades y %':m==='rect'?'<strong>Modo rectángulo:</strong><br>1. Clic y arrastrá para dibujar<br>2. Soltá para confirmar':'<strong>Modo mover:</strong><br>Clic y arrastrá para mover el plano<br><kbd>Espacio</kbd> también activa este modo';
   updateList();render();
 }
