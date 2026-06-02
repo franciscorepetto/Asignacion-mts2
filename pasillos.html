@@ -683,7 +683,7 @@ function exportSVG(){
 ]]>`;
   const svg=`<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${totalW.toFixed(0)}" height="${svgH.toFixed(0)}" viewBox="0 0 ${totalW.toFixed(0)} ${svgH.toFixed(0)}" style="background:#fff;font-family:Montserrat,sans-serif;cursor:grab">
-<script>${script}</script>
+<script>${script}<\/script>
 <rect width="${totalW.toFixed(0)}" height="${svgH.toFixed(0)}" fill="#fff"/>
 <clipPath id="map-clip"><rect width="${svgW.toFixed(0)}" height="${svgH.toFixed(0)}"/></clipPath>
 <g clip-path="url(#map-clip)">
