@@ -298,7 +298,8 @@ let panning=false,panStart=null,panOff=null;
 let rectStart=null,rectCurrent=null;
 let currentType='pasillo';
 let pasillosCSV={};   // { IATA: { PASILLO: [rows...] } }
-let assignPendingPts=null, assignType='pasillo';
+let assignPendingPts=null,assignType='pasillo';
+const collapsedPasillos=new Set();
 let pendingPts=null;
 const PAS_COLOR='#009CA3',COL_COLOR='#97BF0D';
 const canvas=document.getElementById('fp');
@@ -456,10 +457,12 @@ function render(){
   areas.forEach((a,i)=>{
     const col=a.type==='pasillo'?PAS_COLOR:COL_COLOR;
     const isSel=selectedArea===i;
+    const selPas=selectedArea!==null?areas[selectedArea]?.name:null;
+    const isRelated=a.type==='columna'&&a.pasilloParent&&a.pasilloParent===selPas;
     ctx.beginPath();a.pts.forEach((p,j)=>{const[sx,sy]=toS(p[0],p[1]);j?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});ctx.closePath();
-    ctx.fillStyle=col+(isSel?'60':'35');ctx.fill();
+    ctx.fillStyle=col+(isSel?'60':isRelated?'50':'35');ctx.fill();
     if(isSel){ctx.strokeStyle=col+'55';ctx.lineWidth=10;ctx.stroke();}
-    ctx.strokeStyle=col;ctx.lineWidth=isSel?3:2;ctx.setLineDash([]);ctx.stroke();
+    ctx.strokeStyle=col;ctx.lineWidth=isSel?3:isRelated?2.5:2;ctx.setLineDash([]);ctx.stroke();
     const cx=a.pts.reduce((s,p)=>s+p[0],0)/a.pts.length;
     const cy=a.pts.reduce((s,p)=>s+p[1],0)/a.pts.length;
     let[lx,ly]=toS(cx,cy);
@@ -611,16 +614,77 @@ function autoDetectParentPasillo(pts){
     }
   }
 }
+
+function togglePasilloCollapse(name,e){
+  e.stopPropagation();
+  if(collapsedPasillos.has(name))collapsedPasillos.delete(name);
+  else collapsedPasillos.add(name);
+  updateList();
+}
+function renameArea(i,e){
+  e.stopPropagation();
+  const a=areas[i];
+  const n=prompt('Nuevo nombre para "'+a.name+'":', a.name);
+  if(n&&n.trim()&&n.trim()!==a.name){a.name=n.trim();saveAreas();updateList();render();}
+}
+function filterInfoTable(q){
+  q=q.toLowerCase();
+  document.querySelectorAll('#infoTable tbody tr').forEach(r=>{
+    r.style.display=r.textContent.toLowerCase().includes(q)?'':'none';
+  });
+}
+  
 function saveAreas(){if(!currentSuc)return;const key=currentFloor?`pc_areas_${currentSuc.code}_${currentFloor.id}`:`pc_areas_${currentSuc.code}`;localStorage.setItem(key,JSON.stringify(areas));if(window.filterSucursales)window.filterSucursales(document.getElementById('sucSearch')?.value||'');}
 function updateList(){
   const list=document.getElementById('sList');
   if(!areas.length){list.innerHTML='<div style="padding:6px;color:var(--text3);font-size:11px;font-weight:500">Sin marcas aún.</div>';document.getElementById('sbSummary').innerHTML='';return;}
-  list.innerHTML=areas.map((a,i)=>{
+  const pasillos=areas.filter(a=>a.type==='pasillo');
+  const columnasHuerfanas=areas.filter(a=>a.type==='columna'&&!a.pasilloParent);
+  let html='';
+  pasillos.forEach(pas=>{
+    const i=areas.indexOf(pas);
     const isSel=selectedArea===i;
-    const parentInfo=a.type==='columna'&&a.pasilloParent?`<div class="sitem-parent">↳ Pasillo ${a.pasilloParent}</div>`:'';
-return `<div class="sitem${isSel?' selected':''}" onclick="selectArea(${i})" ondblclick="openInfoModal(${i})"><div class="sitem-header"><div class="scolor-dot" style="background:${a.color}"></div><div class="sname">${a.name}</div><span class="stype-badge ${a.type}">${a.type==='pasillo'?'Pasillo':'Columna'}</span><button class="sdel" onclick="event.stopPropagation();deleteArea(${i})" title="Eliminar">✕</button></div>${parentInfo}</div>`;
-  }).join('');
-  const nPas=areas.filter(a=>a.type==='pasillo').length;
+    const cols=areas.filter(a=>a.type==='columna'&&a.pasilloParent===pas.name);
+    const collapsed=collapsedPasillos.has(pas.name);
+    const colCount=cols.length?` <span style="font-size:9px;font-weight:600;color:var(--text3)">(${cols.length})</span>`:'';
+    html+=`<div class="sitem${isSel?' selected':''}" onclick="selectArea(${i})">
+      <div class="sitem-header">
+        <div class="scolor-dot" style="background:${pas.color}"></div>
+        <div class="sname" ondblclick="renameArea(${i},event)" title="Doble click para renombrar">${pas.name}${colCount}</div>
+        <span class="stype-badge pasillo">Pasillo</span>
+        ${cols.length?`<button onclick="togglePasilloCollapse('${pas.name}',event)" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--text3);padding:2px 4px">${collapsed?'▶':'▼'}</button>`:''}
+        <button class="sdel" onclick="event.stopPropagation();deleteArea(${i})" title="Eliminar">✕</button>
+      </div>
+    </div>`;
+    if(!collapsed){
+      cols.forEach(col=>{
+        const ci=areas.indexOf(col);
+        const cSel=selectedArea===ci;
+        html+=`<div class="sitem${cSel?' selected':''}" onclick="selectArea(${ci})" style="margin-left:16px;border-left:3px solid ${col.color}">
+          <div class="sitem-header">
+            <div class="scolor-dot" style="background:${col.color}"></div>
+            <div class="sname" ondblclick="renameArea(${ci},event)" title="Doble click para renombrar">${col.name}</div>
+            <span class="stype-badge columna">Columna</span>
+            <button class="sdel" onclick="event.stopPropagation();deleteArea(${ci})" title="Eliminar">✕</button>
+          </div>
+        </div>`;
+      });
+    }
+  });
+  columnasHuerfanas.forEach(col=>{
+    const i=areas.indexOf(col);
+    const isSel=selectedArea===i;
+    html+=`<div class="sitem${isSel?' selected':''}" onclick="selectArea(${i})">
+      <div class="sitem-header">
+        <div class="scolor-dot" style="background:${col.color}"></div>
+        <div class="sname" ondblclick="renameArea(${i},event)" title="Doble click para renombrar">${col.name}</div>
+        <span class="stype-badge columna">Columna</span>
+        <button class="sdel" onclick="event.stopPropagation();deleteArea(${i})" title="Eliminar">✕</button>
+      </div>
+    </div>`;
+  });
+  list.innerHTML=html;
+  const nPas=pasillos.length;
   const nCol=areas.filter(a=>a.type==='columna').length;
   document.getElementById('sbSummary').innerHTML=`<div class="sum-chip"><div class="sum-dot" style="background:${PAS_COLOR}"></div>${nPas} pasillo${nPas!==1?'s':''}</div><div class="sum-chip"><div class="sum-dot" style="background:${COL_COLOR}"></div>${nCol} columna${nCol!==1?'s':''}</div>`;
 }
