@@ -358,7 +358,7 @@ const SUCURSALES=[
   {code:'RSA',name:'Santa Rosa',available:true},
   {code:'SDE',name:'Santiago del Estero',available:true},
   {code:'RDI',name:'Sarandí',available:true},
-  {code:'MV2',name:'Tortuguitas',available:false},
+  {code:'MV2',name:'Tortuguitas',available:true},
   {code:'REL',name:'Trelew',available:true},
   {code:'TUC',name:'Tucumán',available:true},
   {code:'USH',name:'Ushuaia',available:false},
@@ -460,6 +460,7 @@ function toggleActOverlay(){
   btn.textContent=hide?'▸':'▾';
 }
 const MULTI_FLOOR={
+    MV2:[{id:'N2',name:'Nave 2',file:'tortunave2.dxf',piso:'nave 2'}],
   AVE:[
     {id:'PB',name:'Planta Baja',file:'Ave. Planta Bajadxf.dxf',piso:'PB'},
     {id:'PA',name:'Planta Alta',file:'AVE planta alta.dxf',piso:'PLANTA ALTA'},
