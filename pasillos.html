@@ -122,7 +122,14 @@ canvas{display:block}
     <input class="suc-search" id="sucSearch" placeholder="Buscar por nombre o código..." oninput="window.filterSucursales(this.value)">
     <div class="suc-list" id="sucGrid"></div>
     <button class="enter-btn" id="enterBtn" disabled onclick="enterLayout()">Ingresar al layout →</button>
-    <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:12px;font-weight:500">Solo disponibles las sucursales con plano cargado</div>
+       <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:12px;font-weight:500">Solo disponibles las sucursales con plano cargado</div>
+  </div>
+  <div style="margin-top:16px;text-align:center;font-size:11px;font-weight:600;color:var(--text3)">— o —</div>
+  <div class="splash-card" style="margin-top:12px">
+    <h2>Importar marcas</h2>
+    <p>Cargá un archivo <strong>.json</strong> exportado desde esta plataforma para visualizar las marcas de otro usuario.</p>
+    <label for="jsonImportInput" class="enter-btn" style="display:block;text-align:center;cursor:pointer;margin-bottom:0">↑ Seleccionar archivo .json</label>
+    <input type="file" id="jsonImportInput" accept=".json" style="display:none" onchange="handleJSONImport(this)">
   </div>
 </div>
 
@@ -133,7 +140,8 @@ canvas{display:block}
       <div class="sb-scroll" id="sList"><div style="padding:6px;color:var(--text3);font-size:11px;font-weight:500">Sin marcas aún.</div></div>
       <div class="sb-summary" id="sbSummary"></div>
       <div class="sb-buttons">
-        <button class="expbtn" style="background:#e05548;color:#fff" onclick="limpiarAreas()">🗑 Limpiar todo</button>
+         <button class="expbtn" style="background:#e05548;color:#fff" onclick="limpiarAreas()">🗑 Limpiar todo</button>
+        <button class="expbtn" style="background:#0ea5e9;color:#fff" onclick="exportJSON()">↓ Exportar marcas (.json)</button>
         <button class="expbtn" style="background:#7c3aed;color:#fff" onclick="exportSVG()">↓ Exportar plano (.svg)</button>
       </div>
     </div>
@@ -291,6 +299,7 @@ const MULTI_FLOOR={
 const DXFFILES={MDQ:'Galpon 21.1+2.2_MDQ_v2013 (1) - Mar del Plata.dxf',RDI:'RDI Sarandi mts2.dxf',RSA:'RSA La Pampa mts2.dxf',SFE:'Santa fe - Santo tome mts2.dxf',LUQ:'San Luis mts2.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',LCA:'LCA-2021 09 13 PLANO FINAL LA CARLOTA.dxf',EQS:'Copia de EQS-ESQUEL Lay Out-r05.dxf',BHI:'Bahia Blanca mts2.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',PSS:'Posadas mts2.dxf',AEP:'Copia de AEP-ILUM MMTO-R01 (1).dxf',EZE:'EZE-mod. EZE .PROPUUESTA 2025-01-29..dxf',IRJ:'La Rioja mts2.dxf',STV:'SLT.dxf',COR:'Copia de COR-LA VOZ-Base xref-04 - CORRECCION CORTINA RAPIDA version 2004.dwg.dxf',TUC:'M2 Tucuman.dxf',UAQ:'San Juan mts2.dxf',REL:'Trelew mts2.dxf',RCU:'Rio Cuarto mts2.dxf',SDE:'SDE - Mudanza sucursal Obras (1).dxf',FMA:'FMA-Formosa - Plantas 09-Ago-2019.dxf',MVA:'MVA-OTTO- BASE.dxf',PRA:'PRA-Layout OCASA.dxf',PLO:'Soldati.dxf',RAF:'RAF-JUAN JOSE PASO 2277 RAFAELA SANTA FE V2 15-ENE-2021.dxf',ZUL:'ZUL-AZUL ETAPA 2 ARQ.dxf',CRD:'CRD-Mterio Salud Chubut-R03.dxf',CO2:'CBA_CIRCUNVALACION.dxf',BLG:'BLG-Echeverria 1217 - TABLEROS ELECTRICOS - R01.dxf',EES:'EEV-Plaza Logistica Echeverria - Interiorismo Etapas 1 y 2.dxf',ROS:'Rosario mts2.dxf'};
 
 let currentSuc=null,DXF=null,currentFloor=null;
+let importedAreas=null,importedFloorId=null;
 let scale=1,ox=0,oy=0,baseScale=1;
 let mode='draw',panMode=false;
 let curPts=[],areas=[],selectedArea=null;
@@ -398,7 +407,10 @@ async function switchFloor(floorId){
 }
 async function enterLayout(){
   if(!currentSuc) return;
-  if(MULTI_FLOOR[currentSuc.code]){showFloorSelector();return;}
+  if(MULTI_FLOOR[currentSuc.code]){
+    if(importedFloorId){const fl=MULTI_FLOOR[currentSuc.code].find(f=>f.id===importedFloorId);if(fl){enterFloor(fl);return;}}
+    showFloorSelector();return;
+  }
   const btn=document.getElementById('enterBtn');btn.disabled=true;btn.textContent='Cargando plano...';
   try{
     const file=DXFFILES[currentSuc.code];
@@ -412,9 +424,10 @@ async function enterLayout(){
   document.getElementById('headerMid').innerHTML=`Pasillos · <span>${currentSuc.name}</span>`;
   document.getElementById('coords').style.display='block';
   document.getElementById('backBtn').style.display='flex';
-  areas=[];selectedArea=null;
-  try{const saved=localStorage.getItem('pc_areas_'+currentSuc.code);if(saved){areas=JSON.parse(saved);updateList();}}catch(e){}
-  initCanvas();
+    areas=[];selectedArea=null;
+  if(importedAreas!==null){areas=importedAreas;importedAreas=null;importedFloorId=null;}
+  else{try{const saved=localStorage.getItem('pc_areas_'+currentSuc.code);if(saved){areas=JSON.parse(saved);}}catch(e){}}
+  updateList();initCanvas();
 }
 function goBack(){
   document.getElementById('app').style.display='none';
@@ -422,7 +435,8 @@ function goBack(){
   document.getElementById('coords').style.display='none';
   document.getElementById('backBtn').style.display='none';
   document.getElementById('headerMid').innerHTML='Pasillos y Columnas';
-  areas=[];curPts=[];selectedArea=null;canvas._snapPt=null;currentFloor=null;
+    areas=[];curPts=[];selectedArea=null;canvas._snapPt=null;currentFloor=null;
+  importedAreas=null;importedFloorId=null;
   document.getElementById('floorTabs').style.display='none';updateList();
   document.querySelectorAll('.suc-item').forEach(i=>i.classList.remove('active'));
   document.getElementById('enterBtn').disabled=true;document.getElementById('enterBtn').textContent='Ingresar al layout →';
@@ -731,6 +745,33 @@ canvas.addEventListener('wheel',e=>{if(!DXF) return;e.preventDefault();const f=e
 document.addEventListener('keydown',e=>{if(!DXF) return;if(e.code==='Space'&&mode!=='pan'){e.preventDefault();setMode('pan');}if(e.code==='Escape'){curPts=[];canvas._snapPt=null;selectedArea=null;document.getElementById('assignBg').style.display='none';assignPendingPts=null;updateList();render();}if((e.code==='Delete'||e.code==='Backspace')&&selectedArea!==null) deleteArea(selectedArea);if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();if(curPts.length>0) undoVertex();}});
 document.addEventListener('keyup',e=>{if(e.code==='Space') setMode('draw');});
 
+function exportJSON(){
+  if(!currentSuc){alert('No hay sucursal cargada.');return;}
+  const data={version:1,sucCode:currentSuc.code,sucName:currentSuc.name,floorId:currentFloor?currentFloor.id:null,floorName:currentFloor?currentFloor.name:null,areas};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const el=document.createElement('a');el.href=url;el.download=`pasillos_${currentSuc.code}${currentFloor?'_'+currentFloor.id:''}.json`;el.click();URL.revokeObjectURL(url);
+}
+function handleJSONImport(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.sucCode||!Array.isArray(data.areas))throw new Error('Formato de archivo inválido.');
+      const suc=SUCURSALES.find(s=>s.code===data.sucCode);
+      if(!suc||!suc.available)throw new Error('Sucursal no disponible: '+data.sucCode);
+      importedAreas=data.areas;
+      importedFloorId=data.floorId||null;
+      currentSuc=suc;
+      document.querySelectorAll('.suc-item').forEach(i=>i.classList.remove('active'));
+      document.getElementById('enterBtn').disabled=false;
+      enterLayout();
+    }catch(err){alert('Error al importar: '+err.message);input.value='';}
+  };
+  reader.readAsText(file);
+}
+  
 function exportSVG(){
   if(!DXF||!DXF.bbox){alert('No hay plano cargado.');return;}
   const{min_x,max_x,min_y,max_y}=DXF.bbox;
