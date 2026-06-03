@@ -728,40 +728,56 @@ function exportSVG(){
   const W=max_x-min_x,H=max_y-min_y;
   const sc=1200/Math.max(W,H);
   const svgW=W*sc,svgH=H*sc;
-  const panelW=190,totalW=svgW+panelW;
+  const panelW=280,totalW=svgW+panelW;
   const tx=x=>((x-min_x)*sc).toFixed(1);
   const ty=y=>((max_y-y)*sc).toFixed(1);
   const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    // Embed CSV data for current sucursal
+  const iata=currentSuc?.code;
+  const csvData=iata&&pasillosCSV[iata]?pasillosCSV[iata]:{};
   let dxfLayer='';
   DXF.polys.forEach(p=>{if(!p.pts||p.pts.length<2)return;const d=p.pts.map((pt,i)=>`${i?'L':'M'}${tx(pt[0])},${ty(pt[1])}`).join(' ')+(p.closed?' Z':'');dxfLayer+=`<path d="${d}" fill="none" stroke="#2a3a3b" stroke-width="0.8"/>`;});
   DXF.lines.forEach(l=>{dxfLayer+=`<line x1="${tx(l.x1)}" y1="${ty(l.y1)}" x2="${tx(l.x2)}" y2="${ty(l.y2)}" stroke="#2a3a3b" stroke-width="0.7"/>`;});
   let pasLayer='',colLayer='';
-  areas.forEach(a=>{
+    areas.forEach((a,idx)=>{
     const col=a.type==='pasillo'?PAS_COLOR:COL_COLOR;
     const d=a.pts.map((p,i)=>`${i?'L':'M'}${tx(p[0])},${ty(p[1])}`).join(' ')+' Z';
     const cx=a.pts.reduce((s,p)=>s+parseFloat(tx(p[0])),0)/a.pts.length;
     const cy=a.pts.reduce((s,p)=>s+parseFloat(ty(p[1])),0)/a.pts.length;
     const label=a.type==='columna'&&a.pasilloParent?`${esc(a.pasilloParent)}·${esc(a.name)}`:esc(a.name);
-    const shape=`<path d="${d}" fill="${col}" fill-opacity="0.35" stroke="${col}" stroke-width="1.5"/>`+
-      `<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="9" font-weight="800" fill="${col}">${label}</text>`;
+    const shape=`<path d="${d}" fill="${col}" fill-opacity="0.35" stroke="${col}" stroke-width="1.5" cursor="pointer" onclick="showAreaInfo(${idx})"/>`+
+      `<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="9" font-weight="800" fill="${col}" pointer-events="none">${label}</text>`;
     if(a.type==='pasillo') pasLayer+=shape; else colLayer+=shape;
   });
+    const areasJSON=JSON.stringify(areas.map(a=>({name:a.name,type:a.type,color:a.color,pasilloParent:a.pasilloParent||null})));
+  const csvJSON=JSON.stringify(csvData);
   const layers=[
     {id:'layer-dxf',label:'Plano DXF',color:'#2a3a3b'},
     {id:'layer-pas',label:'Pasillos',color:PAS_COLOR},
     {id:'layer-col',label:'Columnas',color:COL_COLOR},
   ];
-  let panelSVG=`<rect x="${svgW}" y="0" width="${panelW}" height="${svgH}" fill="#f8fafa" stroke="#d8eef0" stroke-width="1"/>`;
-  panelSVG+=`<text x="${(svgW+panelW/2).toFixed(1)}" y="26" text-anchor="middle" font-size="11" font-weight="800" fill="#1a1a1a" font-family="Montserrat,sans-serif">CAPAS</text>`;
+    const px=svgW;
+  let panelSVG=`<rect x="${px}" y="0" width="${panelW}" height="${svgH}" fill="#f8fafa" stroke="#d8eef0" stroke-width="1"/>`;
+  panelSVG+=`<text x="${(px+panelW/2).toFixed(1)}" y="22" text-anchor="middle" font-size="10" font-weight="800" letter-spacing="2" fill="#1fa8b0" font-family="Montserrat,sans-serif">CAPAS</text>`;
   layers.forEach((item,idx)=>{
-    const by=44+idx*50;
-    panelSVG+=`<rect id="btn-${item.id}" x="${svgW+10}" y="${by}" width="${panelW-20}" height="38" rx="8" fill="${item.color}22" stroke="${item.color}" stroke-width="1.5" cursor="pointer" onclick="toggleLayer('${item.id}',this)"/>`;
-    panelSVG+=`<rect x="${svgW+20}" y="${by+13}" width="12" height="12" rx="3" fill="${item.color}" pointer-events="none"/>`;
-    panelSVG+=`<text x="${svgW+40}" y="${by+22}" font-size="12" font-weight="700" fill="${item.color}" font-family="Montserrat,sans-serif" pointer-events="none">${item.label}</text>`;
+    const by=34+idx*46;
+    panelSVG+=`<rect id="btn-${item.id}" x="${px+10}" y="${by}" width="${panelW-20}" height="36" rx="8" fill="${item.color}22" stroke="${item.color}" stroke-width="1.5" cursor="pointer" onclick="toggleLayer('${item.id}',this)"/>`;
+    panelSVG+=`<rect x="${px+20}" y="${by+12}" width="12" height="12" rx="3" fill="${item.color}" pointer-events="none"/>`;
+    panelSVG+=`<text x="${px+40}" y="${by+21}" font-size="11" font-weight="700" fill="${item.color}" font-family="Montserrat,sans-serif" pointer-events="none">${item.label}</text>`;
   });
-  panelSVG+=`<text x="${(svgW+panelW/2).toFixed(1)}" y="${svgH-20}" text-anchor="middle" font-size="9" fill="#a0b4b5" font-family="Montserrat,sans-serif">Rueda = zoom · Drag = mover</text>`;
-  const script=`<![CDATA[
+  const infoY=34+layers.length*46+10;
+  panelSVG+=`<line x1="${px+10}" y1="${infoY}" x2="${px+panelW-10}" y2="${infoY}" stroke="#d8eef0" stroke-width="1"/>`;
+  panelSVG+=`<foreignObject x="${px}" y="${infoY+4}" width="${panelW}" height="${svgH-infoY-24}" id="infoFO">
+<div xmlns="http://www.w3.org/1999/xhtml" id="infoDiv" style="padding:10px 12px;font-family:Montserrat,sans-serif;font-size:11px;color:#5a6a6b;height:100%;overflow:auto;box-sizing:border-box">
+  <div style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#1fa8b0;margin-bottom:8px">INFORMACIÓN</div>
+  <div id="infoContent" style="color:#a0b4b5;font-size:11px">Hacé clic en un área del mapa para ver su información.</div>
+</div>
+</foreignObject>`;
+  panelSVG+=`<text x="${(px+panelW/2).toFixed(1)}" y="${svgH-8}" text-anchor="middle" font-size="9" fill="#a0b4b5" font-family="Montserrat,sans-serif">Rueda = zoom · Drag = mover</text>`;
+    const script=`<![CDATA[
 (function(){
+  var areasData=${areasJSON};
+  var csvData=${csvJSON};
   var svg=document.querySelector('svg');
   var main=document.getElementById('svg-main');
   var ptx=0,pty=0,sc=1;
@@ -770,17 +786,23 @@ function exportSVG(){
     var rect=svg.getBoundingClientRect();
     var mx=e.clientX-rect.left,my=e.clientY-rect.top;
     if(mx>${svgW.toFixed(0)}) return;
-    var f=e.deltaY<0?1.12:0.89;
+    var delta=e.deltaMode===1?e.deltaY*33:e.deltaMode===2?e.deltaY*500:e.deltaY;
+    var f=Math.pow(0.9985,delta);
     ptx=mx-(mx-ptx)*f; pty=my-(my-pty)*f; sc*=f;
     applyT(); e.preventDefault();
   },{passive:false});
-  var dragging=false,dx=0,dy=0,dtx=0,dty=0;
+  var dragging=false,dx=0,dy=0,dtx=0,dty=0,didDrag=false;
   svg.addEventListener('mousedown',function(e){
     if(e.target.hasAttribute('onclick')) return;
     if(e.clientX-svg.getBoundingClientRect().left>${svgW.toFixed(0)}) return;
-    dragging=true;dx=e.clientX;dy=e.clientY;dtx=ptx;dty=pty;svg.style.cursor='grabbing';
+    dragging=true;didDrag=false;dx=e.clientX;dy=e.clientY;dtx=ptx;dty=pty;svg.style.cursor='grabbing';
   });
-  window.addEventListener('mousemove',function(e){if(!dragging)return;ptx=dtx+(e.clientX-dx);pty=dty+(e.clientY-dy);applyT();});
+  window.addEventListener('mousemove',function(e){
+    if(!dragging)return;
+    var mdx=e.clientX-dx,mdy=e.clientY-dy;
+    if(Math.abs(mdx)>3||Math.abs(mdy)>3)didDrag=true;
+    ptx=dtx+mdx;pty=dty+mdy;applyT();
+  });
   window.addEventListener('mouseup',function(){dragging=false;svg.style.cursor='';});
   window.toggleLayer=function(id,btn){
     var el=document.getElementById(id);if(!el)return;
@@ -788,6 +810,26 @@ function exportSVG(){
     el.setAttribute('visibility',hidden?'visible':'hidden');
     btn.setAttribute('fill-opacity',hidden?'0.13':'0.05');
     btn.setAttribute('stroke-opacity',hidden?'1':'0.4');
+  };
+  var INFO_COLS=['Nave','Tipo de Almacenamiento','Posicion','Tipo de Posicion','Division Horizontal','Piso','Columna','Altura','Largo','Alto','Ancho','Peso'];
+  window.showAreaInfo=function(idx){
+    if(didDrag){didDrag=false;return;}
+    var a=areasData[idx];
+    var rows=[];
+    if(a.type==='pasillo'&&csvData[a.name]) rows=csvData[a.name];
+    else if(a.type==='columna'&&a.pasilloParent&&csvData[a.pasilloParent])
+      rows=csvData[a.pasilloParent].filter(function(r){return r['Columna']===a.name;});
+    var el=document.getElementById('infoContent');
+    var title='<div style="font-size:12px;font-weight:800;color:'+a.color+';margin-bottom:6px">'+(a.type==='pasillo'?'Pasillo ':'Columna ')+a.name+(a.pasilloParent?' &mdash; Pasillo '+a.pasilloParent:'')+'</div>';
+    if(!rows.length){el.innerHTML=title+'<div style="color:#a0b4b5;font-size:11px">Sin datos CSV para esta área.</div>';return;}
+    var cedido=rows.filter(function(r){return r['Tipo de Almacenamiento']==='Espacio Cedido';}).length;
+    var stats='<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">'
+      +'<div style="background:#e8f9fa;border:1px solid #b2e8eb;border-radius:8px;padding:6px 10px;text-align:center"><div style="font-size:18px;font-weight:800;color:#1fa8b0">'+rows.length+'</div><div style="font-size:9px;color:#5a6a6b">Posiciones</div></div>'
+      +(cedido?'<div style="background:#e8f9fa;border:1px solid #b2e8eb;border-radius:8px;padding:6px 10px;text-align:center"><div style="font-size:18px;font-weight:800;color:#1fa8b0">'+cedido+'</div><div style="font-size:9px;color:#5a6a6b">Cedido</div></div>':'')
+      +'</div>';
+    var thead='<thead><tr>'+INFO_COLS.map(function(c){return'<th style="background:#e8f9fa;color:#1fa8b0;font-size:9px;font-weight:700;padding:4px 6px;text-align:left;border-bottom:2px solid #b2e8eb;white-space:nowrap;position:sticky;top:0">'+c+'</th>';}).join('')+'</tr></thead>';
+    var tbody='<tbody>'+rows.map(function(r){return'<tr>'+INFO_COLS.map(function(c){return'<td style="padding:3px 6px;border-bottom:1px solid #d8eef0;white-space:nowrap;font-size:9px">'+(r[c]||'')+'</td>';}).join('')+'</tr>';}).join('')+'</tbody>';
+    el.innerHTML=title+stats+'<div style="overflow:auto;max-height:calc(100% - 80px)"><table style="border-collapse:collapse;width:100%">'+thead+tbody+'</table></div>';
   };
 })();
 ]]>`;
