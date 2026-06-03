@@ -745,7 +745,7 @@ function exportSVG(){
     const cx=a.pts.reduce((s,p)=>s+parseFloat(tx(p[0])),0)/a.pts.length;
     const cy=a.pts.reduce((s,p)=>s+parseFloat(ty(p[1])),0)/a.pts.length;
     const label=a.type==='columna'&&a.pasilloParent?`${esc(a.pasilloParent)}·${esc(a.name)}`:esc(a.name);
-    const shape=`<path d="${d}" fill="${col}" fill-opacity="0.35" stroke="${col}" stroke-width="1.5" cursor="pointer" onclick="showAreaInfo(${idx})"/>`+
+       const shape=`<path id="area-${idx}" d="${d}" fill="${col}" fill-opacity="0.35" stroke="${col}" stroke-width="1.5"/>`+
       `<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="9" font-weight="800" fill="${col}" pointer-events="none">${label}</text>`;
     if(a.type==='pasillo') pasLayer+=shape; else colLayer+=shape;
   });
@@ -756,32 +756,51 @@ function exportSVG(){
     {id:'layer-pas',label:'Pasillos',color:PAS_COLOR},
     {id:'layer-col',label:'Columnas',color:COL_COLOR},
   ];
-    const px=svgW;
+  const px=svgW;
   let panelSVG=`<rect x="${px}" y="0" width="${panelW}" height="${svgH}" fill="#f8fafa" stroke="#d8eef0" stroke-width="1"/>`;
-  panelSVG+=`<text x="${(px+panelW/2).toFixed(1)}" y="22" text-anchor="middle" font-size="10" font-weight="800" letter-spacing="2" fill="#1fa8b0" font-family="Montserrat,sans-serif">CAPAS</text>`;
+  panelSVG+=`<text x="${(px+panelW/2).toFixed(1)}" y="22" text-anchor="middle" font-size="9" font-weight="800" letter-spacing="2" fill="#1fa8b0" font-family="Montserrat,sans-serif">CAPAS</text>`;
   layers.forEach((item,idx)=>{
-    const by=34+idx*46;
-    panelSVG+=`<rect id="btn-${item.id}" x="${px+10}" y="${by}" width="${panelW-20}" height="36" rx="8" fill="${item.color}22" stroke="${item.color}" stroke-width="1.5" cursor="pointer" onclick="toggleLayer('${item.id}',this)"/>`;
-    panelSVG+=`<rect x="${px+20}" y="${by+12}" width="12" height="12" rx="3" fill="${item.color}" pointer-events="none"/>`;
-    panelSVG+=`<text x="${px+40}" y="${by+21}" font-size="11" font-weight="700" fill="${item.color}" font-family="Montserrat,sans-serif" pointer-events="none">${item.label}</text>`;
+    const by=30+idx*40;
+    panelSVG+=`<rect id="btn-${item.id}" x="${px+10}" y="${by}" width="${panelW-20}" height="32" rx="7" fill="${item.color}22" stroke="${item.color}" stroke-width="1.5" cursor="pointer" onclick="toggleLayer('${item.id}',this)"/>`;
+    panelSVG+=`<rect x="${px+20}" y="${by+10}" width="12" height="12" rx="3" fill="${item.color}" pointer-events="none"/>`;
+    panelSVG+=`<text x="${px+40}" y="${by+19}" font-size="11" font-weight="700" fill="${item.color}" font-family="Montserrat,sans-serif" pointer-events="none">${item.label}</text>`;
   });
-  const infoY=34+layers.length*46+10;
-  panelSVG+=`<line x1="${px+10}" y1="${infoY}" x2="${px+panelW-10}" y2="${infoY}" stroke="#d8eef0" stroke-width="1"/>`;
-  panelSVG+=`<foreignObject x="${px}" y="${infoY+4}" width="${panelW}" height="${svgH-infoY-24}" id="infoFO">
-<div xmlns="http://www.w3.org/1999/xhtml" id="infoDiv" style="padding:10px 12px;font-family:Montserrat,sans-serif;font-size:11px;color:#5a6a6b;height:100%;overflow:auto;box-sizing:border-box">
-  <div style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#1fa8b0;margin-bottom:8px">INFORMACIÓN</div>
-  <div id="infoContent" style="color:#a0b4b5;font-size:11px">Hacé clic en un área del mapa para ver su información.</div>
+  const foY=30+layers.length*40+8;
+  panelSVG+=`<line x1="${px+10}" y1="${foY}" x2="${px+panelW-10}" y2="${foY}" stroke="#d8eef0" stroke-width="1"/>`;
+  panelSVG+=`<foreignObject x="${px}" y="${foY+4}" width="${panelW}" height="${svgH-foY-4}">
+<div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;flex-direction:column;height:100%;font-family:Montserrat,sans-serif;font-size:11px;color:#5a6a6b;box-sizing:border-box;overflow:hidden">
+  <div style="padding:8px 12px 6px;flex-shrink:0">
+    <div style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#1fa8b0;margin-bottom:6px">ZOOM</div>
+    <div style="display:flex;gap:6px">
+      <button onclick="doZoom(1.3)" style="flex:1;padding:6px 0;background:#e8f9fa;border:1.5px solid #b2e8eb;border-radius:7px;font-size:16px;font-weight:700;color:#1fa8b0;cursor:pointer">+</button>
+      <button onclick="doZoom(0.77)" style="flex:1;padding:6px 0;background:#e8f9fa;border:1.5px solid #b2e8eb;border-radius:7px;font-size:16px;font-weight:700;color:#1fa8b0;cursor:pointer">−</button>
+      <button onclick="doReset()" style="flex:1;padding:6px 0;background:#e8f9fa;border:1.5px solid #b2e8eb;border-radius:7px;font-size:11px;font-weight:700;color:#1fa8b0;cursor:pointer">↺</button>
+    </div>
+  </div>
+  <div style="border-top:1px solid #d8eef0;padding:8px 12px 4px;flex-shrink:0">
+    <div style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#1fa8b0;margin-bottom:4px">ÁREAS</div>
+  </div>
+  <div id="areaList" style="overflow-y:auto;flex-shrink:0;max-height:35%;padding:0 8px 4px"></div>
+  <div style="border-top:1px solid #d8eef0;padding:8px 12px 4px;flex-shrink:0">
+    <div style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#1fa8b0;margin-bottom:4px">INFORMACIÓN</div>
+  </div>
+  <div id="infoContent" style="flex:1;overflow-y:auto;padding:0 12px 10px;color:#a0b4b5;font-size:11px">Seleccioná un área de la lista.</div>
 </div>
 </foreignObject>`;
-  panelSVG+=`<text x="${(px+panelW/2).toFixed(1)}" y="${svgH-8}" text-anchor="middle" font-size="9" fill="#a0b4b5" font-family="Montserrat,sans-serif">Rueda = zoom · Drag = mover</text>`;
-    const script=`<![CDATA[
+
+  const script=`<![CDATA[
 (function(){
   var areasData=${areasJSON};
   var csvData=${csvJSON};
   var svg=document.querySelector('svg');
   var main=document.getElementById('svg-main');
-  var ptx=0,pty=0,sc=1;
+  var ptx=0,pty=0,sc=1,initSc=1;
   function applyT(){main.setAttribute('transform','translate('+ptx+','+pty+') scale('+sc+')');}
+  window.doZoom=function(f){
+    var cx=${(svgW/2).toFixed(1)},cy=${(svgH/2).toFixed(1)};
+    ptx=cx-(cx-ptx)*f;pty=cy-(cy-pty)*f;sc*=f;applyT();
+  };
+  window.doReset=function(){ptx=0;pty=0;sc=initSc;applyT();};
   svg.addEventListener('wheel',function(e){
     var rect=svg.getBoundingClientRect();
     var mx=e.clientX-rect.left,my=e.clientY-rect.top;
@@ -791,18 +810,13 @@ function exportSVG(){
     ptx=mx-(mx-ptx)*f; pty=my-(my-pty)*f; sc*=f;
     applyT(); e.preventDefault();
   },{passive:false});
-  var dragging=false,dx=0,dy=0,dtx=0,dty=0,didDrag=false;
+  var dragging=false,dx=0,dy=0,dtx=0,dty=0;
   svg.addEventListener('mousedown',function(e){
-    if(e.target.hasAttribute('onclick')) return;
+    if(e.target.tagName==='BUTTON'||e.target.tagName==='LI') return;
     if(e.clientX-svg.getBoundingClientRect().left>${svgW.toFixed(0)}) return;
-    dragging=true;didDrag=false;dx=e.clientX;dy=e.clientY;dtx=ptx;dty=pty;svg.style.cursor='grabbing';
+    dragging=true;dx=e.clientX;dy=e.clientY;dtx=ptx;dty=pty;svg.style.cursor='grabbing';
   });
-  window.addEventListener('mousemove',function(e){
-    if(!dragging)return;
-    var mdx=e.clientX-dx,mdy=e.clientY-dy;
-    if(Math.abs(mdx)>3||Math.abs(mdy)>3)didDrag=true;
-    ptx=dtx+mdx;pty=dty+mdy;applyT();
-  });
+  window.addEventListener('mousemove',function(e){if(!dragging)return;ptx=dtx+(e.clientX-dx);pty=dty+(e.clientY-dy);applyT();});
   window.addEventListener('mouseup',function(){dragging=false;svg.style.cursor='';});
   window.toggleLayer=function(id,btn){
     var el=document.getElementById(id);if(!el)return;
@@ -811,9 +825,32 @@ function exportSVG(){
     btn.setAttribute('fill-opacity',hidden?'0.13':'0.05');
     btn.setAttribute('stroke-opacity',hidden?'1':'0.4');
   };
+  var list=document.getElementById('areaList');
+  var selectedIdx=-1;
+  areasData.forEach(function(a,idx){
+    var li=document.createElement('div');
+    li.style.cssText='display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;cursor:pointer;margin-bottom:3px;border:1.5px solid transparent';
+    li.innerHTML='<div style="width:10px;height:10px;border-radius:3px;flex-shrink:0;background:'+a.color+'"></div>'
+      +'<div style="font-size:10px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:'+a.color+'">'+(a.type==='pasillo'?'':'↳ ')+a.name+'</div>'
+      +'<div style="font-size:8px;font-weight:700;padding:1px 5px;border-radius:5px;background:'+a.color+'22;color:'+a.color+'">'+(a.type==='pasillo'?'PAS':'COL')+'</div>';
+    li.onclick=function(){selectArea(idx);};
+    list.appendChild(li);
+  });
+  function selectArea(idx){
+    if(selectedIdx>=0){
+      var prev=document.getElementById('area-'+selectedIdx);
+      if(prev){prev.setAttribute('fill-opacity','0.35');prev.setAttribute('stroke-width','1.5');}
+      list.children[selectedIdx].style.background='';list.children[selectedIdx].style.borderColor='transparent';
+    }
+    selectedIdx=idx;
+    var path=document.getElementById('area-'+idx);
+    if(path){path.setAttribute('fill-opacity','0.65');path.setAttribute('stroke-width','3');}
+    list.children[idx].style.background=areasData[idx].color+'18';
+    list.children[idx].style.borderColor=areasData[idx].color;
+    showInfo(idx);
+  }
   var INFO_COLS=['Nave','Tipo de Almacenamiento','Posicion','Tipo de Posicion','Division Horizontal','Piso','Columna','Altura','Largo','Alto','Ancho','Peso'];
-  window.showAreaInfo=function(idx){
-    if(didDrag){didDrag=false;return;}
+  function showInfo(idx){
     var a=areasData[idx];
     var rows=[];
     if(a.type==='pasillo'&&csvData[a.name]) rows=csvData[a.name];
@@ -823,14 +860,14 @@ function exportSVG(){
     var title='<div style="font-size:12px;font-weight:800;color:'+a.color+';margin-bottom:6px">'+(a.type==='pasillo'?'Pasillo ':'Columna ')+a.name+(a.pasilloParent?' &mdash; Pasillo '+a.pasilloParent:'')+'</div>';
     if(!rows.length){el.innerHTML=title+'<div style="color:#a0b4b5;font-size:11px">Sin datos CSV para esta área.</div>';return;}
     var cedido=rows.filter(function(r){return r['Tipo de Almacenamiento']==='Espacio Cedido';}).length;
-    var stats='<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">'
-      +'<div style="background:#e8f9fa;border:1px solid #b2e8eb;border-radius:8px;padding:6px 10px;text-align:center"><div style="font-size:18px;font-weight:800;color:#1fa8b0">'+rows.length+'</div><div style="font-size:9px;color:#5a6a6b">Posiciones</div></div>'
-      +(cedido?'<div style="background:#e8f9fa;border:1px solid #b2e8eb;border-radius:8px;padding:6px 10px;text-align:center"><div style="font-size:18px;font-weight:800;color:#1fa8b0">'+cedido+'</div><div style="font-size:9px;color:#5a6a6b">Cedido</div></div>':'')
+    var stats='<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">'
+      +'<div style="background:#e8f9fa;border:1px solid #b2e8eb;border-radius:7px;padding:5px 8px;text-align:center"><div style="font-size:16px;font-weight:800;color:#1fa8b0">'+rows.length+'</div><div style="font-size:8px;color:#5a6a6b">Posiciones</div></div>'
+      +(cedido?'<div style="background:#e8f9fa;border:1px solid #b2e8eb;border-radius:7px;padding:5px 8px;text-align:center"><div style="font-size:16px;font-weight:800;color:#1fa8b0">'+cedido+'</div><div style="font-size:8px;color:#5a6a6b">Cedido</div></div>':'')
       +'</div>';
-    var thead='<thead><tr>'+INFO_COLS.map(function(c){return'<th style="background:#e8f9fa;color:#1fa8b0;font-size:9px;font-weight:700;padding:4px 6px;text-align:left;border-bottom:2px solid #b2e8eb;white-space:nowrap;position:sticky;top:0">'+c+'</th>';}).join('')+'</tr></thead>';
-    var tbody='<tbody>'+rows.map(function(r){return'<tr>'+INFO_COLS.map(function(c){return'<td style="padding:3px 6px;border-bottom:1px solid #d8eef0;white-space:nowrap;font-size:9px">'+(r[c]||'')+'</td>';}).join('')+'</tr>';}).join('')+'</tbody>';
-    el.innerHTML=title+stats+'<div style="overflow:auto;max-height:calc(100% - 80px)"><table style="border-collapse:collapse;width:100%">'+thead+tbody+'</table></div>';
-  };
+    var thead='<thead><tr>'+INFO_COLS.map(function(c){return'<th style="background:#e8f9fa;color:#1fa8b0;font-size:8px;font-weight:700;padding:3px 5px;text-align:left;border-bottom:2px solid #b2e8eb;white-space:nowrap;position:sticky;top:0">'+c+'</th>';}).join('')+'</tr></thead>';
+    var tbody='<tbody>'+rows.map(function(r){return'<tr>'+INFO_COLS.map(function(c){return'<td style="padding:3px 5px;border-bottom:1px solid #d8eef0;white-space:nowrap;font-size:8px">'+(r[c]||'')+'</td>';}).join('')+'</tr>';}).join('')+'</tbody>';
+    el.innerHTML=title+stats+'<table style="border-collapse:collapse;width:100%">'+thead+tbody+'</table>';
+  }
 })();
 ]]>`;
   const svg=`<?xml version="1.0" encoding="UTF-8"?>
