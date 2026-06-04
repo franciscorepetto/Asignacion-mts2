@@ -208,6 +208,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 <button class="expbtn" onclick="exportXLSX()">↓ Exportar tabla BASE (.xlsx)</button>
 <button class="expbtn" style="background:var(--brand-dark)" onclick="guardarTrabajo()">↓ Exportar actividades (.json)</button>
 <button class="expbtn" style="background:#059669" onclick="exportSVG()">↓ Exportar plano (.svg)</button>
+<button class="expbtn" style="background:#059669" onclick="exportSVG()">↓ Exportar plano (.svg)</button>
       <div class="summary">
         <div class="srow"><span class="skey">Total asignado</span><span class="sval" id="totArea">0.00 m²</span></div>
         <div class="srow"><span class="skey">Áreas</span><span class="sval" id="totN">0</span></div>
@@ -1187,6 +1188,101 @@ function selArea(idx){
   a2.href=url;
   a2.download=(currentSuc?currentSuc.code:'plano')+'_plano.svg';
   a2.click();
+  URL.revokeObjectURL(url);
+}
+  function exportSVG(){
+  if(!checkBeforeExport()) return;
+  saveAreas();
+  const floors=currentSuc?MULTI_FLOOR[currentSuc.code]:null;
+  let exportAreas=[];
+  if(floors){
+    floors.forEach(f=>{try{const saved=localStorage.getItem(`areas_${currentSuc.code}_${f.id}`);if(saved)exportAreas.push(...JSON.parse(saved));}catch(e){}});
+  }else{exportAreas=[...areas];}
+  if(!exportAreas.length){alert('No hay áreas para exportar.');return;}
+  const W=900,H=650,PAD=40,PANEL=280;
+  const mapW=W-PANEL,mapH=H;
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  exportAreas.forEach(a=>{a.points.forEach(p=>{minX=Math.min(minX,p.x);minY=Math.min(minY,p.y);maxX=Math.max(maxX,p.x);maxY=Math.max(maxY,p.y);});});
+  const dxfW=maxX-minX||1,dxfH=maxY-minY||1;
+  const scaleX=(mapW-PAD*2)/dxfW,scaleY=(mapH-PAD*2)/dxfH;
+  const sc=Math.min(scaleX,scaleY);
+  const offX=PAD+(mapW-PAD*2-dxfW*sc)/2-minX*sc;
+  const offY=PAD+(mapH-PAD*2-dxfH*sc)/2-minY*sc;
+  function tx(x){return offX+x*sc;}
+  function ty(y){return mapH-(offY+y*sc);}
+  const COLORS=['#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6','#ec4899','#14b8a6','#f97316','#6366f1','#84cc16'];
+  const famColors={};let ci=0;
+  exportAreas.forEach(a=>{const fam=getFamiliaDeActividad(a.actividad)||a.actividad||'Sin actividad';if(!famColors[fam]){famColors[fam]=COLORS[ci%COLORS.length];ci++;}});
+  let pathsSVG='';
+  exportAreas.forEach((a,idx)=>{
+    const fam=getFamiliaDeActividad(a.actividad)||a.actividad||'Sin actividad';
+    const col=famColors[fam]||'#888';
+    const pts=a.points.map(p=>`${tx(p.x).toFixed(1)},${ty(p.y).toFixed(1)}`).join(' ');
+    pathsSVG+=`<polygon id="area-${idx}" points="${pts}" fill="${col}" fill-opacity="0.45" stroke="${col}" stroke-width="1.5" data-idx="${idx}"/>`;
+  });
+  let listItems='';
+  exportAreas.forEach((a,idx)=>{
+    const fam=getFamiliaDeActividad(a.actividad)||a.actividad||'–';
+    const col=famColors[fam]||'#888';
+    const label=`${a.sector||'–'} | ${a.actividad||'–'}`;
+    const mts2=(a.mts2||0).toFixed(1);
+    listItems+=`<div class="aitem" onclick="selArea(${idx})" id="li-${idx}" style="border-left:4px solid ${col};padding:6px 8px;margin:3px 0;cursor:pointer;border-radius:4px;font-size:11px;background:#f8fafc"><b>${label}</b><br/><span style="color:#666">${mts2} m²</span></div>`;
+  });
+  const areasJSON=JSON.stringify(exportAreas.map(a=>({sector:a.sector,af:a.af,etapa:a.etapa,actividad:a.actividad,mts2:(a.mts2||0).toFixed(1),piso:a.piso||'',espacios:a.espaciosCedidos||'',codCliente:a.codigoCliente||'',nomCliente:a.nombreCliente||'',obs:a.observacion||''}))).replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const sucName=currentSuc?currentSuc.name:'Plano';
+  const fecha=new Date().toLocaleDateString('es-AR');
+  const svgContent=`<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="font-family:sans-serif;background:#f1f5f9">
+<defs><clipPath id="mapClip"><rect x="0" y="0" width="${mapW}" height="${mapH}"/></clipPath></defs>
+<rect x="0" y="0" width="${mapW}" height="${mapH}" fill="#fff"/>
+<g id="mapG" clip-path="url(#mapClip)">
+  <g id="zoom-group" transform="translate(0,0) scale(1)">${pathsSVG}</g>
+</g>
+<rect x="${mapW}" y="0" width="${PANEL}" height="${H}" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+<foreignObject x="${mapW}" y="0" width="${PANEL}" height="${H}">
+  <xhtml:div style="width:${PANEL}px;height:${H}px;box-sizing:border-box;padding:10px;overflow:hidden;display:flex;flex-direction:column;gap:6px">
+    <xhtml:div style="font-weight:700;font-size:13px;color:#1e293b">${sucName}</xhtml:div>
+    <xhtml:div style="font-size:10px;color:#64748b">${fecha}</xhtml:div>
+    <xhtml:div style="display:flex;gap:6px">
+      <xhtml:button onclick="zoomIn()" style="flex:1;padding:5px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;font-size:14px">+</xhtml:button>
+      <xhtml:button onclick="zoomOut()" style="flex:1;padding:5px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;font-size:14px">−</xhtml:button>
+      <xhtml:button onclick="resetZoom()" style="flex:1;padding:5px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;font-size:13px">↺</xhtml:button>
+    </xhtml:div>
+    <xhtml:div style="font-size:11px;font-weight:600;color:#475569">Áreas (${exportAreas.length})</xhtml:div>
+    <xhtml:div id="areaList" style="flex:1;overflow-y:auto;min-height:0">${listItems}</xhtml:div>
+    <xhtml:div id="infoBox" style="font-size:10px;color:#475569;border-top:1px solid #e2e8f0;padding-top:6px;display:none"></xhtml:div>
+  </xhtml:div>
+</foreignObject>
+<script>//<![CDATA[
+var areas=${areasJSON};
+var sc=1,ox=0,oy=0;
+var mapW=${mapW},mapH=${mapH};
+var zg=document.getElementById('zoom-group');
+function applyTransform(){zg.setAttribute('transform','translate('+ox+','+oy+') scale('+sc+')');}
+function zoomAt(cx,cy,factor){ox=cx-(cx-ox)*factor;oy=cy-(cy-oy)*factor;sc*=factor;applyTransform();}
+function zoomIn(){zoomAt(mapW/2,mapH/2,1.25);}
+function zoomOut(){zoomAt(mapW/2,mapH/2,0.8);}
+function resetZoom(){sc=1;ox=0;oy=0;applyTransform();}
+document.getElementById('mapG').addEventListener('wheel',function(e){e.preventDefault();var rect=e.currentTarget.getBoundingClientRect();var cx=e.clientX-rect.left,cy=e.clientY-rect.top;var delta=e.deltaY;if(e.deltaMode===1)delta*=30;if(e.deltaMode===2)delta*=300;zoomAt(cx,cy,Math.pow(0.9985,delta));},{passive:false});
+var dragging=false,startX,startY,startOx,startOy;
+document.getElementById('mapG').addEventListener('mousedown',function(e){dragging=true;startX=e.clientX;startY=e.clientY;startOx=ox;startOy=oy;});
+document.addEventListener('mousemove',function(e){if(!dragging)return;ox=startOx+(e.clientX-startX);oy=startOy+(e.clientY-startY);applyTransform();});
+document.addEventListener('mouseup',function(){dragging=false;});
+function selArea(idx){
+  document.querySelectorAll('.aitem').forEach(function(el){el.style.background='#f8fafc';});
+  var li=document.getElementById('li-'+idx);if(li)li.style.background='#e0f2fe';
+  document.querySelectorAll('[id^="area-"]').forEach(function(el){el.setAttribute('fill-opacity','0.35');el.setAttribute('stroke-width','1.5');});
+  var el=document.getElementById('area-'+idx);if(el){el.setAttribute('fill-opacity','0.85');el.setAttribute('stroke-width','3');}
+  var a=areas[idx];
+  var ib=document.getElementById('infoBox');ib.style.display='block';
+  ib.innerHTML='<b>'+(a.sector||'–')+'</b><br/>Actividad: '+(a.actividad||'–')+'<br/>AF: '+(a.af||'–')+' | Etapa: '+(a.etapa||'–')+'<br/>Mts²: '+a.mts2+(a.piso?'<br/>Piso: '+a.piso:'')+(a.codCliente?'<br/>Cliente: '+a.codCliente+' '+a.nomCliente:'')+(a.obs?'<br/>Obs: '+a.obs:'');
+}
+//]]></script>
+</svg>`;
+  const blob=new Blob([svgContent],{type:'image/svg+xml'});
+  const url=URL.createObjectURL(blob);
+  const a2=document.createElement('a');
+  a2.href=url;a2.download=(currentSuc?currentSuc.code:'plano')+'_plano.svg';a2.click();
   URL.revokeObjectURL(url);
 }
   function exportXLSX(){
