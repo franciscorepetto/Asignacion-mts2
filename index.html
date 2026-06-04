@@ -1072,7 +1072,12 @@ function exportSVG(){
     const label=a.name||('Área '+(idx+1));
     const mts2=a.totalArea?a.totalArea.toFixed(1):'0.0';
     const acts=a.activities.map(act=>`${act.name} (${act.pct}%)`).join('<br/>');
-    listItems+=`<div class="pitem" id="li-${idx}" onclick="toggleArea(${idx})" style="padding:6px 8px;margin:3px 0;cursor:pointer;border-radius:6px;background:#fff;font-size:10px;font-family:sans-serif;display:flex;align-items:center;gap:8px;border:1.5px solid #e8f0f1"><div id="dot-${idx}" style="width:14px;height:14px;border-radius:3px;background:${a.color};flex-shrink:0"></div><div><div style="font-weight:700;color:#1a1a1a">${label}</div><div style="color:#5a6a6b;margin-top:1px">${mts2} m²</div></div></div>`;
+    const actSummary=a.activities.map(act=>{
+  const m2=(act.pct/100*a.totalArea).toFixed(1);
+  const clientStr=act.client?` · ${getClientDesc(act.client)}`:'';
+  return `<div style="color:#5a6a6b;font-size:9px;margin-top:1px">• ${act.name} — ${m2} m²${clientStr}</div>`;
+}).join('');
+listItems+=`<div class="pitem" id="li-${idx}" onclick="toggleArea(${idx})" style="padding:7px 9px;margin:3px 0;cursor:pointer;border-radius:6px;background:#fff;font-size:10px;font-family:sans-serif;border:1.5px solid #e8f0f1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><div id="dot-${idx}" style="width:12px;height:12px;border-radius:3px;background:${a.color};flex-shrink:0"></div><div style="font-weight:700;color:#1a1a1a">${label}</div><div style="color:#5a6a6b;margin-left:auto;white-space:nowrap">${mts2} m²</div></div>${actSummary}</div>`;
   });
 
   // Datos para el JS embebido
@@ -1100,7 +1105,7 @@ function exportSVG(){
     <xhtml:div id="areaList" style="flex:1;overflow-y:auto;min-height:0">${listItems}</xhtml:div>
   </xhtml:div>
 </foreignObject>
-<foreignObject id="tip-fo" x="0" y="0" width="220" height="20" style="display:none;pointer-events:none">
+<foreignObject id="tip-fo" x="0" y="0" width="230" height="300" style="display:none;pointer-events:none">
   <xhtml:div id="tip-content" style="padding:8px 10px;font-size:10px;font-family:sans-serif;line-height:1.6;color:#1a1a1a;background:#fff;border:1.5px solid #d8eef0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.15);width:210px"></xhtml:div>
 </foreignObject>
 <script>//<![CDATA[
@@ -1123,8 +1128,15 @@ var tipContent=document.getElementById('tip-content');
 document.querySelectorAll('.area-poly').forEach(function(el){
   el.addEventListener('mouseover',function(e){
     var idx=+this.getAttribute('data-idx');var a=areas[idx];
-    var h='<b style="color:'+a.color+'">'+a.name+'</b> — '+a.totalArea+' m²<br/>';
-    a.activities.forEach(function(act){h+='<span style="color:#5a6a6b">'+act.name+' '+act.pct+'%'+(act.piso?' · '+act.piso:'')+(act.obs?' · '+act.obs:'')+'</span><br/>';});
+      var h='<b style="color:'+a.color+';font-size:11px">'+a.name+'</b><span style="color:#5a6a6b;font-size:9px"> — '+a.totalArea+' m²</span><br/>';
+    a.activities.forEach(function(act){
+      var m2=(act.pct/100*a.totalArea).toFixed(1);
+      h+='<div style="margin-top:3px;padding-top:3px;border-top:1px solid #e8f0f1">';
+      h+='<span style="font-weight:700;color:#1a1a1a">'+act.name+'</span><br/>';
+      h+='<span style="color:#5a6a6b">'+act.pct+'% · '+m2+' m²'+(act.piso?' · '+act.piso:'')+'</span>';
+      if(act.obs)h+='<br/><span style="color:#a0b4b5">'+act.obs+'</span>';
+      h+='</div>';
+    });
     tipContent.innerHTML=h;tipFo.style.display='';moveTip(e);
   });
   el.addEventListener('mousemove',moveTip);
