@@ -1116,7 +1116,7 @@ function selArea(idx){
   var ib=document.getElementById('infoBox');ib.style.display='block';
    ib.innerHTML='<b>'+(a.nombre||'–')+'</b><br/>Actividades: '+(a.actividades||'–')+'<br/>Mts²: '+a.mts2;
 }
-//]]></script>
+//]]><\/script>
 </svg>`;
   const blob=new Blob([svgContent],{type:'image/svg+xml'});
   const url=URL.createObjectURL(blob);
