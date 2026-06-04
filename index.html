@@ -207,6 +207,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
      <button class="expbtn" style="background:#e05548" onclick="limpiarAreas()">🗑 Limpiar todas las áreas</button>
 <button class="expbtn" onclick="exportXLSX()">↓ Exportar tabla BASE (.xlsx)</button>
 <button class="expbtn" style="background:var(--brand-dark)" onclick="guardarTrabajo()">↓ Exportar actividades (.json)</button>
+<button class="expbtn" style="background:#059669" onclick="exportHTML()">↓ Exportar plano (.html)</button>
       <div class="summary">
         <div class="srow"><span class="skey">Total asignado</span><span class="sval" id="totArea">0.00 m²</span></div>
         <div class="srow"><span class="skey">Áreas</span><span class="sval" id="totN">0</span></div>
@@ -1024,7 +1025,156 @@ function getFamilia(actName){
   }
   return '';
 }
-function exportXLSX(){
+function exportHTML(){
+  if(!DXF||!DXF.bbox){alert('No hay plano cargado.');return;}
+  const dxfData=JSON.stringify({lines:DXF.lines,polys:DXF.polys,bbox:DXF.bbox});
+  const areasData=JSON.stringify(areas);
+  const sucName=currentSuc?(currentSuc.name+(currentFloor?' — '+currentFloor.name:'')):'';
+  const COLORS=JSON.stringify({PAS:'#009CA3',ACT:['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0']});
+  const html=`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OCASA — ${sucName}</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Montserrat',sans-serif;background:#f4f6f7;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+header{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:48px;background:#fff;border-bottom:2px solid #33c2ca;flex-shrink:0;box-shadow:0 2px 8px rgba(51,194,202,.12)}
+.logo{font-size:20px;font-weight:800;color:#1a1a1a}.sub{font-size:12px;font-weight:600;color:#5a6a6b}.sub span{color:#33c2ca;font-weight:700}
+.main{display:flex;flex:1;overflow:hidden;min-height:0}
+.sidebar{width:270px;background:#fff;border-right:1.5px solid #d8eef0;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.sb-head{padding:12px 14px 8px;border-bottom:1px solid #d8eef0;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#1fa8b0}
+.sb-body{flex:1;overflow-y:auto;padding:8px}
+.sb-body::-webkit-scrollbar{width:4px}.sb-body::-webkit-scrollbar-thumb{background:#b2e8eb;border-radius:2px}
+.aitem{border-radius:9px;margin-bottom:6px;border:1.5px solid #d8eef0;overflow:hidden;background:#fff;cursor:pointer;transition:all .12s}
+.aitem:hover{box-shadow:0 2px 8px rgba(51,194,202,.12)}
+.aitem.sel{border-color:#33c2ca;box-shadow:0 0 0 3px rgba(51,194,202,.15)}
+.aitem-head{display:flex;align-items:center;gap:8px;padding:8px 10px}
+.adot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.aname{font-size:11px;font-weight:700;flex:1}
+.am2{font-size:10px;font-weight:600;color:#1fa8b0;background:#e8f9fa;padding:2px 6px;border-radius:10px;border:1px solid #b2e8eb}
+.aacts{padding:5px 10px 8px;background:#f0f8f9;border-top:1px solid #d8eef0}
+.aact{display:flex;align-items:center;gap:5px;padding:2px 0;font-size:10px}
+.aact-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.aact-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;color:#5a6a6b}
+.aact-pct{font-weight:700;color:#1fa8b0;white-space:nowrap}
+.aact-m2{font-weight:600;color:#a0b4b5;white-space:nowrap}
+.summary{padding:10px 14px;border-top:2px solid #d8eef0;background:#f0f8f9;font-size:11px;display:flex;justify-content:space-between}
+.skey{color:#5a6a6b;font-weight:500}.sval{color:#1fa8b0;font-weight:700}
+.cwrap{flex:1;position:relative;overflow:hidden}
+canvas{display:block}
+.tbar{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px;z-index:10}
+.tbtn{width:34px;height:34px;background:#fff;border:1.5px solid #d8eef0;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#5a6a6b;transition:all .12s;user-select:none;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.tbtn:hover{background:#e8f9fa;color:#33c2ca;border-color:#33c2ca}
+.scalebar{position:absolute;bottom:12px;right:12px;background:#fff;border:1.5px solid #d8eef0;padding:4px 10px;border-radius:20px;font-size:9px;font-weight:600;color:#5a6a6b;pointer-events:none}
+.tooltip{display:none;position:fixed;z-index:50;pointer-events:none;background:#fff;border:1.5px solid #d8eef0;border-radius:10px;padding:10px 13px;box-shadow:0 4px 20px rgba(0,0,0,.12);max-width:240px;font-size:11px;line-height:1.7}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">OCASA</div>
+  <div class="sub">Layout · <span>${sucName}</span></div>
+  <div style="font-size:9px;font-weight:600;color:#a0b4b5;background:#e8f9fa;padding:3px 10px;border-radius:20px;border:1px solid #b2e8eb" id="coords">—</div>
+</header>
+<div class="main">
+  <div class="sidebar">
+    <div class="sb-head">Áreas definidas</div>
+    <div class="sb-body" id="sbody"></div>
+    <div class="summary"><span class="skey">Total</span><span class="sval" id="totm2">—</span></div>
+  </div>
+  <div class="cwrap" id="cwrap">
+    <canvas id="fp"></canvas>
+    <div class="tbar">
+      <div class="tbtn" onclick="zoom(1.2)" title="Zoom +">+</div>
+      <div class="tbtn" onclick="zoom(0.83)" title="Zoom −">−</div>
+      <div class="tbtn" onclick="resetView()" title="Encuadrar">⊡</div>
+    </div>
+    <div class="scalebar" id="scalebar">—</div>
+  </div>
+</div>
+<div class="tooltip" id="tip"></div>
+<script>
+const DXF=${dxfData};
+const areas=${areasData};
+const ACT_COLORS=${COLORS};
+const canvas=document.getElementById('fp'),ctx=canvas.getContext('2d'),wrap=document.getElementById('cwrap');
+let scale=1,ox=0,oy=0,baseScale=1,sel=null,panning=false,panStart=null,panOff=null;
+function toS(wx,wy){const b=DXF.bbox;return[(wx-b.min_x)*scale+ox,(b.max_y-wy)*scale+oy];}
+function toW(sx,sy){const b=DXF.bbox;return[(sx-ox)/scale+DXF.bbox.min_x,DXF.bbox.max_y-(sy-oy)/scale];}
+function polyArea(pts){let a=0,n=pts.length;for(let i=0;i<n;i++){const j=(i+1)%n;a+=pts[i][0]*pts[j][1]-pts[j][0]*pts[i][1];}return Math.abs(a/2);}
+function pip([x,y],pts){let inside=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const xi=pts[i][0],yi=pts[i][1],xj=pts[j][0],yj=pts[j][1];if(((yi>y)!=(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))inside=!inside;}return inside;}
+function initCanvas(){canvas.width=wrap.clientWidth;canvas.height=wrap.clientHeight;if(canvas.width>0&&canvas.height>0)resetView();else requestAnimationFrame(initCanvas);}
+new ResizeObserver(()=>{canvas.width=wrap.clientWidth;canvas.height=wrap.clientHeight;render();}).observe(wrap);
+function resetView(){const b=DXF.bbox,m=40,dw=b.max_x-b.min_x,dh=b.max_y-b.min_y;scale=Math.min((canvas.width-m*2)/dw,(canvas.height-m*2)/dh);baseScale=scale;ox=(canvas.width-dw*scale)/2;oy=(canvas.height-dh*scale)/2;render();}
+function zoom(f){const cx=canvas.width/2,cy=canvas.height/2;ox=cx-(cx-ox)*f;oy=cy-(cy-oy)*f;scale*=f;render();}
+function render(){
+  const b=DXF.bbox;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const[x1,y2]=toS(b.min_x,b.min_y),[x2,y1]=toS(b.max_x,b.max_y);
+  ctx.fillStyle='#fff';ctx.fillRect(x1,y1,x2-x1,y2-y1);
+  ctx.strokeStyle='#e8f5f6';ctx.lineWidth=0.5;
+  const gm=10;for(let gx=Math.ceil(b.min_x/gm)*gm;gx<=b.max_x;gx+=gm){const[sx]=toS(gx,0);ctx.beginPath();ctx.moveTo(sx,y1);ctx.lineTo(sx,y2);ctx.stroke();}
+  for(let gy=Math.ceil(b.min_y/gm)*gm;gy<=b.max_y;gy+=gm){const[,sy]=toS(0,gy);ctx.beginPath();ctx.moveTo(x1,sy);ctx.lineTo(x2,sy);ctx.stroke();}
+  areas.forEach((a,i)=>{
+    const isSel=sel===i;
+    ctx.beginPath();a.pts.forEach((p,j)=>{const[sx,sy]=toS(p[0],p[1]);j?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});ctx.closePath();
+    ctx.fillStyle=a.color+(isSel?'55':'30');ctx.fill();
+    if(isSel){ctx.strokeStyle=a.color+'55';ctx.lineWidth=10;ctx.stroke();}
+    ctx.strokeStyle=a.color;ctx.lineWidth=isSel?3:2;ctx.setLineDash([]);ctx.stroke();
+    const cx=a.pts.reduce((s,p)=>s+p[0],0)/a.pts.length,cy=a.pts.reduce((s,p)=>s+p[1],0)/a.pts.length;
+    const[lx,ly]=toS(cx,cy);const fs=Math.max(9,Math.min(14,scale*6));
+    const label=a.name||('Área '+(i+1));
+    ctx.font='800 '+fs+'px Montserrat,sans-serif';
+    const tw=ctx.measureText(label).width;
+    ctx.fillStyle='rgba(255,255,255,.95)';ctx.beginPath();ctx.roundRect(lx-tw/2-6,ly-fs*1.45-4,tw+12,fs+8,4);ctx.fill();
+    ctx.fillStyle=a.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,lx,ly-fs*0.9);
+  });
+  DXF.polys.forEach(p=>{if(!p.pts||p.pts.length<2)return;ctx.beginPath();p.pts.forEach((pt,i)=>{const[sx,sy]=toS(pt[0],pt[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});if(p.closed)ctx.closePath();ctx.strokeStyle='#2a3a3b';ctx.lineWidth=1.2;ctx.setLineDash([]);ctx.stroke();});
+  DXF.lines.forEach(l=>{const[lx1,ly1]=toS(l.x1,l.y1),[lx2,ly2]=toS(l.x2,l.y2);ctx.beginPath();ctx.moveTo(lx1,ly1);ctx.lineTo(lx2,ly2);ctx.strokeStyle='#2a3a3b';ctx.lineWidth=1;ctx.setLineDash([]);ctx.stroke();});
+  document.getElementById('scalebar').textContent=(10/scale).toFixed(1)+'m = 10px';
+}
+// Sidebar
+const ACT_C=ACT_COLORS.ACT||[];
+function buildSidebar(){
+  const sb=document.getElementById('sbody');
+  if(!areas.length){sb.innerHTML='<div style="padding:10px;color:#a0b4b5;font-size:11px">Sin áreas.</div>';return;}
+  sb.innerHTML=areas.map((a,i)=>{
+    const actsHtml=(a.activities||[]).map((act,ai)=>{
+      const m2=(act.pct/100*(a.totalArea||polyArea(a.pts))).toFixed(1);
+      const c=ACT_C[ai%ACT_C.length]||'#33c2ca';
+      const short=act.name.length>26?act.name.slice(0,24)+'..':act.name;
+      return '<div class="aact"><div class="aact-dot" style="background:'+c+'"></div><div class="aact-name" title="'+act.name+'">'+short+'</div><div class="aact-pct">'+act.pct+'%</div><div class="aact-m2">'+m2+'m²</div></div>';
+    }).join('');
+    const tot=(a.totalArea||polyArea(a.pts)).toFixed(1);
+    return '<div class="aitem" id="si'+i+'" onclick="selArea('+i+')"><div class="aitem-head"><div class="adot" style="background:'+a.color+'"></div><div class="aname" style="color:'+a.color+'">'+(a.name||'Área '+(i+1))+'</div><div class="am2">'+tot+' m²</div></div>'+(actsHtml?'<div class="aacts">'+actsHtml+'</div>':'')+'</div>';
+  }).join('');
+  const tot=areas.reduce((s,a)=>s+(a.totalArea||polyArea(a.pts)),0);
+  document.getElementById('totm2').textContent=tot.toFixed(2)+' m²';
+}
+function selArea(i){
+  if(sel===i){sel=null;}else{sel=i;document.getElementById('si'+i).scrollIntoView({block:'nearest'});}
+  document.querySelectorAll('.aitem').forEach((el,j)=>el.classList.toggle('sel',j===sel));
+  render();
+}
+// Events
+canvas.addEventListener('click',e=>{if(panning)return;const[wx,wy]=toW(e.offsetX,e.offsetY);let found=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}selArea(found!==null?found:(sel===found?null:found));});
+canvas.addEventListener('mousedown',e=>{if(e.button===1||e.button===0){panning=true;panStart=[e.clientX,e.clientY];panOff=[ox,oy];canvas.style.cursor='grabbing';}});
+window.addEventListener('mousemove',e=>{if(panning&&panStart){ox=panOff[0]+(e.clientX-panStart[0]);oy=panOff[1]+(e.clientY-panStart[1]);render();}if(!panning&&DXF){const[wx,wy]=toW(e.clientX-canvas.getBoundingClientRect().left,e.clientY-canvas.getBoundingClientRect().top);const b=DXF.bbox;document.getElementById('coords').textContent='x: '+(wx-b.min_x).toFixed(1)+'m  y: '+(wy-b.min_y).toFixed(1)+'m';}});
+window.addEventListener('mouseup',()=>{setTimeout(()=>panning=false,10);canvas.style.cursor='default';});
+canvas.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaY<0?1.12:0.9;ox=e.offsetX-(e.offsetX-ox)*f;oy=e.offsetY-(e.offsetY-oy)*f;scale*=f;render();},{passive:false});
+buildSidebar();initCanvas();
+<\/script>
+</body>
+</html>`;
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const el=document.createElement('a');el.href=url;
+  el.download=`layout_${currentSuc.code}${currentFloor?'_'+currentFloor.id:''}.html`;
+  el.click();URL.revokeObjectURL(url);
+}
+  function exportXLSX(){
     if(!checkBeforeExport()) return;
   saveAreas();
   const floors=currentSuc?MULTI_FLOOR[currentSuc.code]:null;
