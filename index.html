@@ -176,10 +176,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
   <div class="hmeta" id="rectArea" style="display:none">— m²</div>
   <button class="back-btn" id="backBtn" style="display:none" onclick="goBack()">← Volver</button>
   <div class="user-info" id="userInfo" style="display:none">
-    <button class="upload-plan-btn" id="uploadPlanBtn" style="display:none" onclick="document.getElementById('uploadPlanInput').click()" title="Subir plano DXF">
+    <button class="upload-plan-btn" id="uploadPlanBtn" style="display:none" onclick="openUploadModal()" title="Subir plano DXF">
       ↑ Subir plano
     </button>
-    <input type="file" id="uploadPlanInput" accept=".dxf" style="display:none" onchange="handlePlanUpload(event)">
     <span class="user-role" id="userRoleBadge">usuario</span>
     <span class="user-email" id="userEmailLabel"></span>
     <button class="logout-btn" onclick="doLogout()">Salir</button>
@@ -322,6 +321,8 @@ async function initAuth(){
   if(isAdmin){ roleBadge.textContent='admin'; roleBadge.classList.add('admin'); }
   document.getElementById('uploadPlanBtn').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('userInfo').style.display = 'flex';
+  await loadUploadedPlans();
+  buildSplash();
 }
 
 async function doLogout(){
@@ -329,20 +330,113 @@ async function doLogout(){
   window.location.href = 'login.html';
 }
 
-function handlePlanUpload(event){
-  const file = event.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const content = e.target.result;
-    const fileName = file.name;
-    // Guardar el plano en localStorage para uso inmediato
-    localStorage.setItem('uploaded_plan_' + fileName, content);
-    alert('Plano "' + fileName + '" cargado. Para que quede permanente en el sistema, envialo al repositorio.');
-  };
-  reader.readAsText(file);
-  event.target.value = '';
+// ── Upload modal ──────────────────────────────────────────────────────────
+let uploadedPlans = []; // sucursales cargadas desde Supabase
+
+async function loadUploadedPlans(){
+  try{
+    const {data, error} = await sb.from('sucursales_upload').select('*').order('created_at');
+    if(error || !data) return;
+    uploadedPlans = data;
+    // Agregar sucursales nuevas a SUCURSALES si no existen
+    data.forEach(row=>{
+      if(!SUCURSALES.find(s=>s.code===row.iata)){
+        SUCURSALES.push({code:row.iata, name:row.nombre, available:true, fromSupabase:true});
+      }
+      // Agregar piso a MULTI_FLOOR
+      if(!MULTI_FLOOR[row.iata]) MULTI_FLOOR[row.iata]=[];
+      if(!MULTI_FLOOR[row.iata].find(f=>f.id===row.piso_id)){
+        MULTI_FLOOR[row.iata].push({id:row.piso_id, name:row.piso_nombre, supabase_path:row.archivo_path, piso:row.piso_label});
+      }
+    });
+  }catch(e){ console.warn('No se pudieron cargar planos de Supabase:', e); }
 }
+
+function openUploadModal(){
+  // Poblar select de sucursales existentes
+  const sel = document.getElementById('uploadSucSelect');
+  sel.innerHTML = '<option value="">— Seleccioná una sucursal —</option>';
+  [...SUCURSALES].sort((a,b)=>a.name.localeCompare(b.name)).forEach(s=>{
+    const o = document.createElement('option');
+    o.value = s.code; o.textContent = `${s.code} — ${s.name}`;
+    sel.appendChild(o);
+  });
+  document.querySelector('input[name="sucType"][value="existing"]').checked = true;
+  toggleSucType('existing');
+  document.getElementById('uploadPisoNombre').value='';
+  document.getElementById('uploadDXFInput').value='';
+  document.getElementById('uploadIATA').value='';
+  document.getElementById('uploadNombre').value='';
+  showUploadMsg('','');
+  document.getElementById('uploadModalBg').style.display='flex';
+}
+
+function closeUploadModal(){
+  document.getElementById('uploadModalBg').style.display='none';
+}
+
+function toggleSucType(val){
+  document.getElementById('sucExistingWrap').style.display = val==='existing'?'block':'none';
+  document.getElementById('sucNewWrap').style.display = val==='new'?'flex':'none';
+}
+
+function showUploadMsg(text, type){
+  const el = document.getElementById('uploadMsgBox');
+  if(!text){ el.style.display='none'; return; }
+  el.textContent = text;
+  el.style.display = 'block';
+  el.style.background = type==='error'?'#fce8e8':'#f0fdf4';
+  el.style.border = '1.5px solid '+(type==='error'?'#f5a0a0':'#86efac');
+  el.style.color = type==='error'?'#c0392b':'#166534';
+}
+
+async function submitPlanUpload(){
+  const sucType = document.querySelector('input[name="sucType"]:checked').value;
+  const pisoNombre = document.getElementById('uploadPisoNombre').value.trim();
+  const fileInput = document.getElementById('uploadDXFInput');
+  const file = fileInput.files[0];
+
+  let iata, nombre;
+  if(sucType==='existing'){
+    iata = document.getElementById('uploadSucSelect').value;
+    const suc = SUCURSALES.find(s=>s.code===iata);
+    nombre = suc ? suc.name : '';
+  } else {
+    iata = document.getElementById('uploadIATA').value.trim().toUpperCase();
+    nombre = document.getElementById('uploadNombre').value.trim();
+    if(!iata||!nombre){ showUploadMsg('Completá IATA y nombre de la sucursal.','error'); return; }
+    if(iata.length < 2){ showUploadMsg('El código IATA debe tener al menos 2 letras.','error'); return; }
+  }
+  if(!iata){ showUploadMsg('Seleccioná una sucursal.','error'); return; }
+  if(!pisoNombre){ showUploadMsg('Indicá el nombre del piso.','error'); return; }
+  if(!file){ showUploadMsg('Seleccioná un archivo DXF.','error'); return; }
+
+  const btn = document.getElementById('uploadSubmitBtn');
+  btn.disabled=true; btn.textContent='Subiendo...';
+
+  try{
+    const filePath = `${iata}/${Date.now()}_${file.name}`;
+    const {error: storageError} = await sb.storage.from('planos').upload(filePath, file);
+    if(storageError) throw new Error(storageError.message);
+
+    const pisoId = pisoNombre.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+    const {error: dbError} = await sb.from('sucursales_upload').insert({
+      iata, nombre, piso_id: pisoId, piso_nombre: pisoNombre,
+      piso_label: pisoNombre.toUpperCase(), archivo_path: filePath,
+      created_by: currentUser.id
+    });
+    if(dbError) throw new Error(dbError.message);
+
+    showUploadMsg('Plano subido correctamente. Recargá la página para verlo en la lista.','success');
+    btn.textContent='Subir plano';
+    setTimeout(()=>closeUploadModal(), 2000);
+    await loadUploadedPlans();
+  }catch(e){
+    showUploadMsg('Error al subir: '+e.message,'error');
+    btn.disabled=false; btn.textContent='Subir plano';
+  }
+}
+// ──────────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', initAuth);
 // ──────────────────────────────────────────────────────────────────────────
@@ -571,7 +665,7 @@ const canvas=document.getElementById('fp');
 const ctx=canvas.getContext('2d');
 const wrap=document.getElementById('cwrap');
 
-(function buildSplash(){
+function buildSplash(){
   const list=document.getElementById('sucGrid');
   function renderList(filter){
     list.innerHTML='';
@@ -594,7 +688,7 @@ const wrap=document.getElementById('cwrap');
   }
   renderList();
   window.filterSucursales=renderList;
-})();
+}
 
 function closeFSel(){
   document.getElementById('floorSelBg').style.display='none';
@@ -624,12 +718,22 @@ function renderFloorTabs(){
     return `<button onclick="switchFloor('${f.id}')" style="padding:6px 14px;border:1.5px solid ${active?'var(--brand)':'var(--border)'};background:${active?'var(--brand)':'#fff'};color:${active?'#fff':'var(--text2)'};font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;border-radius:8px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.06)">${f.name}</button>`;
   }).join('');
 }
+async function getFloorUrl(floor){
+  if(floor.supabase_path){
+    const {data} = sb.storage.from('planos').getPublicUrl(floor.supabase_path);
+    if(data?.publicUrl) return data.publicUrl;
+    // fallback: signed URL
+    const {data:signed} = await sb.storage.from('planos').createSignedUrl(floor.supabase_path, 3600);
+    return signed?.signedUrl;
+  }
+  return 'mapas/planos/'+floor.file.replace(/ /g,'%20');
+}
 async function enterFloor(floor){
   document.getElementById('floorSelBg').style.display='none';
   const btn=document.getElementById('enterBtn');
   btn.disabled=true;btn.textContent='Cargando plano...';
   try{
-    const url='mapas/planos/'+floor.file.replace(/ /g,'%20');
+    const url=await getFloorUrl(floor);
     const resp=await fetch(url);
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     DXF=parseDXF(await resp.text());
@@ -656,7 +760,7 @@ async function switchFloor(floorId){
   const floor=MULTI_FLOOR[currentSuc.code].find(f=>f.id===floorId);
   if(!floor) return;
   try{
-    const url='mapas/planos/'+floor.file.replace(/ /g,'%20');
+    const url=await getFloorUrl(floor);
     const resp=await fetch(url);
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     DXF=parseDXF(await resp.text());
@@ -1373,5 +1477,55 @@ if(v==='LINE'){
 canvas.addEventListener('mouseleave',()=>document.getElementById('areaTooltip').style.display='none');
 </script>
 <div id="areaTooltip" style="display:none;position:fixed;z-index:50;pointer-events:none;background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;box-shadow:0 4px 20px rgba(0,0,0,.15);max-width:260px;font-family:'Montserrat',sans-serif;font-size:11px;line-height:1.7"></div>
+
+<!-- Modal subir plano -->
+<div id="uploadModalBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:28px 28px 24px;width:100%;max-width:440px;box-shadow:0 12px 48px rgba(0,0,0,.18);border-top:4px solid var(--brand);font-family:'Montserrat',sans-serif">
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:4px">Subir plano DXF</h3>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:20px">El plano quedará disponible para todos los usuarios.</p>
+
+    <div id="uploadMsgBox" style="display:none;padding:9px 12px;border-radius:8px;font-size:12px;font-weight:500;margin-bottom:14px"></div>
+
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-dark);margin-bottom:6px">Sucursal</label>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer">
+          <input type="radio" name="sucType" value="existing" checked onchange="toggleSucType(this.value)"> Existente
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer">
+          <input type="radio" name="sucType" value="new" onchange="toggleSucType(this.value)"> Nueva sucursal
+        </label>
+      </div>
+      <div id="sucExistingWrap">
+        <select id="uploadSucSelect" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;outline:none;color:var(--text)">
+          <option value="">— Seleccioná una sucursal —</option>
+        </select>
+      </div>
+      <div id="sucNewWrap" style="display:none;display:flex;gap:8px">
+        <div style="flex:0 0 90px">
+          <input id="uploadIATA" type="text" maxlength="4" placeholder="IATA" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;outline:none;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div style="flex:1">
+          <input id="uploadNombre" type="text" placeholder="Nombre completo de la sucursal" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;outline:none">
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-dark);margin-bottom:6px">Nombre del piso</label>
+      <input id="uploadPisoNombre" type="text" placeholder="Ej: Planta Baja, Subsuelo, Piso 1..." style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;outline:none">
+    </div>
+
+    <div style="margin-bottom:20px">
+      <label style="display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-dark);margin-bottom:6px">Archivo DXF</label>
+      <input type="file" id="uploadDXFInput" accept=".dxf" style="width:100%;padding:8px;border:1.5px dashed var(--border);border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;cursor:pointer">
+    </div>
+
+    <div style="display:flex;gap:8px">
+      <button onclick="closeUploadModal()" style="padding:10px 16px;background:none;border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer">Cancelar</button>
+      <button id="uploadSubmitBtn" onclick="submitPlanUpload()" style="flex:1;padding:10px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s">Subir plano</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
