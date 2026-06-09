@@ -1,10 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 72" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 70" fill="none">
   <!-- OCASA text -->
-  <text x="0" y="58" font-family="'Arial Black', 'Arial', sans-serif" font-weight="900" font-size="56" fill="#111111" letter-spacing="-1">OCASA</text>
-  <!-- Arrow: upper-right pointing arrow in teal -->
-  <g transform="translate(192, 6)">
-    <!-- Arrow body: diagonal line from bottom-left to top-right -->
-    <!-- Arrowhead pointing upper-right -->
-    <polygon points="0,52 0,0 52,0 52,14 22,14 52,44 42,54 12,24 12,52" fill="#2ab3bb"/>
+  <text x="0" y="57" font-family="'Arial Black', 'Arial', sans-serif" font-weight="900" font-size="54" fill="#111111" letter-spacing="-1">OCASA</text>
+  <!-- Arrow pointing upper-right (northeast), to the right of text -->
+  <!-- Upward arrow rotated -45deg, centered at 278,33 -->
+  <g transform="translate(278,33) rotate(-45)">
+    <polygon points="-9,22 -9,-2 -20,-2 0,-24 20,-2 9,-2 9,22" fill="#2ab3bb"/>
   </g>
 </svg>
