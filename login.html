@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OCASA — Iniciar sesión</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --brand:#33c2ca;--brand-dark:#1fa8b0;--brand-light:#e8f9fa;--brand-mid:#b2e8eb;
+  --bg:#f4f6f7;--surface:#fff;--border:#d8eef0;
+  --text:#1a1a1a;--text2:#5a6a6b;--text3:#a0b4b5;--danger:#e05548;
+}
+body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+header{display:flex;align-items:center;padding:0 24px;height:52px;border-bottom:2px solid var(--brand);background:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(51,194,202,.12)}
+.logo-text{font-size:22px;font-weight:800;letter-spacing:-.5px;color:#1a1a1a}
+main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 16px}
+.card{background:#fff;border-radius:16px;padding:36px 32px;width:100%;max-width:420px;box-shadow:0 4px 24px rgba(51,194,202,.12);border:1.5px solid var(--border)}
+.card-title{font-size:20px;font-weight:800;margin-bottom:4px}
+.card-sub{font-size:12px;color:var(--text2);margin-bottom:28px;line-height:1.6}
+.tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:24px}
+.tab{flex:1;padding:8px 0;text-align:center;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);cursor:pointer;border:none;border-bottom:3px solid transparent;background:none;font-family:'Montserrat',sans-serif;transition:all .15s;margin-bottom:-2px}
+.tab.active{color:var(--brand-dark);border-bottom-color:var(--brand)}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-dark);margin-bottom:6px}
+.form-group input{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-family:'Montserrat',sans-serif;font-size:13px;outline:none;color:var(--text);background:#fff;transition:border-color .15s}
+.form-group input:focus{border-color:var(--brand)}
+.btn{width:100%;padding:12px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.04em;box-shadow:0 2px 12px rgba(51,194,202,.35);margin-top:4px}
+.btn:hover{background:var(--brand-dark)}
+.btn:disabled{background:var(--text3);box-shadow:none;cursor:not-allowed}
+.msg{padding:10px 13px;border-radius:8px;font-size:12px;font-weight:500;margin-bottom:16px;display:none}
+.msg.error{background:#fce8e8;border:1.5px solid #f5a0a0;color:#c0392b;display:block}
+.msg.success{background:#f0fdf4;border:1.5px solid #86efac;color:#166534;display:block}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo-text">OCASA</div>
+</header>
+<main>
+  <div class="card">
+    <div class="card-title">Bienvenido</div>
+    <div class="card-sub">Plataforma de layout de sucursales</div>
+
+    <div class="tabs">
+      <button class="tab active" id="tabLogin" onclick="switchTab('login')">Iniciar sesión</button>
+      <button class="tab" id="tabRegister" onclick="switchTab('register')">Crear cuenta</button>
+    </div>
+
+    <div id="msgBox" class="msg"></div>
+
+    <!-- Login -->
+    <div id="formLogin">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="tu@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn" id="loginBtn" onclick="doLogin()">Iniciar sesión</button>
+    </div>
+
+    <!-- Register -->
+    <div id="formRegister" style="display:none">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="regEmail" placeholder="tu@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="regPass" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>Confirmar contraseña</label>
+        <input type="password" id="regPass2" placeholder="Repetí la contraseña" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()">
+      </div>
+      <button class="btn" id="registerBtn" onclick="doRegister()">Crear cuenta</button>
+    </div>
+  </div>
+</main>
+
+<script>
+const SUPABASE_URL = 'https://yxlseunaxhxozxbvzmhh.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4bHNldW5heGh4b3p4YnZ6bWhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMTk1NjksImV4cCI6MjA5NjU5NTU2OX0.XO1VEcvXAQLfKoLGNRAb64jOYUFlEVuerXtyM8gVTy0';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Si ya hay sesión activa, ir directo a la app
+sb.auth.getSession().then(({data:{session}})=>{
+  if(session) window.location.href='index.html';
+});
+
+function switchTab(tab){
+  document.getElementById('formLogin').style.display = tab==='login'?'block':'none';
+  document.getElementById('formRegister').style.display = tab==='register'?'block':'none';
+  document.getElementById('tabLogin').classList.toggle('active', tab==='login');
+  document.getElementById('tabRegister').classList.toggle('active', tab==='register');
+  hideMsg();
+}
+
+function showMsg(text, type){
+  const el = document.getElementById('msgBox');
+  el.textContent = text;
+  el.className = 'msg ' + type;
+}
+function hideMsg(){
+  const el = document.getElementById('msgBox');
+  el.className = 'msg';
+}
+
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if(!email||!pass){showMsg('Completá email y contraseña.','error');return;}
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Ingresando...';
+  const {error} = await sb.auth.signInWithPassword({email, password:pass});
+  if(error){
+    showMsg(error.message==='Invalid login credentials'?'Email o contraseña incorrectos.':error.message,'error');
+    btn.disabled=false; btn.textContent='Iniciar sesión';
+  } else {
+    window.location.href='index.html';
+  }
+}
+
+async function doRegister(){
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPass').value;
+  const pass2 = document.getElementById('regPass2').value;
+  if(!email||!pass||!pass2){showMsg('Completá todos los campos.','error');return;}
+  if(pass!==pass2){showMsg('Las contraseñas no coinciden.','error');return;}
+  if(pass.length<6){showMsg('La contraseña debe tener al menos 6 caracteres.','error');return;}
+  const btn = document.getElementById('registerBtn');
+  btn.disabled=true; btn.textContent='Creando cuenta...';
+  const {error} = await sb.auth.signUp({email, password:pass});
+  if(error){
+    showMsg(error.message,'error');
+    btn.disabled=false; btn.textContent='Crear cuenta';
+  } else {
+    showMsg('Cuenta creada. Ya podés iniciar sesión.','success');
+    setTimeout(()=>switchTab('login'),1500);
+    btn.disabled=false; btn.textContent='Crear cuenta';
+  }
+}
+</script>
+</body>
+</html>

@@ -6,6 +6,7 @@
 <title>OCASA — Layout</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -19,6 +20,14 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 .header-mid{font-size:13px;font-weight:600;color:var(--text2)}
 .header-mid span{color:var(--brand);font-weight:700}
 .hmeta{font-size:11px;font-weight:600;color:var(--text3);background:var(--brand-light);padding:4px 10px;border-radius:20px;border:1px solid var(--brand-mid);font-family:monospace}
+.user-info{display:flex;align-items:center;gap:8px}
+.user-email{font-size:11px;font-weight:600;color:var(--text2)}
+.user-role{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--brand-light);color:var(--brand-dark);border:1px solid var(--brand-mid);text-transform:uppercase;letter-spacing:.08em}
+.user-role.admin{background:#fff3d4;color:#a05a00;border-color:#f5c842}
+.logout-btn{padding:5px 11px;background:none;border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:10px;font-weight:600;border-radius:8px;cursor:pointer;transition:all .15s}
+.logout-btn:hover{border-color:var(--danger);color:var(--danger)}
+.upload-plan-btn{display:flex;align-items:center;gap:5px;padding:5px 11px;background:var(--brand-light);border:1.5px solid var(--brand-mid);color:var(--brand-dark);font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;border-radius:8px;cursor:pointer;transition:all .15s}
+.upload-plan-btn:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
 .back-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;background:none;border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;border-radius:8px;cursor:pointer;transition:all .15s}
 .back-btn:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-light)}
 #splash{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px}
@@ -166,6 +175,15 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
   <div class="hmeta" id="coords" style="display:none">x: —  y: —</div>
   <div class="hmeta" id="rectArea" style="display:none">— m²</div>
   <button class="back-btn" id="backBtn" style="display:none" onclick="goBack()">← Volver</button>
+  <div class="user-info" id="userInfo" style="display:none">
+    <button class="upload-plan-btn" id="uploadPlanBtn" style="display:none" onclick="document.getElementById('uploadPlanInput').click()" title="Subir plano DXF">
+      ↑ Subir plano
+    </button>
+    <input type="file" id="uploadPlanInput" accept=".dxf" style="display:none" onchange="handlePlanUpload(event)">
+    <span class="user-role" id="userRoleBadge">usuario</span>
+    <span class="user-email" id="userEmailLabel"></span>
+    <button class="logout-btn" onclick="doLogout()">Salir</button>
+  </div>
 </header>
 
 <div id="splash">
@@ -283,6 +301,51 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 </div>
 
 <script>
+
+// ── Supabase Auth ──────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://yxlseunaxhxozxbvzmhh.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4bHNldW5heGh4b3p4YnZ6bWhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMTk1NjksImV4cCI6MjA5NjU5NTU2OX0.XO1VEcvXAQLfKoLGNRAb64jOYUFlEVuerXtyM8gVTy0';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;
+
+async function initAuth(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session){
+    window.location.href = 'login.html';
+    return;
+  }
+  currentUser = session.user;
+  const isAdmin = currentUser.app_metadata?.role === 'admin';
+  document.getElementById('userEmailLabel').textContent = currentUser.email;
+  const roleBadge = document.getElementById('userRoleBadge');
+  if(isAdmin){ roleBadge.textContent='admin'; roleBadge.classList.add('admin'); }
+  document.getElementById('uploadPlanBtn').style.display = isAdmin ? 'flex' : 'none';
+  document.getElementById('userInfo').style.display = 'flex';
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+function handlePlanUpload(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const content = e.target.result;
+    const fileName = file.name;
+    // Guardar el plano en localStorage para uso inmediato
+    localStorage.setItem('uploaded_plan_' + fileName, content);
+    alert('Plano "' + fileName + '" cargado. Para que quede permanente en el sistema, envialo al repositorio.');
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+document.addEventListener('DOMContentLoaded', initAuth);
+// ──────────────────────────────────────────────────────────────────────────
 
 let ACTIVIDADES_ESTRUCTURA={};
 
