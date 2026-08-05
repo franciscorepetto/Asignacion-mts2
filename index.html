@@ -834,6 +834,13 @@ function segsIntersect(a1,a2,b1,b2){const d1x=a2[0]-a1[0],d1y=a2[1]-a1[1],d2x=b2
 function polysOverlap(pA,pB){const onVert=(p,poly)=>poly.some(v=>Math.abs(v[0]-p[0])<1e-9&&Math.abs(v[1]-p[1])<1e-9);for(const p of pA) if(!onVert(p,pB)&&pip(p,pB)) return true;for(const p of pB) if(!onVert(p,pA)&&pip(p,pA)) return true;for(let i=0;i<pA.length;i++){const a1=pA[i],a2=pA[(i+1)%pA.length];for(let j=0;j<pB.length;j++){if(segsIntersect(a1,a2,pB[j],pB[(j+1)%pB.length])) return true;}}return false;}
 function checkOverlap(pts,excl=-1){return areas.some((a,i)=>i!==excl&&polysOverlap(pts,a.pts));}
 function isCedido(n){return ESPACIOS_CEDIDOS.includes((n||'').toUpperCase().trim());}
+function getAreaLabel(a){
+  const acts=(a&&a.activities)||[];
+  if(!acts.length) return a.name||'Área';
+  const names=acts.map(x=>x.name).join(' + ');
+  const clients=[...new Set(acts.filter(x=>x.client).map(x=>x.client))];
+  return clients.length===1?`${names} — ${getClientDesc(clients[0])}`:names;
+}
 
 const SNAP_PX=14;
 function snapToVertex(wx,wy){
@@ -865,7 +872,7 @@ function render(){
     const cy=a.pts.reduce((s,p)=>s+p[1],0)/a.pts.length;
     let[lx,ly]=toS(cx,cy);
     const fs=Math.max(10,Math.min(14,scale*6));
-    const label=a.name||('Área '+(i+1));
+    const label=getAreaLabel(a);
     ctx.font=`800 ${fs}px 'Montserrat',sans-serif`;
     const tw=ctx.measureText(label).width;
     const spts=a.pts.map(p=>toS(p[0],p[1]));
@@ -879,12 +886,6 @@ function render(){
   });
   DXF.polys.forEach(p=>{if(!p.pts||p.pts.length<2) return;ctx.beginPath();p.pts.forEach((pt,i)=>{const[sx,sy]=toS(pt[0],pt[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});if(p.closed) ctx.closePath();ctx.strokeStyle=p.layer==='Contorno'?'#1a1a1a':'#2a3a3b';ctx.lineWidth=(p.pts.length===4&&p.closed)?0.6:1.3;ctx.setLineDash([]);ctx.stroke();});
   DXF.lines.forEach(l=>{const[lx1,ly1]=toS(l.x1,l.y1),[lx2,ly2]=toS(l.x2,l.y2);ctx.beginPath();ctx.moveTo(lx1,ly1);ctx.lineTo(lx2,ly2);ctx.strokeStyle='#2a3a3b';ctx.lineWidth=1;ctx.setLineDash([]);ctx.stroke();});
-const _la=Math.min(1,Math.max(0,(scale/baseScale-1.3)/0.4));
-if(_la>0){
-  ctx.globalAlpha=_la;
-  DXF.labels.forEach(l=>{if(!l.text||l.text.length<2||l.text.includes('hormigón')||l.text.startsWith('h ')) return;const[lx,ly]=toS(l.x,l.y);if(lx<-50||lx>canvas.width+50||ly<-50||ly>canvas.height+50) return;ctx.fillStyle='#1fa8b0';ctx.font=`500 ${Math.max(7,Math.min(10,scale*3.5))}px 'Montserrat',sans-serif`;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText(l.text,lx,ly);});
-  ctx.globalAlpha=1;
-}
   if(rectStart&&rectCurrent){
   const[sx0,sy0]=toS(Math.min(rectStart[0],rectCurrent[0]),Math.max(rectStart[1],rectCurrent[1]));
   const[sx1,sy1]=toS(Math.max(rectStart[0],rectCurrent[0]),Math.min(rectStart[1],rectCurrent[1]));
@@ -958,7 +959,6 @@ function renderModalRows(){
   document.getElementById('pctFill').style.width=Math.min(100,tot)+'%';
   document.getElementById('pctFill').style.background=tot>100?'#e05548':tot===100?'#33c2ca':'#f0a500';
   modalRows.forEach((row,i)=>{
-    const ced=isCedido(row.name);
     const d=document.createElement('div');d.className='modal-row';
     d.innerHTML=`
       <div class="modal-row-top">
@@ -978,7 +978,7 @@ function renderModalRows(){
           <label class="piso-lbl">Observación</label>
           <input type="text" placeholder="Observación..." value="${row.observacion||''}" oninput="modalRows[${i}].observacion=this.value" style="flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;padding:5px 7px;border-radius:6px;outline:none">
         </div>
-                  ${ced?`<div class="field-row">
+                  <div class="field-row">
           <label class="client-lbl">Cliente</label>
           <select class="sm" style="flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;padding:5px 7px;border-radius:6px;outline:none" onchange="if(this.value==='__otros__'){modalRows[${i}].client='';modalRows[${i}].otrosMode=true;renderModalRows();}else{modalRows[${i}].client=this.value;modalRows[${i}].otrosMode=false;renderModalRows();}">
             <option value="">— seleccionar —</option>
@@ -989,7 +989,7 @@ function renderModalRows(){
         <div class="field-row" style="display:${row.otrosMode?'flex':'none'}">
           <label></label>
           <input class="client-inp" type="text" placeholder="Nombre del cliente..." value="${row.client}" oninput="modalRows[${i}].client=this.value" style="flex:1;background:#fff;border:1.5px solid #a805e0;color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;padding:5px 8px;border-radius:6px;outline:none">
-        </div>`:''}
+        </div>
       </div>`;
     c.appendChild(d);
   });
@@ -1042,7 +1042,7 @@ function updateList(){
       const short=act.name.length>22?act.name.slice(0,20)+'..':act.name;
       return `<div class="act-row"><div class="act-dot" style="background:${col}"></div><div class="act-name" title="${act.name}">${short}</div><div class="act-pct">${act.pct}%</div><div class="act-m2">${m2} m²</div>${act.client?`<div class="act-client" title="${act.client}">${getClientDesc(act.client)}</div>`:''}</div>`;
     }).join('');
-    const displayName=a.name||('Área '+(i+1));
+    const displayName=getAreaLabel(a);
     return `<div class="sitem${isSel?' selected':''}" id="sitem${i}"><div class="sitem-header" onclick="selectArea(${i})"><div class="scolor-dot" style="background:${a.color}"></div><div class="sname" style="color:${a.color}">${displayName}</div><div class="sarea-badge">${a.totalArea.toFixed(1)} m²</div><button class="sdel sedit" onclick="event.stopPropagation();editArea(${i})" title="Editar">✎</button><button class="sdel" onclick="event.stopPropagation();deleteArea(${i})" title="Eliminar">✕</button></div><div class="sitem-acts">${actHtml}</div></div>`;
   }).join('');
   document.getElementById('totArea').textContent=areas.reduce((s,a)=>s+a.totalArea,0).toFixed(2)+' m²';
@@ -1069,7 +1069,7 @@ if(!panning&&curPts.length===0&&!rectStart&&document.getElementById('modalBg').s
   let hov=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){hov=i;break;}}
   if(hov!==null){
     const a=areas[hov];
-    let h=`<div style="font-weight:800;font-size:12px;color:${a.color};margin-bottom:3px">${a.name||('Área '+(hov+1))}</div>`;
+    let h=`<div style="font-weight:800;font-size:12px;color:${a.color};margin-bottom:3px">${getAreaLabel(a)}</div>`;
     h+=`<div style="font-weight:600;color:var(--text2);margin-bottom:5px;font-size:10px">${a.totalArea.toFixed(2)} m²</div>`;
     a.activities.forEach(act=>{
       const m2=(act.pct/100*a.totalArea).toFixed(1);
@@ -1228,7 +1228,7 @@ function exportSVG(){
     const pts=a.pts.map(p=>`${sx(p[0]).toFixed(1)},${sy(p[1]).toFixed(1)}`).join(' ');
     const cx=a.pts.reduce((s,p)=>s+p[0],0)/a.pts.length;
     const cy=a.pts.reduce((s,p)=>s+p[1],0)/a.pts.length;
-    const label=a.name||('Área '+(idx+1));
+    const label=getAreaLabel(a);
     areasSVG+=`<polygon class="area-poly" id="area-${idx}" points="${pts}" fill="${a.color}" fill-opacity="0.25" stroke="${a.color}" stroke-width="2" data-idx="${idx}"/>`;
     areasSVG+=`<text x="${sx(cx).toFixed(1)}" y="${sy(cy).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="10" font-weight="700" fill="${a.color}" font-family="sans-serif" pointer-events="none">${label}</text>`;
   });
@@ -1236,7 +1236,7 @@ function exportSVG(){
   // Panel lista
   let listItems='';
   exportAreas.forEach((a,idx)=>{
-    const label=a.name||('Área '+(idx+1));
+    const label=getAreaLabel(a);
     const mts2=a.totalArea?a.totalArea.toFixed(1):'0.0';
     const acts=a.activities.map(act=>`${act.name} (${act.pct}%)`).join('<br/>');
     const actSummary=a.activities.map(act=>{
@@ -1248,7 +1248,7 @@ listItems+=`<div class="pitem" id="li-${idx}" onclick="toggleArea(${idx})" style
   });
 
   // Datos para el JS embebido
-  const areasData=exportAreas.map(a=>({name:a.name||'Sin nombre',totalArea:a.totalArea?+a.totalArea.toFixed(2):0,color:a.color,activities:a.activities.map(act=>({name:act.name,pct:act.pct,piso:act.piso||'',obs:act.observacion||''}))}));
+  const areasData=exportAreas.map(a=>({name:getAreaLabel(a),totalArea:a.totalArea?+a.totalArea.toFixed(2):0,color:a.color,activities:a.activities.map(act=>({name:act.name,pct:act.pct,piso:act.piso||'',obs:act.observacion||''}))}));
   const areasJSON=JSON.stringify(areasData).replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const sucName=currentSuc?currentSuc.name:'Plano';
   const fecha=new Date().toLocaleDateString('es-AR');
