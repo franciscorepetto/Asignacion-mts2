@@ -179,6 +179,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
     <button class="upload-plan-btn" id="uploadPlanBtn" style="display:none" onclick="openUploadModal()" title="Subir plano DXF">
       ↑ Subir plano
     </button>
+    <button class="upload-plan-btn" id="wipePlanBtn" style="display:none;background:#fce8e8;color:#c0392b;border-color:#f5a0a0" onclick="wipeAllPlans()" title="Borrar todos los planos cargados en la plataforma">
+      🗑 Limpiar planos
+    </button>
     <span class="user-role" id="userRoleBadge">usuario</span>
     <span class="user-email" id="userEmailLabel"></span>
     <button class="logout-btn" onclick="doLogout()">Salir</button>
@@ -320,6 +323,7 @@ async function initAuth(){
   const roleBadge = document.getElementById('userRoleBadge');
   if(isAdmin){ roleBadge.textContent='admin'; roleBadge.classList.add('admin'); }
   document.getElementById('uploadPlanBtn').style.display = isAdmin ? 'flex' : 'none';
+  document.getElementById('wipePlanBtn').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('userInfo').style.display = 'flex';
   await loadUploadedPlans();
   buildSplash();
@@ -350,6 +354,32 @@ async function loadUploadedPlans(){
       }
     });
   }catch(e){ console.warn('No se pudieron cargar planos de Supabase:', e); }
+}
+
+// Borra TODOS los planos subidos a Supabase (archivo + registro), para arrancar
+// de cero y volver a cargar solo los que estén confirmados como actualizados.
+async function wipeAllPlans(){
+  if(!confirm('Esto va a borrar TODOS los planos subidos a la plataforma (archivos y registros en Supabase). No se puede deshacer.\n\n¿Confirmás que querés limpiar todo?')) return;
+  const btn=document.getElementById('wipePlanBtn');
+  btn.disabled=true;btn.textContent='Borrando...';
+  try{
+    const {data:rows, error:selError}=await sb.from('sucursales_upload').select('id,archivo_path');
+    if(selError) throw new Error(selError.message);
+    const paths=(rows||[]).map(r=>r.archivo_path).filter(Boolean);
+    if(paths.length){
+      const {error:rmError}=await sb.storage.from('planos').remove(paths);
+      if(rmError) throw new Error(rmError.message);
+    }
+    if(rows&&rows.length){
+      const {error:delError}=await sb.from('sucursales_upload').delete().not('id','is',null);
+      if(delError) throw new Error(delError.message);
+    }
+    alert(`Listo. Se borraron ${paths.length} plano(s) de la plataforma. La página se va a recargar.`);
+    location.reload();
+  }catch(e){
+    alert('No se pudo limpiar los planos: '+e.message);
+    btn.disabled=false;btn.textContent='🗑 Limpiar planos';
+  }
 }
 
 function openUploadModal(){
@@ -617,44 +647,10 @@ function toggleActOverlay(){
   body.style.display=hide?'none':'';
   btn.textContent=hide?'▸':'▾';
 }
-const MULTI_FLOOR={
-    MV2:[{id:'N1',name:'Nave 1',file:'Tortunave1.dxf',piso:'nave 1'},{id:'N2',name:'Nave 2',file:'tortunave2.dxf',piso:'nave 2'},{id:'N3',name:'Nave 3',file:'tortunave3.dxf',piso:'nave 3'}],
-  AVE:[
-    {id:'PB',name:'Planta Baja',file:'Ave. Planta Bajadxf.dxf',piso:'PB'},
-    {id:'PA',name:'Planta Alta',file:'AVE planta alta.dxf',piso:'PLANTA ALTA'},
-  ],
-  MTZ:[
-    {id:'SS',name:'Subsuelo',file:'MTZ ss mts2.dxf',piso:'SUBSUELO'},
-    {id:'PB',name:'Planta Baja',file:'MTZ pb mts2.dxf',piso:'PB'},
-    {id:'EP',name:'Entrepiso',file:'MTZ ep mts2.dxf',piso:'ENTREPISO'},
-    {id:'P1',name:'Piso 1',file:'MTZ  p1 mts2.dxf',piso:'1RO'},
-    {id:'P2',name:'Piso 2',file:'MTZ p2 mts2.dxf',piso:'2DO'},
-  ],
-  IRI:[
-    {id:'SS',name:'Subsuelo',file:'Iriarte Subsuelo.dxf',piso:'SUBSUELO'},
-    {id:'PB',name:'Planta Baja',file:'Iriarte Planta Baja.dxf',piso:'PB'},
-    {id:'P1A',name:'Primer Piso A',file:'Iriarte Primer Piso A.dxf',piso:'1RO A'},
-     {id:'P1B',name:'Primer Piso B',file:'Iriarte Primer Piso B.dxf',piso:'1RO B'},
-  ],
-  SPY:[
-    {id:'PB',name:'Planta Baja',file:'SLW Planta Baja.dxf',piso:'PB'},
-    {id:'PA',name:'Planta Alta',file:'SLW Planta Alta.dxf',piso:'PA'},
-  ],
-  ST3:[
-    {id:'S1_PB',name:'Subnave 1 — Planta Baja',file:'SL3 Subnave 1 Planta Baja.dxf',piso:'SN1 PB'},
-    {id:'S1_PA',name:'Subnave 1 — Planta Alta',file:'SL3 Subnave 1 Planta Alta.dxf',piso:'SN1 PA'},
-    {id:'S1_T',name:'Subnave 1 — Techo',file:'SL3 Subnave 1 Techo.dxf',piso:'SN1 TECHO'},
-    {id:'S2_PB',name:'Subnave 2 — Planta Baja',file:'SL3 Subnave 2 Planta Baja.dxf',piso:'SN2 PB'},
-    {id:'S2_EP',name:'Subnave 2 — Entrepiso',file:'SL3 Subnave 2 Entrepiso.dxf',piso:'SN2 EP'},
-    {id:'S3',name:'Subnave 3',file:'SL3 Subnave 3.dxf',piso:'SN3'},
-    {id:'S4',name:'Subnave 4',file:'SL3 Subnave 4.dxf',piso:'SN4'},
-    {id:'S5',name:'Subnave 5',file:'SL3 Subnave 5.dxf',piso:'SN5'},
-  ],
-  MDZ:[
-    {id:'PB',name:'Planta Baja',file:'Mendoza Planta Baja.dxf',piso:'PB'},
-    {id:'EP',name:'Entrepiso',file:'Mendoza Entrepiso.dxf',piso:'ENTREPISO'},
-  ],
-};
+// Los planos ya no viven hardcodeados en el código: se cargan dinámicamente
+// desde Supabase (tabla sucursales_upload) a medida que un admin los sube
+// confirmando que están actualizados. Ver loadUploadedPlans().
+const MULTI_FLOOR={};
 let scale=1,ox=0,oy=0,baseScale=1;
 let mode='draw',panMode=false;
 let curPts=[],areas=[],colIdx=0,selectedArea=null;
@@ -773,29 +769,13 @@ async function switchFloor(floorId){
 }
 async function enterLayout(){
   if(!currentSuc) return;
-  if(MULTI_FLOOR[currentSuc.code]){showFloorSelector();return;}
-  const btn=document.getElementById('enterBtn');
-  btn.disabled=true;btn.textContent='Cargando plano...';
-  try{
-    const file=({MDQ:'Galpon 21.1+2.2_MDQ_v2013 (1) - Mar del Plata.dxf',RDI:'RDI Sarandi mts2.dxf',RSA:'RSA La Pampa mts2.dxf',SFE:'Santa fe - Santo tome mts2.dxf',LUQ:'San Luis mts2.dxf',FLO:'Copia de FLO-Flores-Plano Base-V02.dxf',LCA:'LCA-2021 09 13 PLANO FINAL LA CARLOTA.dxf',EQS:'Copia de EQS-ESQUEL Lay Out-r05.dxf',BHI:'Bahia Blanca mts2.dxf',NQN:'Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf',PSS:'Posadas mts2.dxf',AEP:'Copia de AEP-ILUM MMTO-R01 (1).dxf',EZE:'EZE-mod. EZE .PROPUUESTA 2025-01-29..dxf',BAH:'Copia de BHI-Bahia Blanca.V4 - ARQUITECTURA (1).dxf',IRJ:'La Rioja mts2.dxf',STV:'SLT.dxf',SPY:'',COR:'Copia de COR-LA VOZ-Base xref-04 - CORRECCION CORTINA RAPIDA version 2004.dwg.dxf',TUC:'M2 Tucuman.dxf',IRI:'Iriarte Planta Baja.dxf',IR2:'Iriarte Subsuelo.dxf',IR3:'Iriarte Primer Piso A.dxf',IR4:'Iriarte Primer Piso B.dxf',UAQ:'San Juan mts2.dxf',REL:'Trelew mts2.dxf',RCU:'Rio Cuarto mts2.dxf',SDE:'SDE - Mudanza sucursal Obras (1).dxf',FMA:'FMA-Formosa - Plantas 09-Ago-2019.dxf',MVA:'MVA-OTTO- BASE.dxf',PRA:'PRA-Layout OCASA.dxf',PLO:'Soldati.dxf',RAF:'RAF-JUAN JOSE PASO 2277 RAFAELA SANTA FE V2 15-ENE-2021.dxf',ZUL:'ZUL-AZUL ETAPA 2 ARQ.dxf',CRD:'CRD-Mterio Salud Chubut-R03.dxf',CO2:'CBA_CIRCUNVALACION.dxf',BLG:'BLG-Echeverria 1217 - TABLEROS ELECTRICOS - R01.dxf',EES:'EEV-Plaza Logistica Echeverria - Interiorismo Etapas 1 y 2.dxf',ROS:'Rosario mts2.dxf'})[currentSuc.code];
-    const url=file.startsWith('http')?file:'mapas/planos/'+file.replace(/ /g,'%20');
-    const resp=await fetch(url);
-    if(!resp.ok) throw new Error('HTTP '+resp.status);
-    DXF=parseDXF(await resp.text());
-  }catch(e){
-    alert('No se pudo cargar el plano: '+e.message);
-    btn.disabled=false;btn.textContent='Ingresar al layout →';
+  const floors=MULTI_FLOOR[currentSuc.code];
+  if(!floors||!floors.length){
+    alert('Todavía no hay ningún plano cargado para '+currentSuc.name+'. Un administrador tiene que subirlo con "↑ Subir plano".');
     return;
   }
-  document.getElementById('splash').style.display='none';
-  const app=document.getElementById('app');
-  app.style.display='flex';app.style.flexDirection='column';
-  document.getElementById('headerMid').innerHTML=`Layout · <span>${currentSuc.name}</span>`;
-  document.getElementById('coords').style.display='block';
-  document.getElementById('backBtn').style.display='flex';
-  areas=[];colIdx=0;selectedArea=null;
-  try{const saved=localStorage.getItem('areas_'+currentSuc.code);if(saved){areas=JSON.parse(saved);colIdx=areas.length;updateList();}}catch(e){}
-    initCanvas();renderActOverlay();
+  if(floors.length===1){ enterFloor(floors[0]); return; }
+  showFloorSelector();
 }
 
 function goBack(){
