@@ -179,6 +179,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
     <button class="upload-plan-btn" id="uploadPlanBtn" style="display:none" onclick="openUploadModal()" title="Subir plano DXF">
       ↑ Subir plano
     </button>
+    <button class="upload-plan-btn" id="managePlanBtn" style="display:none" onclick="openManageModal()" title="Ver y borrar planos cargados">
+      🗂 Gestionar planos
+    </button>
     <button class="upload-plan-btn" id="wipePlanBtn" style="display:none;background:#fce8e8;color:#c0392b;border-color:#f5a0a0" onclick="wipeAllPlans()" title="Borrar todos los planos cargados en la plataforma">
       🗑 Limpiar planos
     </button>
@@ -323,6 +326,7 @@ async function initAuth(){
   const roleBadge = document.getElementById('userRoleBadge');
   if(isAdmin){ roleBadge.textContent='admin'; roleBadge.classList.add('admin'); }
   document.getElementById('uploadPlanBtn').style.display = isAdmin ? 'flex' : 'none';
+  document.getElementById('managePlanBtn').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('wipePlanBtn').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('userInfo').style.display = 'flex';
   await loadUploadedPlans();
@@ -354,6 +358,49 @@ async function loadUploadedPlans(){
       }
     });
   }catch(e){ console.warn('No se pudieron cargar planos de Supabase:', e); }
+}
+
+// Modal para ver y borrar planos subidos de a uno.
+function openManageModal(){
+  renderManageList();
+  document.getElementById('manageModalBg').style.display='flex';
+}
+function closeManageModal(){
+  document.getElementById('manageModalBg').style.display='none';
+}
+function renderManageList(){
+  const box=document.getElementById('manageList');
+  if(!uploadedPlans.length){
+    box.innerHTML='<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">Todavía no se subió ningún plano.</div>';
+    return;
+  }
+  box.innerHTML=[...uploadedPlans].sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||'')||(a.piso_nombre||'').localeCompare(b.piso_nombre||'')).map(row=>{
+    const fecha=row.created_at?new Date(row.created_at).toLocaleDateString('es-AR'):'';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--border)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700">${row.iata} — ${row.nombre}</div>
+        <div style="font-size:11px;color:var(--text2)">${row.piso_nombre}${fecha?' · '+fecha:''}</div>
+      </div>
+      <button onclick="deleteUploadedPlan('${row.id}')" style="padding:7px 12px;background:#fce8e8;color:#c0392b;border:1.5px solid #f5a0a0;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Borrar</button>
+    </div>`;
+  }).join('');
+}
+async function deleteUploadedPlan(id){
+  const row=uploadedPlans.find(r=>String(r.id)===String(id));
+  if(!row) return;
+  if(!confirm(`¿Borrar el plano "${row.piso_nombre}" de ${row.nombre}? No se puede deshacer.`)) return;
+  try{
+    if(row.archivo_path){
+      const {error:rmError}=await sb.storage.from('planos').remove([row.archivo_path]);
+      if(rmError) throw new Error(rmError.message);
+    }
+    const {error:delError}=await sb.from('sucursales_upload').delete().eq('id', row.id);
+    if(delError) throw new Error(delError.message);
+    alert('Plano borrado. La página se va a recargar.');
+    location.reload();
+  }catch(e){
+    alert('No se pudo borrar el plano: '+e.message);
+  }
 }
 
 // Borra TODOS los planos subidos a Supabase (archivo + registro), para arrancar
@@ -1636,6 +1683,15 @@ canvas.addEventListener('mouseleave',()=>document.getElementById('areaTooltip').
       <button onclick="closeUploadModal()" style="padding:10px 16px;background:none;border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer">Cancelar</button>
       <button id="uploadSubmitBtn" onclick="submitPlanUpload()" style="flex:1;padding:10px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s">Subir plano</button>
     </div>
+  </div>
+</div>
+
+<div id="manageModalBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center" onclick="if(event.target===this)closeManageModal()">
+  <div style="background:#fff;border-radius:16px;padding:28px 28px 24px;width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(0,0,0,.18);border-top:4px solid var(--brand);font-family:'Montserrat',sans-serif">
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:4px">Planos cargados</h3>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:16px">Borrá puntualmente el que no corresponda — el resto queda intacto.</p>
+    <div id="manageList" style="overflow-y:auto;flex:1;margin-bottom:16px"></div>
+    <button onclick="closeManageModal()" style="padding:10px 16px;background:none;border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer">Cerrar</button>
   </div>
 </div>
 </body>
