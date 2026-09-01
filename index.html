@@ -666,14 +666,22 @@ function buildSplash(){
   function renderList(filter){
     list.innerHTML='';
     const q=(filter||'').toLowerCase();
-    SUCURSALES.filter(s=>!q||s.name.toLowerCase().includes(q)||s.code.toLowerCase().includes(q)).forEach(s=>{
+    // Solo se listan sucursales que ya tienen al menos un plano subido a Supabase.
+    const conPlan=SUCURSALES.filter(s=>MULTI_FLOOR[s.code]&&MULTI_FLOOR[s.code].length);
+    const shown=conPlan.filter(s=>!q||s.name.toLowerCase().includes(q)||s.code.toLowerCase().includes(q));
+    if(!shown.length){
+      const msg=conPlan.length?'No se encontraron sucursales.':'Todavía no hay planos cargados. Un administrador tiene que subirlos con "↑ Subir plano".';
+      list.innerHTML=`<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">${msg}</div>`;
+      return;
+    }
+    shown.forEach(s=>{
       const item=document.createElement('div');
-      item.className='suc-item'+(s.available?'':' unavailable');
-      const _fl=MULTI_FLOOR[s.code];let _n=0;if(_fl){_fl.forEach(f=>{try{const d=localStorage.getItem(`areas_${s.code}_${f.id}`);if(d)_n+=JSON.parse(d).length;}catch(e){}});}else{try{const d=localStorage.getItem(`areas_${s.code}`);if(d)_n=JSON.parse(d).length;}catch(e){}}
-      const _bc=!s.available?' soon':_n>0?' has-data':'';
-      const _bt=!s.available?'Próx.':_n>0?`${_n} área${_n>1?'s':''}`:'Disponible';
+      item.className='suc-item';
+      let _n=0;MULTI_FLOOR[s.code].forEach(f=>{try{const d=localStorage.getItem(`areas_${s.code}_${f.id}`);if(d)_n+=JSON.parse(d).length;}catch(e){}});
+      const _bc=_n>0?' has-data':'';
+      const _bt=_n>0?`${_n} área${_n>1?'s':''}`:'Disponible';
       item.innerHTML=`<span class="suc-item-code">${s.code}</span><span class="suc-item-name">${s.name}</span><span class="suc-item-badge${_bc}">${_bt}</span>`;
-      if(s.available) item.onclick=()=>{
+      item.onclick=()=>{
         document.querySelectorAll('.suc-item').forEach(i=>i.classList.remove('active'));
         item.classList.add('active');
         currentSuc=s;
