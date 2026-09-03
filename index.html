@@ -31,6 +31,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 .back-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;background:none;border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;border-radius:8px;cursor:pointer;transition:all .15s}
 .back-btn:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-light)}
 #splash{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px}
+#funcSplash{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px}
+#noAccessMsg{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px;text-align:center}
 .splash-logo{font-size:48px;font-weight:800;letter-spacing:-2px;color:#1a1a1a;margin-bottom:4px}
 .splash-sub{font-size:14px;font-weight:500;color:var(--text2);margin-bottom:48px;letter-spacing:.02em}
 .splash-card{background:#fff;border-radius:16px;padding:32px;width:100%;max-width:480px;box-shadow:0 4px 24px rgba(51,194,202,.12);border:1.5px solid var(--border)}
@@ -185,6 +187,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
     <button class="upload-plan-btn" id="wipePlanBtn" style="display:none;background:#fce8e8;color:#c0392b;border-color:#f5a0a0" onclick="wipeAllPlans()" title="Borrar todos los planos cargados en la plataforma">
       🗑 Limpiar planos
     </button>
+    <button class="upload-plan-btn" id="manageUsersBtn" style="display:none" onclick="openManageUsersModal()" title="Elegir a qué funciones accede cada usuario">
+      👥 Usuarios
+    </button>
     <span class="user-role" id="userRoleBadge">usuario</span>
     <span class="user-email" id="userEmailLabel"></span>
     <button class="logout-btn" onclick="doLogout()">Salir</button>
@@ -206,6 +211,25 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
       <input type="file" accept=".json" style="display:none" onchange="cargarTrabajoSplash(this)">
     </label>
     <div class="coming-note">Las sucursales marcadas como "Próximamente" están en proceso de carga.</div>
+  </div>
+</div>
+
+<div id="funcSplash">
+  <div class="splash-logo">OCASA</div>
+  <div class="splash-sub">Sistema de asignación de actividades por layout</div>
+  <div class="splash-card">
+    <h2>Elegí qué vas a hacer</h2>
+    <p>Tu usuario tiene acceso a más de una función. Elegí con cuál querés trabajar.</p>
+    <div class="slabel">Funciones disponibles</div>
+    <div class="suc-list" id="funcGrid"></div>
+  </div>
+</div>
+
+<div id="noAccessMsg">
+  <div class="splash-logo">OCASA</div>
+  <div class="splash-card" style="text-align:center">
+    <h2>Todavía no tenés funciones habilitadas</h2>
+    <p>Pedile a un administrador que te habilite el acceso a alguna función de la plataforma desde "👥 Usuarios".</p>
   </div>
 </div>
 
@@ -328,9 +352,130 @@ async function initAuth(){
   document.getElementById('uploadPlanBtn').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('managePlanBtn').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('wipePlanBtn').style.display = isAdmin ? 'flex' : 'none';
+  document.getElementById('manageUsersBtn').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('userInfo').style.display = 'flex';
   await loadUploadedPlans();
+  await loadFuncionalidades();
+  startFuncFlow();
+}
+
+// ── Funciones de la plataforma (qué puede hacer cada usuario) ──────────────
+let FUNCIONALIDADES_CATALOGO = [];
+let misFuncionalidades = [];
+let currentFuncionalidad = null;
+let funcionalidadesDisponibles = false;
+
+async function loadFuncionalidades(){
+  try{
+    const {data: catalogo, error: e1} = await sb.from('funcionalidades').select('*').eq('activa', true).order('orden');
+    if(e1) throw e1;
+    const {data: mias, error: e2} = await sb.from('usuario_funcionalidades').select('funcionalidad_id').eq('user_id', currentUser.id);
+    if(e2) throw e2;
+    FUNCIONALIDADES_CATALOGO = catalogo || [];
+    const misIds = new Set((mias||[]).map(r=>r.funcionalidad_id));
+    misFuncionalidades = FUNCIONALIDADES_CATALOGO.filter(f=>misIds.has(f.id));
+    funcionalidadesDisponibles = true;
+  }catch(e){
+    console.warn('No se pudo cargar el sistema de funciones (¿falta correr la migración SQL en Supabase?):', e);
+    funcionalidadesDisponibles = false;
+  }
+}
+
+function startFuncFlow(){
+  if(!funcionalidadesDisponibles){
+    // El sistema de funciones todavía no está migrado en Supabase: comportamiento anterior, sin filtrar por función.
+    buildSplash();
+    return;
+  }
+  if(!misFuncionalidades.length){
+    document.getElementById('noAccessMsg').style.display='flex';
+    return;
+  }
+  if(misFuncionalidades.length===1){
+    currentFuncionalidad = misFuncionalidades[0];
+    buildSplash();
+    return;
+  }
+  buildFuncSplash();
+}
+
+function buildFuncSplash(){
+  document.getElementById('splash').style.display='none';
+  document.getElementById('noAccessMsg').style.display='none';
+  const grid = document.getElementById('funcGrid');
+  grid.innerHTML = misFuncionalidades.map(f =>
+    `<div class="suc-item" onclick="selectFuncionalidad('${f.id}')">
+       <span class="suc-item-name" style="font-weight:700">${f.nombre}</span>
+     </div>`
+  ).join('');
+  document.getElementById('funcSplash').style.display='flex';
+}
+
+function selectFuncionalidad(funcId){
+  currentFuncionalidad = misFuncionalidades.find(f => f.id === funcId) || misFuncionalidades[0];
+  document.getElementById('funcSplash').style.display='none';
   buildSplash();
+}
+
+// ── Admin: gestión de acceso a funciones por usuario ────────────────────────
+async function openManageUsersModal(){
+  document.getElementById('manageUsersModalBg').style.display='flex';
+  await renderManageUsersList();
+}
+function closeManageUsersModal(){
+  document.getElementById('manageUsersModalBg').style.display='none';
+}
+async function renderManageUsersList(){
+  const box = document.getElementById('manageUsersList');
+  box.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">Cargando...</div>';
+  try{
+    if(!FUNCIONALIDADES_CATALOGO.length){
+      const {data: catalogo, error: eCat} = await sb.from('funcionalidades').select('*').order('orden');
+      if(eCat) throw eCat;
+      FUNCIONALIDADES_CATALOGO = catalogo || [];
+    }
+    const {data: profiles, error: e1} = await sb.from('profiles').select('*').order('email');
+    if(e1) throw e1;
+    const {data: grants, error: e2} = await sb.from('usuario_funcionalidades').select('user_id,funcionalidad_id');
+    if(e2) throw e2;
+    const grantSet = new Set((grants||[]).map(g => g.user_id+'|'+g.funcionalidad_id));
+    if(!profiles || !profiles.length){
+      box.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">No hay usuarios.</div>';
+      return;
+    }
+    if(!FUNCIONALIDADES_CATALOGO.length){
+      box.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">Todavía no hay funciones creadas en la tabla "funcionalidades".</div>';
+      return;
+    }
+    box.innerHTML = profiles.map(p => {
+      const checks = FUNCIONALIDADES_CATALOGO.map(f => {
+        const checked = grantSet.has(p.id+'|'+f.id);
+        return `<label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;cursor:pointer">
+          <input type="checkbox" ${checked?'checked':''} onchange="toggleUserFuncionalidad('${p.id}','${f.id}',this.checked)"> ${f.nombre}
+        </label>`;
+      }).join('');
+      return `<div style="padding:10px 4px;border-bottom:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;margin-bottom:6px">${p.nombre || p.email}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px">${checks}</div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    box.innerHTML = `<div style="padding:16px;text-align:center;color:#c0392b;font-size:12px">No se pudo cargar: ${e.message}</div>`;
+  }
+}
+async function toggleUserFuncionalidad(userId, funcId, granted){
+  try{
+    if(granted){
+      const {error} = await sb.from('usuario_funcionalidades').insert({user_id: userId, funcionalidad_id: funcId, otorgado_por: currentUser.id});
+      if(error) throw error;
+    }else{
+      const {error} = await sb.from('usuario_funcionalidades').delete().eq('user_id', userId).eq('funcionalidad_id', funcId);
+      if(error) throw error;
+    }
+  }catch(e){
+    alert('No se pudo actualizar el acceso: '+e.message);
+    renderManageUsersList();
+  }
 }
 
 async function doLogout(){
@@ -1692,6 +1837,15 @@ canvas.addEventListener('mouseleave',()=>document.getElementById('areaTooltip').
     <p style="font-size:11px;color:var(--text2);margin-bottom:16px">Borrá puntualmente el que no corresponda — el resto queda intacto.</p>
     <div id="manageList" style="overflow-y:auto;flex:1;margin-bottom:16px"></div>
     <button onclick="closeManageModal()" style="padding:10px 16px;background:none;border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer">Cerrar</button>
+  </div>
+</div>
+
+<div id="manageUsersModalBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center" onclick="if(event.target===this)closeManageUsersModal()">
+  <div style="background:#fff;border-radius:16px;padding:28px 28px 24px;width:100%;max-width:520px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(0,0,0,.18);border-top:4px solid var(--brand);font-family:'Montserrat',sans-serif">
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:4px">Acceso por usuario</h3>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:16px">Tildá las funciones a las que cada usuario debe tener acceso. Los cambios se guardan al instante.</p>
+    <div id="manageUsersList" style="overflow-y:auto;flex:1;margin-bottom:16px"></div>
+    <button onclick="closeManageUsersModal()" style="padding:10px 16px;background:none;border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer">Cerrar</button>
   </div>
 </div>
 </body>
