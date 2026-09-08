@@ -65,6 +65,9 @@ main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 
         <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <button class="btn" id="loginBtn" onclick="doLogin()">Iniciar sesión</button>
+      <div style="text-align:center;margin-top:14px">
+        <a href="#" style="font-size:11px;color:var(--text2);text-decoration:underline" onclick="switchView('forgot');return false">¿Olvidaste tu contraseña?</a>
+      </div>
     </div>
 
     <!-- Register -->
@@ -83,6 +86,33 @@ main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 
       </div>
       <button class="btn" id="registerBtn" onclick="doRegister()">Crear cuenta</button>
     </div>
+
+    <!-- Forgot password -->
+    <div id="formForgot" style="display:none">
+      <div class="card-sub" style="margin-bottom:20px">Ingresá tu email y te mandamos un enlace para restablecer tu contraseña.</div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="forgotEmail" placeholder="tu@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')doForgotPassword()">
+      </div>
+      <button class="btn" id="forgotBtn" onclick="doForgotPassword()">Enviar enlace de recuperación</button>
+      <div style="text-align:center;margin-top:14px">
+        <a href="#" style="font-size:11px;color:var(--text2);text-decoration:underline" onclick="switchView('login');return false">← Volver a iniciar sesión</a>
+      </div>
+    </div>
+
+    <!-- Reset password (llegando desde el enlace del email) -->
+    <div id="formReset" style="display:none">
+      <div class="card-sub" style="margin-bottom:20px">Elegí tu nueva contraseña.</div>
+      <div class="form-group">
+        <label>Nueva contraseña</label>
+        <input type="password" id="resetPass" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>Confirmar nueva contraseña</label>
+        <input type="password" id="resetPass2" placeholder="Repetí la contraseña" autocomplete="new-password" onkeydown="if(event.key==='Enter')doResetPassword()">
+      </div>
+      <button class="btn" id="resetBtn" onclick="doResetPassword()">Guardar nueva contraseña</button>
+    </div>
   </div>
 </main>
 
@@ -91,18 +121,32 @@ const SUPABASE_URL = 'https://yxlseunaxhxozxbvzmhh.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4bHNldW5heGh4b3p4YnZ6bWhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMTk1NjksImV4cCI6MjA5NjU5NTU2OX0.XO1VEcvXAQLfKoLGNRAb64jOYUFlEVuerXtyM8gVTy0';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Si ya hay sesión activa, ir directo a la app
-sb.auth.getSession().then(({data:{session}})=>{
-  if(session) window.location.href='index.html';
+// El enlace de recuperación de contraseña vuelve acá con type=recovery en el hash
+// y Supabase crea una sesión temporal para permitir el cambio: no redirigir en ese caso.
+const isRecovery = window.location.hash.includes('type=recovery');
+
+sb.auth.onAuthStateChange((event)=>{
+  if(event === 'PASSWORD_RECOVERY') switchView('reset');
 });
 
-function switchTab(tab){
-  document.getElementById('formLogin').style.display = tab==='login'?'block':'none';
-  document.getElementById('formRegister').style.display = tab==='register'?'block':'none';
-  document.getElementById('tabLogin').classList.toggle('active', tab==='login');
-  document.getElementById('tabRegister').classList.toggle('active', tab==='register');
+// Si ya hay sesión activa (y no es una recuperación de contraseña), ir directo a la app
+if(!isRecovery){
+  sb.auth.getSession().then(({data:{session}})=>{
+    if(session) window.location.href='index.html';
+  });
+}
+
+function switchView(view){
+  document.getElementById('formLogin').style.display = view==='login'?'block':'none';
+  document.getElementById('formRegister').style.display = view==='register'?'block':'none';
+  document.getElementById('formForgot').style.display = view==='forgot'?'block':'none';
+  document.getElementById('formReset').style.display = view==='reset'?'block':'none';
+  document.querySelector('.tabs').style.display = (view==='login'||view==='register') ? 'flex' : 'none';
+  document.getElementById('tabLogin').classList.toggle('active', view==='login');
+  document.getElementById('tabRegister').classList.toggle('active', view==='register');
   hideMsg();
 }
+function switchTab(tab){ switchView(tab); }
 
 function showMsg(text, type){
   const el = document.getElementById('msgBox');
@@ -146,6 +190,40 @@ async function doRegister(){
     showMsg('Cuenta creada. Ya podés iniciar sesión.','success');
     setTimeout(()=>switchTab('login'),1500);
     btn.disabled=false; btn.textContent='Crear cuenta';
+  }
+}
+
+async function doForgotPassword(){
+  const email = document.getElementById('forgotEmail').value.trim();
+  if(!email){showMsg('Ingresá tu email.','error');return;}
+  const btn = document.getElementById('forgotBtn');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  const {error} = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  btn.disabled = false; btn.textContent = 'Enviar enlace de recuperación';
+  if(error){
+    showMsg(error.message,'error');
+  } else {
+    showMsg('Si el email existe, te enviamos un enlace para restablecer tu contraseña. Revisá tu bandeja de entrada (y spam).','success');
+  }
+}
+
+async function doResetPassword(){
+  const pass = document.getElementById('resetPass').value;
+  const pass2 = document.getElementById('resetPass2').value;
+  if(!pass||!pass2){showMsg('Completá ambos campos.','error');return;}
+  if(pass!==pass2){showMsg('Las contraseñas no coinciden.','error');return;}
+  if(pass.length<6){showMsg('La contraseña debe tener al menos 6 caracteres.','error');return;}
+  const btn = document.getElementById('resetBtn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  const {error} = await sb.auth.updateUser({password: pass});
+  if(error){
+    showMsg(error.message,'error');
+    btn.disabled = false; btn.textContent = 'Guardar nueva contraseña';
+  } else {
+    showMsg('Contraseña actualizada. Redirigiendo...','success');
+    setTimeout(()=>{ window.location.href='index.html'; }, 1200);
   }
 }
 </script>
