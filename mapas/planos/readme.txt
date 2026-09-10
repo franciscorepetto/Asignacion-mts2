@@ -32,3 +32,9 @@ Cómo agregar un plano nuevo desde GitHub (sin usar el botón "Subir plano" / Su
 El código de sucursal ("MDQ" en el ejemplo) tiene que coincidir con el
 código IATA usado en el resto de la plataforma (ver el array SUCURSALES
 en index.html).
+
+Nota: los .dxf sueltos en esta carpeta (sin subcarpeta) son los planos
+viejos que estaban antes de migrar a Supabase; manifest.json los referencia
+directamente por nombre de archivo. Algunos quedaron sin mapear en
+manifest.json porque el nombre no permitía identificar con certeza a qué
+sucursal correspondían (ver aviso del asistente al restaurarlos).
