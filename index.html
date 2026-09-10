@@ -858,22 +858,32 @@ function buildSplash(){
   function renderList(filter){
     list.innerHTML='';
     const q=(filter||'').toLowerCase();
-    // Solo se listan sucursales que ya tienen al menos un plano subido a Supabase.
-    const conPlan=SUCURSALES.filter(s=>MULTI_FLOOR[s.code]&&MULTI_FLOOR[s.code].length);
-    const shown=conPlan.filter(s=>!q||s.name.toLowerCase().includes(q)||s.code.toLowerCase().includes(q));
+    // Se listan todas las sucursales habilitadas; las que todavía no tienen
+    // plano subido a Supabase se muestran como "Próximamente" (no seleccionables).
+    const habilitadas=SUCURSALES.filter(s=>s.available);
+    const shown=habilitadas.filter(s=>!q||s.name.toLowerCase().includes(q)||s.code.toLowerCase().includes(q))
+      .sort((a,b)=>{
+        const pa=MULTI_FLOOR[a.code]&&MULTI_FLOOR[a.code].length?0:1;
+        const pb=MULTI_FLOOR[b.code]&&MULTI_FLOOR[b.code].length?0:1;
+        return pa-pb||a.name.localeCompare(b.name);
+      });
     if(!shown.length){
-      const msg=conPlan.length?'No se encontraron sucursales.':'Todavía no hay planos cargados. Un administrador tiene que subirlos con "↑ Subir plano".';
+      const msg=habilitadas.length?'No se encontraron sucursales.':'No hay sucursales habilitadas.';
       list.innerHTML=`<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">${msg}</div>`;
       return;
     }
     shown.forEach(s=>{
       const item=document.createElement('div');
-      item.className='suc-item';
-      let _n=0;MULTI_FLOOR[s.code].forEach(f=>{try{const d=localStorage.getItem(`areas_${s.code}_${f.id}`);if(d)_n+=JSON.parse(d).length;}catch(e){}});
+      const floors=MULTI_FLOOR[s.code];
+      const conPlano=floors&&floors.length;
+      let _n=0;if(conPlano) floors.forEach(f=>{try{const d=localStorage.getItem(`areas_${s.code}_${f.id}`);if(d)_n+=JSON.parse(d).length;}catch(e){}});
+      item.className='suc-item'+(conPlano?'':' suc-item-soon');
+      if(!conPlano) item.style.opacity='.55';
       const _bc=_n>0?' has-data':'';
-      const _bt=_n>0?`${_n} área${_n>1?'s':''}`:'Disponible';
+      const _bt=!conPlano?'Próximamente':(_n>0?`${_n} área${_n>1?'s':''}`:'Disponible');
       item.innerHTML=`<span class="suc-item-code">${s.code}</span><span class="suc-item-name">${s.name}</span><span class="suc-item-badge${_bc}">${_bt}</span>`;
       item.onclick=()=>{
+        if(!conPlano){ alert('Esta sucursal todavía no tiene un plano cargado.'); return; }
         document.querySelectorAll('.suc-item').forEach(i=>i.classList.remove('active'));
         item.classList.add('active');
         currentSuc=s;
