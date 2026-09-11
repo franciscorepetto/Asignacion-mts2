@@ -38,8 +38,8 @@
     { "id": "P2", "name": "Piso 2", "file": "MTZ p2 mts2.dxf", "piso": "2DO" }
   ],
   "MDZ": [
-    { "id": "PB", "name": "Planta Baja", "file": "Mendoza Planta Baja.dxf", "piso": "PB" },
-    { "id": "EP", "name": "Entrepiso", "file": "Mendoza Entrepiso.dxf", "piso": "ENTREPISO" }
+    { "id": "PB", "name": "Planta Baja", "file": "Mendoza Planta Baja Limpio.dxf", "piso": "PB" },
+    { "id": "EP", "name": "Entrepiso", "file": "Mendoza Entrepiso Limpio.dxf", "piso": "ENTREPISO" }
   ],
   "MDQ": [
     { "id": "LIMPIO", "name": "Plano", "file": "Mar del Plata Limpio.dxf", "piso": "GENERAL" }
