@@ -57,9 +57,6 @@
   "RAF": [
     { "id": "GRAL", "name": "General", "file": "RAF-JUAN JOSE PASO 2277 RAFAELA SANTA FE V2 15-ENE-2021.dxf", "piso": "GENERAL" }
   ],
-  "RDI": [
-    { "id": "MTS2", "name": "Plano MTS2", "file": "RDI Sarandi mts2.dxf", "piso": "GENERAL" }
-  ],
   "RSA": [
     { "id": "LIMPIO", "name": "Plano", "file": "Santa Rosa.dxf", "piso": "GENERAL" }
   ],
