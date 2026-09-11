@@ -10,7 +10,9 @@
     { "id": "GRAL", "name": "General", "file": "CRD-Mterio Salud Chubut-R03.dxf", "piso": "GENERAL" }
   ],
   "COR": [
-    { "id": "BASE", "name": "Base", "file": "Copia de COR-LA VOZ-Base xref-04 - CORRECCION CORTINA RAPIDA version 2004.dwg.dxf", "piso": "BASE" }
+    { "id": "PB", "name": "Planta Baja", "file": "Cordoba La Voz PB.dxf", "piso": "PB" },
+    { "id": "PA", "name": "Planta Alta", "file": "Cordoba La Voz PA.dxf", "piso": "PLANTA ALTA" },
+    { "id": "TECHO", "name": "Techo", "file": "Cordoba La Voz Techo.dxf", "piso": "TECHO" }
   ],
   "EQS": [
     { "id": "LAYOUT", "name": "Layout", "file": "Copia de EQS-ESQUEL Lay Out-r05.dxf", "piso": "GENERAL" }
