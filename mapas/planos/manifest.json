@@ -117,7 +117,7 @@
     { "id": "MTS2", "name": "Plano MTS2", "file": "M2 Tucuman.dxf", "piso": "GENERAL" }
   ],
   "ZUL": [
-    { "id": "ETAPA2", "name": "Etapa 2 — Arquitectura", "file": "ZUL-AZUL ETAPA 2 ARQ.dxf", "piso": "ETAPA 2" }
+    { "id": "LIMPIO", "name": "Plano", "file": "Azul Limpio.dxf", "piso": "GENERAL" }
   ],
   "MV2": [
     { "id": "N1", "name": "Nave 1", "file": "Tortunave1.dxf", "piso": "NAVE 1" },
