@@ -79,7 +79,7 @@
     { "id": "BASE", "name": "Plano Base", "file": "Copia de SLW - PARAGUAY - PLANO BASE (1).dxf", "piso": "BASE" }
   ],
   "UAQ": [
-    { "id": "MTS2", "name": "Plano MTS2", "file": "UAQ San Juan mts2.dxf", "piso": "GENERAL" }
+    { "id": "LIMPIO", "name": "Plano", "file": "San Juan.dxf", "piso": "GENERAL" }
   ],
   "LUQ": [
     { "id": "MTS2", "name": "Plano MTS2", "file": "San Luis mts2.dxf", "piso": "GENERAL" }
