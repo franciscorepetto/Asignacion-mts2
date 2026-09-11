@@ -335,24 +335,26 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser = null;
 
+// El login quedó opcional mientras la plataforma está en etapa de prueba:
+// cualquiera con el link puede entrar y usarla sin crear cuenta. Si alguien
+// sí inicia sesión (login.html) y es admin, sigue viendo los controles de
+// administración (Gestionar planos, Limpiar planos, Usuarios).
 async function initAuth(){
   const {data:{session}} = await sb.auth.getSession();
-  if(!session){
-    window.location.href = 'login.html';
-    return;
+  if(session){
+    currentUser = session.user;
+    const isAdmin = currentUser.app_metadata?.role === 'admin';
+    document.getElementById('userEmailLabel').textContent = currentUser.email;
+    const roleBadge = document.getElementById('userRoleBadge');
+    if(isAdmin){ roleBadge.textContent='admin'; roleBadge.classList.add('admin'); }
+    document.getElementById('managePlanBtn').style.display = isAdmin ? 'flex' : 'none';
+    document.getElementById('wipePlanBtn').style.display = isAdmin ? 'flex' : 'none';
+    document.getElementById('manageUsersBtn').style.display = isAdmin ? 'flex' : 'none';
+    document.getElementById('userInfo').style.display = 'flex';
   }
-  currentUser = session.user;
-  const isAdmin = currentUser.app_metadata?.role === 'admin';
-  document.getElementById('userEmailLabel').textContent = currentUser.email;
-  const roleBadge = document.getElementById('userRoleBadge');
-  if(isAdmin){ roleBadge.textContent='admin'; roleBadge.classList.add('admin'); }
-  document.getElementById('managePlanBtn').style.display = isAdmin ? 'flex' : 'none';
-  document.getElementById('wipePlanBtn').style.display = isAdmin ? 'flex' : 'none';
-  document.getElementById('manageUsersBtn').style.display = isAdmin ? 'flex' : 'none';
-  document.getElementById('userInfo').style.display = 'flex';
   await loadManifestPlans();
   await loadUploadedPlans();
-  await loadFuncionalidades();
+  if(currentUser) await loadFuncionalidades();
   startFuncFlow();
 }
 
