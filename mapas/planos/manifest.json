@@ -17,9 +17,6 @@
   "EQS": [
     { "id": "LAYOUT", "name": "Layout", "file": "Copia de EQS-ESQUEL Lay Out-r05.dxf", "piso": "GENERAL" }
   ],
-  "EZE": [
-    { "id": "PROP", "name": "Propuesta 2025", "file": "EZE-mod. EZE .PROPUUESTA 2025-01-29..dxf", "piso": "GENERAL" }
-  ],
   "FLO": [
     { "id": "BASE", "name": "Plano Base", "file": "Copia de FLO-Flores-Plano Base-V02.dxf", "piso": "GENERAL" }
   ],
