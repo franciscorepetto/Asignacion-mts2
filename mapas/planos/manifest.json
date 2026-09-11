@@ -21,7 +21,8 @@
     { "id": "BASE", "name": "Plano Base", "file": "Copia de FLO-Flores-Plano Base-V02.dxf", "piso": "GENERAL" }
   ],
   "FMA": [
-    { "id": "PLANTAS", "name": "Plantas", "file": "FMA-Formosa - Plantas 09-Ago-2019.dxf", "piso": "GENERAL" }
+    { "id": "PB", "name": "Planta Baja", "file": "Formosa Planta Baja.dxf", "piso": "PB" },
+    { "id": "PA", "name": "Planta Alta", "file": "Formosa Planta Alta.dxf", "piso": "PLANTA ALTA" }
   ],
   "IRI": [
     { "id": "SS", "name": "Subsuelo", "file": "Iriarte Subsuelo.dxf", "piso": "SUBSUELO" },
