@@ -38,8 +38,17 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 .modo-item .suc-item-name{font-weight:700}
 .modo-item .modo-desc{font-size:11px;color:var(--text2);font-weight:500;white-space:normal;line-height:1.5}
 body.modo-layout .costeo-only{display:none!important}
+.layout-only{display:none}
+body.modo-layout .layout-only{display:flex}
 #layoutPanel{display:none;padding:14px;font-size:12px;color:var(--text2);line-height:1.7}
 body.modo-layout #layoutPanel{display:block}
+.label-item{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--border);font-size:11px}
+.label-item:last-child{border-bottom:none}
+.label-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.label-text{flex:1;font-weight:600;color:var(--text);word-break:break-word}
+.label-tipo{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+.label-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:2px 4px}
+.label-del:hover{color:#c0392b}
 .splash-logo{font-size:48px;font-weight:800;letter-spacing:-2px;color:#1a1a1a;margin-bottom:4px}
 .splash-sub{font-size:14px;font-weight:500;color:var(--text2);margin-bottom:48px;letter-spacing:.02em}
 .splash-card{background:#fff;border-radius:16px;padding:32px;width:100%;max-width:480px;box-shadow:0 4px 24px rgba(51,194,202,.12);border:1.5px solid var(--border)}
@@ -283,9 +292,10 @@ body.modo-layout #layoutPanel{display:block}
         <div class="srow"><span class="skey">Áreas</span><span class="sval" id="totN">0</span></div>
       </div>
       <div id="layoutPanel">
-        <strong style="color:var(--text);display:block;margin-bottom:8px">📐 Anotaciones de layout</strong>
-        Esta sección todavía se está armando: pasillos, alturas, posiciones de espacios cedidos y zonas especiales.
-        Por ahora podés ver el plano (con zoom y desplazamiento); la parte de dibujo se suma en una próxima etapa.
+        <strong style="color:var(--text);display:block;margin-bottom:8px;padding:0 10px">📐 Anotaciones de layout</strong>
+        <div style="padding:0 10px 12px;color:var(--text2)">Tocá 🏷 en la barra de herramientas y hacé clic en el plano para poner una etiqueta (número de pasillo, altura, etc). Posiciones de espacios cedidos y zonas especiales se suman en una próxima etapa.</div>
+        <div class="slabel" style="padding:8px 10px 4px">Etiquetas (<span id="labelCount">0</span>)</div>
+        <div id="labelList"><div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin etiquetas aún.</div></div>
       </div>
     </div>
     <div class="cwrap" id="cwrap">
@@ -306,9 +316,33 @@ body.modo-layout #layoutPanel{display:block}
         <div class="tbtn active-tool costeo-only" id="btnD" onclick="setMode('draw')" title="Polígono">✏</div>
         <div class="tbtn costeo-only" id="btnR" onclick="setMode('rect')" title="Rectángulo">▭</div>
         <div class="tbtn" id="btnPan" onclick="setMode('pan')" title="Mover (Espacio)">✋</div>
+        <div class="tbtn layout-only" id="btnLabel" onclick="setMode('label')" title="Etiqueta">🏷</div>
         <div class="tbtn costeo-only" onclick="undoVertex()" title="Deshacer vértice">↩</div>
       </div>
       <div class="scalebar" id="scalebar">—</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="labelModalBg" style="display:none" onclick="if(event.target===this)closeLabelModal()">
+  <div class="modal" style="min-width:300px;max-width:340px">
+    <h3 id="labelModalTitle">Etiqueta</h3>
+    <div class="dropdown-section">
+      <label>Tipo</label>
+      <select id="labelTipo">
+        <option value="pasillo">Pasillo</option>
+        <option value="altura">Altura</option>
+        <option value="otro">Otro</option>
+      </select>
+    </div>
+    <div class="dropdown-section">
+      <label>Texto</label>
+      <input type="text" id="labelTexto" placeholder="Ej: Pasillo 3, H: 6.5m..." style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:6px;font-family:'Montserrat',sans-serif;font-size:12px;outline:none" onkeydown="if(event.key==='Enter')saveLabelModal()">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn-secondary" style="flex:1" onclick="closeLabelModal()">Cancelar</button>
+      <button class="btn-secondary" id="labelDeleteBtn" style="display:none;color:#c0392b;border-color:#f5a0a0" onclick="deleteCurrentLabel()">Borrar</button>
+      <button class="btn-primary" onclick="saveLabelModal()">Guardar</button>
     </div>
   </div>
 </div>
@@ -1029,11 +1063,14 @@ async function enterFloor(floor){
   document.getElementById('backBtn').style.display='flex';
   areas=[];colIdx=0;selectedArea=null;
   try{const saved=localStorage.getItem(`areas_${currentSuc.code}_${floor.id}`);if(saved){areas=JSON.parse(saved);colIdx=areas.length;updateList();}}catch(e){}
+  layoutLabels=[];editingLabelIdx=-1;
+  try{const savedL=localStorage.getItem(`layout_${currentSuc.code}_${floor.id}`);if(savedL) layoutLabels=JSON.parse(savedL);}catch(e){}
+  renderLabelList();
     renderFloorTabs();initCanvas();renderActOverlay();
 }
 async function switchFloor(floorId){
   if(currentFloor&&currentFloor.id===floorId) return;
-  saveAreas();
+  saveAreas();saveLayoutLabels();
   const floor=MULTI_FLOOR[currentSuc.code].find(f=>f.id===floorId);
   if(!floor) return;
   try{
@@ -1046,6 +1083,9 @@ async function switchFloor(floorId){
   document.getElementById('headerMid').innerHTML=`Layout · <span>${currentSuc.name}</span> — ${floor.name}`;
   areas=[];colIdx=0;selectedArea=null;curPts=[];canvas._snapPt=null;
   try{const saved=localStorage.getItem(`areas_${currentSuc.code}_${floor.id}`);if(saved){areas=JSON.parse(saved);colIdx=areas.length;}}catch(e){}
+  layoutLabels=[];editingLabelIdx=-1;
+  try{const savedL=localStorage.getItem(`layout_${currentSuc.code}_${floor.id}`);if(savedL) layoutLabels=JSON.parse(savedL);}catch(e){}
+  renderLabelList();
   renderFloorTabs();updateList();resetView();
 }
 async function enterLayout(){
@@ -1066,6 +1106,7 @@ function goBack(){
   document.getElementById('backBtn').style.display='none';
   document.getElementById('headerMid').innerHTML='Layout de Sucursales';
   areas=[];curPts=[];selectedArea=null;colIdx=0;canvas._snapPt=null;currentFloor=null;document.getElementById('floorTabs').style.display='none';updateList();
+  layoutLabels=[];editingLabelIdx=-1;renderLabelList();
   document.querySelectorAll('.suc-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('enterBtn').disabled=true;
   document.getElementById('enterBtn').textContent='Ingresar al layout →';
@@ -1156,6 +1197,18 @@ function render(){
   DXF.polys.forEach(p=>{if(!p.pts||p.pts.length<2) return;ctx.beginPath();p.pts.forEach((pt,i)=>{const[sx,sy]=toS(pt[0],pt[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});if(p.closed) ctx.closePath();ctx.strokeStyle=p.layer==='Contorno'?'#1a1a1a':'#2a3a3b';ctx.lineWidth=(p.pts.length===4&&p.closed)?0.6:1.3;ctx.setLineDash([]);ctx.stroke();});
   DXF.lines.forEach(l=>{const[lx1,ly1]=toS(l.x1,l.y1),[lx2,ly2]=toS(l.x2,l.y2);ctx.beginPath();ctx.moveTo(lx1,ly1);ctx.lineTo(lx2,ly2);ctx.strokeStyle='#2a3a3b';ctx.lineWidth=1;ctx.setLineDash([]);ctx.stroke();});
   (DXF.hatches||[]).forEach(h=>{ctx.beginPath();h.loops.forEach(loop=>{loop.forEach((pt,i)=>{const[sx,sy]=toS(pt[0],pt[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});ctx.closePath();});ctx.fillStyle='rgba(30,40,40,.55)';ctx.fill('evenodd');});
+  if(MODO==='layout') layoutLabels.forEach(l=>{
+    const[lsx,lsy]=toS(l.x,l.y);
+    const col=LABEL_COLORS[l.tipo]||LABEL_COLORS.otro;
+    ctx.beginPath();ctx.arc(lsx,lsy,5,0,2*Math.PI);ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+    const fs=11;ctx.font=`700 ${fs}px 'Montserrat',sans-serif`;
+    const tw=ctx.measureText(l.text).width;
+    const bx=lsx+9,by=lsy-fs/2-4;
+    ctx.fillStyle='rgba(255,255,255,0.96)';
+    ctx.beginPath();ctx.roundRect(bx,by,tw+10,fs+8,4);ctx.fill();
+    ctx.strokeStyle=col;ctx.lineWidth=1;ctx.stroke();
+    ctx.fillStyle=col;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(l.text,bx+5,by+fs/2+4);
+  });
   if(rectStart&&rectCurrent){
   const[sx0,sy0]=toS(Math.min(rectStart[0],rectCurrent[0]),Math.max(rectStart[1],rectCurrent[1]));
   const[sx1,sy1]=toS(Math.max(rectStart[0],rectCurrent[0]),Math.min(rectStart[1],rectCurrent[1]));
@@ -1324,8 +1377,58 @@ function updateList(){
 function selectArea(i){selectedArea=selectedArea===i?null:i;updateList();render();}
 function editArea(i){selectedArea=i;openModal(areas[i].pts,areas[i],i);updateList();render();}
 function deleteArea(i){if(!confirm('¿Eliminar "'+(areas[i].name||'Área '+(i+1))+'"?')) return;areas.splice(i,1);if(selectedArea===i) selectedArea=null;else if(selectedArea>i) selectedArea--;updateList();saveAreas();render();}
+
+// ── Etiquetas de layout (modo "Anotaciones de layout") ──────────────────────
+// Puntos con texto libre sobre el plano — número de pasillo, altura, etc.
+// Reutiliza la misma persistencia por piso que las áreas de costeo, pero en
+// una clave de localStorage aparte para no mezclarse con ellas.
+let layoutLabels=[],editingLabelIdx=-1,pendingLabelPt=null;
+const LABEL_COLORS={pasillo:'#0a7ae0',altura:'#e07a0a',otro:'#7c3aed'};
+function saveLayoutLabels(){if(!currentSuc||!currentFloor)return;localStorage.setItem(`layout_${currentSuc.code}_${currentFloor.id}`,JSON.stringify(layoutLabels));}
+function renderLabelList(){
+  const list=document.getElementById('labelList');
+  document.getElementById('labelCount').textContent=layoutLabels.length;
+  if(!layoutLabels.length){list.innerHTML='<div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin etiquetas aún.</div>';return;}
+  list.innerHTML=layoutLabels.map((l,i)=>`<div class="label-item"><div class="label-dot" style="background:${LABEL_COLORS[l.tipo]||LABEL_COLORS.otro}"></div><div style="flex:1;min-width:0;cursor:pointer" onclick="editLabel(${i})"><div class="label-text">${l.text}</div><div class="label-tipo">${l.tipo}</div></div><button class="label-del" onclick="event.stopPropagation();deleteLabelDirect(${i})" title="Eliminar">✕</button></div>`).join('');
+}
+function openLabelModal(pt,idx){
+  editingLabelIdx=(idx===undefined||idx===null)?-1:idx;
+  pendingLabelPt=pt||null;
+  const existing=editingLabelIdx>=0?layoutLabels[editingLabelIdx]:null;
+  document.getElementById('labelModalTitle').textContent=existing?'Editar etiqueta':'Nueva etiqueta';
+  document.getElementById('labelTipo').value=existing?existing.tipo:'pasillo';
+  document.getElementById('labelTexto').value=existing?existing.text:'';
+  document.getElementById('labelDeleteBtn').style.display=existing?'block':'none';
+  document.getElementById('labelModalBg').style.display='flex';
+  document.getElementById('labelTexto').focus();
+}
+function closeLabelModal(){
+  document.getElementById('labelModalBg').style.display='none';
+  editingLabelIdx=-1;pendingLabelPt=null;
+}
+function saveLabelModal(){
+  const texto=document.getElementById('labelTexto').value.trim();
+  if(!texto){alert('Escribí un texto para la etiqueta.');return;}
+  const tipo=document.getElementById('labelTipo').value;
+  if(editingLabelIdx>=0) layoutLabels[editingLabelIdx]={...layoutLabels[editingLabelIdx],text:texto,tipo};
+  else if(pendingLabelPt) layoutLabels.push({x:pendingLabelPt[0],y:pendingLabelPt[1],text:texto,tipo});
+  saveLayoutLabels();renderLabelList();render();
+  closeLabelModal();
+}
+function deleteCurrentLabel(){
+  if(editingLabelIdx<0)return;
+  layoutLabels.splice(editingLabelIdx,1);
+  saveLayoutLabels();renderLabelList();render();
+  closeLabelModal();
+}
+function editLabel(i){openLabelModal(null,i);}
+function deleteLabelDirect(i){
+  if(!confirm('¿Eliminar la etiqueta "'+layoutLabels[i].text+'"?'))return;
+  layoutLabels.splice(i,1);
+  saveLayoutLabels();renderLabelList();render();
+}
   
-canvas.addEventListener('click',e=>{if(panning||panMode&&panning) return;if(panMode) return;if(mode==='draw'){const[wx,wy]=toW(e.offsetX,e.offsetY);const snap=snapToVertex(wx,wy);curPts.push(snap||[wx,wy]);canvas._snapPt=null;render();}else{const[wx,wy]=toW(e.offsetX,e.offsetY);let found=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}selectedArea=found;updateList();render();}});
+canvas.addEventListener('click',e=>{if(panning||panMode&&panning) return;if(panMode) return;if(mode==='draw'){const[wx,wy]=toW(e.offsetX,e.offsetY);const snap=snapToVertex(wx,wy);curPts.push(snap||[wx,wy]);canvas._snapPt=null;render();}else if(mode==='label'){const[wx,wy]=toW(e.offsetX,e.offsetY);openLabelModal([wx,wy]);}else{const[wx,wy]=toW(e.offsetX,e.offsetY);let found=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}selectedArea=found;updateList();render();}});
 canvas.addEventListener('dblclick',e=>{if(panMode||mode!=='draw') return;if(curPts.length<3){curPts=[];render();return;}const pts=[...curPts];curPts=[];canvas._snapPt=null;openModal(pts,null,null);});
 canvas.addEventListener('mousemove',e=>{if(!DXF) return;const[wx,wy]=toW(e.offsetX,e.offsetY);const bb=DXF.bbox;
 document.getElementById('coords').textContent='x: '+(wx-bb.min_x).toFixed(1)+'m  y: '+(wy-bb.min_y).toFixed(1)+'m';
@@ -1378,7 +1481,7 @@ canvas.addEventListener('mouseup',e=>{
 canvas.addEventListener('wheel',e=>{if(!DXF) return;e.preventDefault();const f=e.deltaY<0?1.12:0.9;ox=e.offsetX-(e.offsetX-ox)*f;oy=e.offsetY-(e.offsetY-oy)*f;scale*=f;render();},{passive:false});
 
 document.addEventListener('keydown',e=>{if(!DXF) return;if(e.code==='Space'&&mode!=='pan'){e.preventDefault();setMode('pan');}if(e.code==='Escape'){curPts=[];canvas._snapPt=null;selectedArea=null;updateList();render();}if((e.code==='Delete'||e.code==='Backspace')&&selectedArea!==null&&document.getElementById('modalBg').style.display==='none') deleteArea(selectedArea);if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();const modalOpen=document.getElementById('modalBg').style.display!=='none';if(modalOpen&&editingIdx===-1){curPts=pendingPts?[...pendingPts]:[];closeModal(false);}else if(curPts.length>0){undoVertex();}else if(areas.length>0){areas.pop();selectedArea=null;updateList();saveAreas();render();}}});
-document.addEventListener('keyup',e=>{if(e.code==='Space'){setMode('draw');}});
+document.addEventListener('keyup',e=>{if(e.code==='Space'){setMode(MODO==='layout'?'label':'draw');}});
 
 function setMode(m){
   mode=m;
@@ -1388,8 +1491,9 @@ function setMode(m){
   document.getElementById('btnD').classList.toggle('active-tool',m==='draw');
   document.getElementById('btnR').classList.toggle('active-tool',m==='rect');
   document.getElementById('btnPan').classList.toggle('active-tool',m==='pan');
-  canvas.style.cursor=m==='pan'?'grab':m==='draw'||m==='rect'?'crosshair':'default';
-  document.getElementById('instrTxt').innerHTML=m==='draw'?'<strong>Modo polígono:</strong><br>1. Clic = vértice del área<br>2. Doble clic = cerrar polígono<br>3. Asigná actividades y %':m==='rect'?'<strong>Modo rectángulo:</strong><br>1. Clic y arrastrá para dibujar<br>2. Soltá para confirmar':'<strong>Modo mover:</strong><br>Clic y arrastrá para mover el plano<br><kbd>Espacio</kbd> también activa este modo';
+  document.getElementById('btnLabel')?.classList.toggle('active-tool',m==='label');
+  canvas.style.cursor=m==='pan'?'grab':m==='draw'||m==='rect'||m==='label'?'crosshair':'default';
+  document.getElementById('instrTxt').innerHTML=m==='draw'?'<strong>Modo polígono:</strong><br>1. Clic = vértice del área<br>2. Doble clic = cerrar polígono<br>3. Asigná actividades y %':m==='rect'?'<strong>Modo rectángulo:</strong><br>1. Clic y arrastrá para dibujar<br>2. Soltá para confirmar':m==='label'?'<strong>Modo etiqueta:</strong><br>Clic en el plano para poner una etiqueta':'<strong>Modo mover:</strong><br>Clic y arrastrá para mover el plano<br><kbd>Espacio</kbd> también activa este modo';
   updateList();render();
 }
 function zoomToSlider(val){const cx=canvas.width/2,cy=canvas.height/2;const target=baseScale*Math.pow(10,(val-50)/40);const f=target/scale;ox=cx-(cx-ox)*f;oy=cy-(cy-oy)*f;scale=target;render();}
