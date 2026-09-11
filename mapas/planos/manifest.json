@@ -1,7 +1,6 @@
 {
   "BHI": [
-    { "id": "LIMPIO", "name": "Plano", "file": "BHI Limpio.dxf", "piso": "GENERAL" },
-    { "id": "ARQ", "name": "Arquitectura V4", "file": "Copia de BHI-Bahia Blanca.V4 - ARQUITECTURA (1).dxf", "piso": "ARQ V4" }
+    { "id": "LIMPIO", "name": "Plano", "file": "BHI Limpio.dxf", "piso": "GENERAL" }
   ],
   "CO2": [
     { "id": "LIMPIO1", "name": "Plano 1", "file": "Cordoba Circunvalacion Limpio.dxf", "piso": "GENERAL" },
