@@ -1,6 +1,6 @@
 {
   "BHI": [
-    { "id": "MTS2", "name": "Plano MTS2", "file": "Bahia Blanca mts2.dxf", "piso": "GENERAL" },
+    { "id": "LIMPIO", "name": "Plano", "file": "BHI Limpio.dxf", "piso": "GENERAL" },
     { "id": "ARQ", "name": "Arquitectura V4", "file": "Copia de BHI-Bahia Blanca.V4 - ARQUITECTURA (1).dxf", "piso": "ARQ V4" }
   ],
   "CO2": [
