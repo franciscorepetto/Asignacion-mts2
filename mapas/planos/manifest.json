@@ -52,8 +52,7 @@
     { "id": "LAYOUT", "name": "Layout", "file": "PRA-Layout OCASA.dxf", "piso": "GENERAL" }
   ],
   "PSS": [
-    { "id": "MTS2", "name": "Plano MTS2", "file": "Posadas mts2.dxf", "piso": "GENERAL" },
-    { "id": "COMEDOR", "name": "Comedor", "file": "Copia de PSS-Posadas .Comedor 07-07-2020.dxf", "piso": "COMEDOR" }
+    { "id": "LIMPIO", "name": "Plano", "file": "Posadas Limpio.dxf", "piso": "GENERAL" }
   ],
   "RAF": [
     { "id": "GRAL", "name": "General", "file": "RAF-JUAN JOSE PASO 2277 RAFAELA SANTA FE V2 15-ENE-2021.dxf", "piso": "GENERAL" }
