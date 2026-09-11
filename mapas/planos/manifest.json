@@ -1,10 +1,11 @@
 {
   "BHI": [
-    { "id": "MTS2", "name": "Plano MTS2", "file": "Bahia Blanca mts2.dxf", "piso": "GENERAL" },
+    { "id": "LIMPIO", "name": "Plano", "file": "BHI Limpio.dxf", "piso": "GENERAL" },
     { "id": "ARQ", "name": "Arquitectura V4", "file": "Copia de BHI-Bahia Blanca.V4 - ARQUITECTURA (1).dxf", "piso": "ARQ V4" }
   ],
   "CO2": [
-    { "id": "GRAL", "name": "General", "file": "CBA_CIRCUNVALACION.dxf", "piso": "GENERAL" }
+    { "id": "LIMPIO1", "name": "Plano 1", "file": "Cordoba Circunvalacion Limpio.dxf", "piso": "GENERAL" },
+    { "id": "LIMPIO2", "name": "Plano 2", "file": "Cordoba Circunvalacion Limpio 2.dxf", "piso": "GENERAL" }
   ],
   "CRD": [
     { "id": "GRAL", "name": "General", "file": "CRD-Mterio Salud Chubut-R03.dxf", "piso": "GENERAL" }
