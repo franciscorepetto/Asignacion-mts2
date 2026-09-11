@@ -95,7 +95,7 @@
     { "id": "S5", "name": "Subnave 5", "file": "SL3 Subnave 5.dxf", "piso": "SN5" }
   ],
   "REL": [
-    { "id": "MTS2", "name": "Plano MTS2", "file": "Trelew mts2.dxf", "piso": "GENERAL" }
+    { "id": "LIMPIO", "name": "Plano", "file": "Trelew Limpio.dxf", "piso": "GENERAL" }
   ],
   "TUC": [
     { "id": "MTS2", "name": "Plano MTS2", "file": "M2 Tucuman.dxf", "piso": "GENERAL" }
