@@ -1107,6 +1107,7 @@ function render(){
   });
   DXF.polys.forEach(p=>{if(!p.pts||p.pts.length<2) return;ctx.beginPath();p.pts.forEach((pt,i)=>{const[sx,sy]=toS(pt[0],pt[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});if(p.closed) ctx.closePath();ctx.strokeStyle=p.layer==='Contorno'?'#1a1a1a':'#2a3a3b';ctx.lineWidth=(p.pts.length===4&&p.closed)?0.6:1.3;ctx.setLineDash([]);ctx.stroke();});
   DXF.lines.forEach(l=>{const[lx1,ly1]=toS(l.x1,l.y1),[lx2,ly2]=toS(l.x2,l.y2);ctx.beginPath();ctx.moveTo(lx1,ly1);ctx.lineTo(lx2,ly2);ctx.strokeStyle='#2a3a3b';ctx.lineWidth=1;ctx.setLineDash([]);ctx.stroke();});
+  (DXF.hatches||[]).forEach(h=>{ctx.beginPath();h.loops.forEach(loop=>{loop.forEach((pt,i)=>{const[sx,sy]=toS(pt[0],pt[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});ctx.closePath();});ctx.fillStyle='rgba(30,40,40,.55)';ctx.fill('evenodd');});
   if(rectStart&&rectCurrent){
   const[sx0,sy0]=toS(Math.min(rectStart[0],rectCurrent[0]),Math.max(rectStart[1],rectCurrent[1]));
   const[sx1,sy1]=toS(Math.max(rectStart[0],rectCurrent[0]),Math.min(rectStart[1],rectCurrent[1]));
@@ -1442,6 +1443,7 @@ function exportSVG(){
   let dxfSVG='';
   DXF.lines.forEach(l=>{dxfSVG+=`<line x1="${sx(l.x1).toFixed(1)}" y1="${sy(l.y1).toFixed(1)}" x2="${sx(l.x2).toFixed(1)}" y2="${sy(l.y2).toFixed(1)}" stroke="#2a3a3b" stroke-width="0.8"/>`;});
   DXF.polys.forEach(p=>{if(!p.pts||p.pts.length<2)return;const d=p.pts.map((pt,i)=>`${i?'L':'M'}${sx(pt[0]).toFixed(1)},${sy(pt[1]).toFixed(1)}`).join(' ')+(p.closed?'Z':'');dxfSVG+=`<path d="${d}" stroke="#2a3a3b" stroke-width="0.8" fill="none"/>`;});
+  (DXF.hatches||[]).forEach(h=>{const d=h.loops.map(loop=>loop.map((pt,i)=>`${i?'L':'M'}${sx(pt[0]).toFixed(1)},${sy(pt[1]).toFixed(1)}`).join(' ')+'Z').join(' ');dxfSVG+=`<path d="${d}" fill="rgba(30,40,40,.55)" fill-rule="evenodd" stroke="none"/>`;});
 
   // Áreas
   let areasSVG='';
@@ -1636,7 +1638,7 @@ function parseDXF(text){
   const raw=text.split(/\r?\n/);
   const pairs=[];
   for(let i=0;i+1<raw.length;i+=2){const c=parseInt(raw[i]);if(!isNaN(c))pairs.push([c,raw[i+1].trim()]);}
-  const res={lines:[],polys:[],labels:[],bbox:null};
+  const res={lines:[],polys:[],labels:[],hatches:[],bbox:null};
   let x0=null,x1=null,y0=null,y1=null;
   for(let i=0;i<pairs.length;i++){
     const[c,v]=pairs[i];
@@ -1788,6 +1790,72 @@ if(v==='LINE'){
       let txt='',tx=0,ty=0;i++;
       while(i<n&&pairs[i][0]!==0){const[gc,gv]=pairs[i++];if(gc===1)txt=cleanMText(gv);else if(gc===10)tx=parseFloat(gv);else if(gc===20)ty=parseFloat(gv);}
       if(txt&&inR(tx,ty))res.labels.push({text:txt,x:tx,y:ty});
+    }else if(v==='HATCH'){
+      // Los rellenos (HATCH) no se leían: quedaban invisibles aunque el CAD los
+      // muestre sólidos encima de lo que hay debajo (inodoros, piletas, íconos
+      // con relleno). Solo se guarda el contorno de cada boundary para pintarlo
+      // sólido; no se reproduce el patrón real de achurado.
+      let numPaths=0,loops=[],ps=false;i++;
+      while(i<n&&pairs[i][0]!==0){
+        const[gc,gv]=pairs[i];
+        if(gc===67){ps=(parseInt(gv)===1);i++;}
+        else if(gc===91&&numPaths===0){
+          numPaths=parseInt(gv);i++;
+          for(let pI=0;pI<numPaths&&i<n&&pairs[i][0]!==0;pI++){
+            let pathFlag=0;
+            if(pairs[i][0]===92){pathFlag=parseInt(pairs[i][1]);i++;}
+            const isPoly=!!(pathFlag&2);
+            const loopPts=[];
+            if(isPoly){
+              let hasBulge=false,vcount=0;
+              if(pairs[i][0]===72){hasBulge=(parseInt(pairs[i][1])===1);i++;}
+              if(pairs[i][0]===73){i++;}
+              if(pairs[i][0]===93){vcount=parseInt(pairs[i][1]);i++;}
+              const xs=[],ys=[],bulges=[];
+              for(let vI=0;vI<vcount&&i<n;vI++){
+                let vx=0,vy=0,vb=0;
+                if(pairs[i][0]===10){vx=parseFloat(pairs[i][1]);i++;}
+                if(pairs[i][0]===20){vy=parseFloat(pairs[i][1]);i++;}
+                if(hasBulge&&pairs[i][0]===42){vb=parseFloat(pairs[i][1])||0;i++;}
+                xs.push(vx);ys.push(vy);bulges.push(vb);
+              }
+              loopPts.push(...expandBulges(xs.map((x,k)=>[x,ys[k]]),bulges,true));
+            }else{
+              let ecount=0,bad=false;
+              if(pairs[i][0]===93){ecount=parseInt(pairs[i][1]);i++;}
+              for(let eI=0;eI<ecount&&i<n;eI++){
+                let etype=1;
+                if(pairs[i][0]===72){etype=parseInt(pairs[i][1]);i++;}
+                if(etype===1){
+                  let ex1=0,ey1=0,ex2=0,ey2=0;
+                  if(pairs[i][0]===10){ex1=parseFloat(pairs[i][1]);i++;}
+                  if(pairs[i][0]===20){ey1=parseFloat(pairs[i][1]);i++;}
+                  if(pairs[i][0]===11){ex2=parseFloat(pairs[i][1]);i++;}
+                  if(pairs[i][0]===21){ey2=parseFloat(pairs[i][1]);i++;}
+                  loopPts.push([ex1,ey1],[ex2,ey2]);
+                }else if(etype===2){
+                  let cx=0,cy=0,r=0,sa=0,ea=360;
+                  if(pairs[i][0]===10){cx=parseFloat(pairs[i][1]);i++;}
+                  if(pairs[i][0]===20){cy=parseFloat(pairs[i][1]);i++;}
+                  if(pairs[i][0]===40){r=parseFloat(pairs[i][1]);i++;}
+                  if(pairs[i][0]===50){sa=parseFloat(pairs[i][1]);i++;}
+                  if(pairs[i][0]===51){ea=parseFloat(pairs[i][1]);i++;}
+                  if(pairs[i][0]===73){i++;}
+                  const span=ea>sa?ea-sa:360-sa+ea;const segs=Math.max(8,Math.ceil(span/8));
+                  for(let k=0;k<=segs;k++){const ang=(sa+span*k/segs)*Math.PI/180;loopPts.push([cx+r*Math.cos(ang),cy+r*Math.sin(ang)]);}
+                }else{
+                  bad=true;
+                  while(i<n&&pairs[i][0]!==0&&pairs[i][0]!==72&&pairs[i][0]!==97&&pairs[i][0]!==93)i++;
+                }
+              }
+              if(bad)loopPts.length=0;
+            }
+            if(loopPts.length>=3)loops.push(loopPts);
+          }
+        }
+        else i++;
+      }
+      if(!ps&&loops.length)res.hatches.push({loops});
     }else{i++;}
   }
     // IQR outlier filter — remove elements far from the main cluster
@@ -1798,7 +1866,7 @@ if(v==='LINE'){
     const qs=arr=>{const s=[...arr].sort((a,b)=>a-b);return{q1:s[Math.floor(s.length*0.25)],q3:s[Math.floor(s.length*0.75)]};};
     const ix=qs(allXf),iy=qs(allYf);
     const iqrX=ix.q3-ix.q1,iqrY=iy.q3-iy.q1;
-    const k=7;
+    const k=15;
     const xLo=ix.q1-k*iqrX,xHi=ix.q3+k*iqrX,yLo=iy.q1-k*iqrY,yHi=iy.q3+k*iqrY;
     res.lines=res.lines.filter(l=>l.x1>=xLo&&l.x1<=xHi&&l.y1>=yLo&&l.y1<=yHi&&l.x2>=xLo&&l.x2<=xHi&&l.y2>=yLo&&l.y2<=yHi);
     res.polys=res.polys.filter(p=>p.pts.every(([px,py])=>px>=xLo&&px<=xHi&&py>=yLo&&py<=yHi));
