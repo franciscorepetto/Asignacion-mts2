@@ -24,14 +24,7 @@
     { "id": "PB", "name": "Planta Baja", "file": "Formosa Planta Baja.dxf", "piso": "PB" },
     { "id": "PA", "name": "Planta Alta", "file": "Formosa Planta Alta.dxf", "piso": "PLANTA ALTA" }
   ],
-  "IRI": [
-    { "id": "SS", "name": "Subsuelo", "file": "Iriarte Subsuelo.dxf", "piso": "SUBSUELO" },
-    { "id": "PB", "name": "Planta Baja", "file": "Iriarte Planta Baja.dxf", "piso": "PB" },
-    { "id": "P1A", "name": "Primer Piso A", "file": "Iriarte Primer Piso A.dxf", "piso": "1RO A" },
-    { "id": "P1B", "name": "Primer Piso B", "file": "Iriarte Primer Piso B.dxf", "piso": "1RO B" }
-  ],
   "IRJ": [
-    { "id": "GRAL", "name": "General", "file": "Copia de IRJ-La RIOJA.dxf", "piso": "GENERAL" },
     { "id": "MTS2", "name": "Plano MTS2", "file": "La Rioja mts2.dxf", "piso": "MTS2" }
   ],
   "LCA": [
@@ -48,11 +41,8 @@
     { "id": "PB", "name": "Planta Baja", "file": "Mendoza Planta Baja.dxf", "piso": "PB" },
     { "id": "EP", "name": "Entrepiso", "file": "Mendoza Entrepiso.dxf", "piso": "ENTREPISO" }
   ],
-  "MVA": [
-    { "id": "BASE", "name": "Base", "file": "MVA-OTTO- BASE.dxf", "piso": "GENERAL" }
-  ],
   "MDQ": [
-    { "id": "GALPON", "name": "Galpón 21.1 + 2.2", "file": "Galpon 21.1+2.2_MDQ_v2013 (1) - Mar del Plata.dxf", "piso": "GENERAL" }
+    { "id": "LIMPIO", "name": "Plano", "file": "Mar del Plata Limpio.dxf", "piso": "GENERAL" }
   ],
   "NQN": [
     { "id": "ARQ", "name": "Arquitectura", "file": "Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf", "piso": "GENERAL" }
