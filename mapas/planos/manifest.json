@@ -61,7 +61,7 @@
     { "id": "MTS2", "name": "Plano MTS2", "file": "RDI Sarandi mts2.dxf", "piso": "GENERAL" }
   ],
   "RSA": [
-    { "id": "MTS2", "name": "Plano MTS2", "file": "RSA La Pampa mts2.dxf", "piso": "GENERAL" }
+    { "id": "LIMPIO", "name": "Plano", "file": "Santa Rosa.dxf", "piso": "GENERAL" }
   ],
   "RCU": [
     { "id": "MTS2", "name": "Plano MTS2", "file": "Rio Cuarto mts2.dxf", "piso": "GENERAL" }
