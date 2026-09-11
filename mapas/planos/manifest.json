@@ -66,9 +66,6 @@
   "RCU": [
     { "id": "MTS2", "name": "Plano MTS2", "file": "Rio Cuarto mts2.dxf", "piso": "GENERAL" }
   ],
-  "ROS": [
-    { "id": "MTS2", "name": "Plano MTS2", "file": "Rosario mts2.dxf", "piso": "GENERAL" }
-  ],
   "SDE": [
     { "id": "OBRAS", "name": "Mudanza / Obras", "file": "SDE - Mudanza sucursal Obras (1).dxf", "piso": "GENERAL" }
   ],
@@ -86,9 +83,6 @@
   ],
   "LUQ": [
     { "id": "MTS2", "name": "Plano MTS2", "file": "San Luis mts2.dxf", "piso": "GENERAL" }
-  ],
-  "SFE": [
-    { "id": "MTS2", "name": "Plano MTS2", "file": "Santa fe - Santo tome mts2.dxf", "piso": "GENERAL" }
   ],
   "ST3": [
     { "id": "S1_PB", "name": "Subnave 1 — Planta Baja", "file": "SL3 Subnave 1 Planta Baja.dxf", "piso": "SN1 PB" },
