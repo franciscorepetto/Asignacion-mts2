@@ -30,9 +30,16 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 .upload-plan-btn:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
 .back-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;background:none;border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;border-radius:8px;cursor:pointer;transition:all .15s}
 .back-btn:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-light)}
-#splash{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px}
+#splash{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px}
+#modoSplash{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px}
 #funcSplash{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px}
 #noAccessMsg{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px;text-align:center}
+.suc-item.modo-item{flex-direction:column;align-items:flex-start;gap:4px;padding:14px 16px}
+.modo-item .suc-item-name{font-weight:700}
+.modo-item .modo-desc{font-size:11px;color:var(--text2);font-weight:500;white-space:normal;line-height:1.5}
+body.modo-layout .costeo-only{display:none!important}
+#layoutPanel{display:none;padding:14px;font-size:12px;color:var(--text2);line-height:1.7}
+body.modo-layout #layoutPanel{display:block}
 .splash-logo{font-size:48px;font-weight:800;letter-spacing:-2px;color:#1a1a1a;margin-bottom:4px}
 .splash-sub{font-size:14px;font-weight:500;color:var(--text2);margin-bottom:48px;letter-spacing:.02em}
 .splash-card{background:#fff;border-radius:16px;padding:32px;width:100%;max-width:480px;box-shadow:0 4px 24px rgba(51,194,202,.12);border:1.5px solid var(--border)}
@@ -211,6 +218,25 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
   </div>
 </div>
 
+<div id="modoSplash">
+  <div class="splash-logo">OCASA</div>
+  <div class="splash-sub">Sistema de asignación de actividades por layout</div>
+  <div class="splash-card">
+    <h2>Elegí qué vas a hacer</h2>
+    <p>Antes de abrir un plano, elegí con qué función vas a trabajar.</p>
+    <div class="suc-list">
+      <div class="suc-item modo-item" onclick="selectModo('costeo')">
+        <span class="suc-item-name">📊 Asignación de costeo</span>
+        <span class="modo-desc">Dibujar áreas sobre el plano y asignarles actividades y % de costeo.</span>
+      </div>
+      <div class="suc-item modo-item" onclick="selectModo('layout')">
+        <span class="suc-item-name">📐 Anotaciones de layout</span>
+        <span class="modo-desc">Pasillos, alturas, posiciones de espacios cedidos, zonas especiales. (en construcción)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="funcSplash">
   <div class="splash-logo">OCASA</div>
   <div class="splash-sub">Sistema de asignación de actividades por layout</div>
@@ -233,7 +259,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 <div id="app">
   <div class="main">
     <div class="sidebar">
-      <div class="ss">
+      <div class="ss costeo-only">
         <div class="instr" id="instrTxt">
           <strong>Modo dibujo:</strong><br>
           1. Clic = vértice del área<br>
@@ -241,26 +267,31 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
           3. Asigná actividades y %
         </div>
       </div>
-      <div class="sidebar-tabs">
+      <div class="sidebar-tabs costeo-only">
   <button class="stab active" id="tabAreas" onclick="switchTab('areas')">Áreas</button>
   <button class="stab" id="tabActs" onclick="switchTab('acts')">Actividades</button>
 </div>
-<div class="slabel" style="padding:8px 14px 4px" id="panelAreasLabel">Áreas definidas</div>
-      <div class="slist" id="sList"><div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin áreas aún.</div></div>
-<div class="slist" id="actPanel" style="display:none;padding:8px"></div>
-     <button class="expbtn" style="background:#e05548" onclick="limpiarAreas()">🗑 Limpiar todas las áreas</button>
-<button class="expbtn" onclick="exportXLSX()">↓ Exportar tabla BASE (.xlsx)</button>
-<button class="expbtn" style="background:var(--brand-dark)" onclick="guardarTrabajo()">↓ Exportar actividades (.json)</button>
-<button class="expbtn" style="background:#059669" onclick="exportSVG()">↓ Exportar plano (.svg)</button>
-      <div class="summary">
+<div class="slabel costeo-only" style="padding:8px 14px 4px" id="panelAreasLabel">Áreas definidas</div>
+      <div class="slist costeo-only" id="sList"><div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin áreas aún.</div></div>
+<div class="slist costeo-only" id="actPanel" style="display:none;padding:8px"></div>
+     <button class="expbtn costeo-only" style="background:#e05548" onclick="limpiarAreas()">🗑 Limpiar todas las áreas</button>
+<button class="expbtn costeo-only" onclick="exportXLSX()">↓ Exportar tabla BASE (.xlsx)</button>
+<button class="expbtn costeo-only" style="background:var(--brand-dark)" onclick="guardarTrabajo()">↓ Exportar actividades (.json)</button>
+<button class="expbtn costeo-only" style="background:#059669" onclick="exportSVG()">↓ Exportar plano (.svg)</button>
+      <div class="summary costeo-only">
         <div class="srow"><span class="skey">Total asignado</span><span class="sval" id="totArea">0.00 m²</span></div>
         <div class="srow"><span class="skey">Áreas</span><span class="sval" id="totN">0</span></div>
+      </div>
+      <div id="layoutPanel">
+        <strong style="color:var(--text);display:block;margin-bottom:8px">📐 Anotaciones de layout</strong>
+        Esta sección todavía se está armando: pasillos, alturas, posiciones de espacios cedidos y zonas especiales.
+        Por ahora podés ver el plano (con zoom y desplazamiento); la parte de dibujo se suma en una próxima etapa.
       </div>
     </div>
     <div class="cwrap" id="cwrap">
       <canvas id="fp"></canvas>
       <div id="floorTabs" style="display:none;position:absolute;top:14px;left:14px;z-index:10;gap:6px;flex-wrap:wrap"></div>
-      <div class="act-overlay" id="actOverlay">
+      <div class="act-overlay costeo-only" id="actOverlay">
   <div class="act-ov-head" onclick="toggleActOverlay()">
     <span class="act-ov-title" id="actOvTitle">Actividades</span>
     <button class="act-ov-toggle" id="actOvBtn">▾</button>
@@ -272,10 +303,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
         <div class="tbtn" onclick="zoom(0.83)" title="Zoom out">−</div>
 <input type="range" class="zoom-slider" id="zoomSlider" min="1" max="100" value="50" oninput="zoomToSlider(this.value)" title="Zoom">
         <div class="tbtn" onclick="resetView()" title="Encuadrar">⊡</div>
-        <div class="tbtn active-tool" id="btnD" onclick="setMode('draw')" title="Polígono">✏</div>
-        <div class="tbtn" id="btnR" onclick="setMode('rect')" title="Rectángulo">▭</div>
+        <div class="tbtn active-tool costeo-only" id="btnD" onclick="setMode('draw')" title="Polígono">✏</div>
+        <div class="tbtn costeo-only" id="btnR" onclick="setMode('rect')" title="Rectángulo">▭</div>
         <div class="tbtn" id="btnPan" onclick="setMode('pan')" title="Mover (Espacio)">✋</div>
-        <div class="tbtn" onclick="undoVertex()" title="Deshacer vértice">↩</div>
+        <div class="tbtn costeo-only" onclick="undoVertex()" title="Deshacer vértice">↩</div>
       </div>
       <div class="scalebar" id="scalebar">—</div>
     </div>
@@ -352,9 +383,24 @@ async function initAuth(){
     document.getElementById('manageUsersBtn').style.display = isAdmin ? 'flex' : 'none';
     document.getElementById('userInfo').style.display = 'flex';
   }
-  await loadManifestPlans();
-  await loadUploadedPlans();
-  if(currentUser) await loadFuncionalidades();
+  dataReadyPromise = (async()=>{
+    await loadManifestPlans();
+    await loadUploadedPlans();
+    if(currentUser) await loadFuncionalidades();
+  })();
+}
+
+// ── Elegir función antes de entrar (costeo vs. anotaciones de layout) ──────
+// Pantalla previa a todo lo demás: separa la herramienta de costeo (áreas +
+// actividades) de las futuras anotaciones de layout, para que abrir un plano
+// no muestre de entrada todas las herramientas juntas.
+let MODO='costeo';
+let dataReadyPromise=null;
+async function selectModo(modo){
+  MODO=modo;
+  document.body.classList.toggle('modo-layout', modo==='layout');
+  document.getElementById('modoSplash').style.display='none';
+  if(dataReadyPromise) await dataReadyPromise;
   startFuncFlow();
 }
 
@@ -877,6 +923,7 @@ const ctx=canvas.getContext('2d');
 const wrap=document.getElementById('cwrap');
 
 function buildSplash(){
+  document.getElementById('splash').style.display='flex';
   const list=document.getElementById('sucGrid');
   function renderList(filter){
     list.innerHTML='';
@@ -974,6 +1021,7 @@ async function enterFloor(floor){
   }
   currentFloor=floor;
   document.getElementById('splash').style.display='none';
+  if(MODO==='layout') mode='pan';
   const app=document.getElementById('app');
   app.style.display='flex';app.style.flexDirection='column';
   document.getElementById('headerMid').innerHTML=`Layout · <span>${currentSuc.name}</span> — ${floor.name}`;
