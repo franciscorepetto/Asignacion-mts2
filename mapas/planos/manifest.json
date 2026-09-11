@@ -45,7 +45,8 @@
     { "id": "LIMPIO", "name": "Plano", "file": "Mar del Plata Limpio.dxf", "piso": "GENERAL" }
   ],
   "NQN": [
-    { "id": "ARQ", "name": "Arquitectura", "file": "Copia de NQN-Layout v14-08-23- Arquitectura (1).dxf", "piso": "GENERAL" }
+    { "id": "PB", "name": "Planta Baja", "file": "Neuquen Planta Baja.dxf", "piso": "PB" },
+    { "id": "EP", "name": "Entrepiso", "file": "Neuquen entrepiso.dxf", "piso": "ENTREPISO" }
   ],
   "PRA": [
     { "id": "LAYOUT", "name": "Layout", "file": "PRA-Layout OCASA.dxf", "piso": "GENERAL" }
