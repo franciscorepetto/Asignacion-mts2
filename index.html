@@ -178,9 +178,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
   <div class="hmeta" id="rectArea" style="display:none">— m²</div>
   <button class="back-btn" id="backBtn" style="display:none" onclick="goBack()">← Volver</button>
   <div class="user-info" id="userInfo" style="display:none">
-    <button class="upload-plan-btn" id="uploadPlanBtn" style="display:none" onclick="openUploadModal()" title="Subir plano DXF">
-      ↑ Subir plano
-    </button>
     <button class="upload-plan-btn" id="managePlanBtn" style="display:none" onclick="openManageModal()" title="Ver y borrar planos cargados">
       🗂 Gestionar planos
     </button>
@@ -349,7 +346,6 @@ async function initAuth(){
   document.getElementById('userEmailLabel').textContent = currentUser.email;
   const roleBadge = document.getElementById('userRoleBadge');
   if(isAdmin){ roleBadge.textContent='admin'; roleBadge.classList.add('admin'); }
-  document.getElementById('uploadPlanBtn').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('managePlanBtn').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('wipePlanBtn').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('manageUsersBtn').style.display = isAdmin ? 'flex' : 'none';
@@ -507,10 +503,14 @@ async function loadManifestPlans(){
 // ── Upload modal ──────────────────────────────────────────────────────────
 let uploadedPlans = []; // sucursales cargadas desde Supabase
 
+// Sucursales de Supabase que no se muestran más en la plataforma (planos de prueba, etc.)
+const SUPABASE_SUC_OCULTAS = ['PRU'];
+
 async function loadUploadedPlans(){
   try{
-    const {data, error} = await sb.from('sucursales_upload').select('*').order('created_at');
-    if(error || !data) return;
+    const {data: raw, error} = await sb.from('sucursales_upload').select('*').order('created_at');
+    if(error || !raw) return;
+    const data = raw.filter(row=>!SUPABASE_SUC_OCULTAS.includes(row.iata));
     uploadedPlans = data;
     // Agregar sucursales nuevas a SUCURSALES si no existen
     data.forEach(row=>{
@@ -1002,7 +1002,7 @@ async function enterLayout(){
   if(!currentSuc) return;
   const floors=MULTI_FLOOR[currentSuc.code];
   if(!floors||!floors.length){
-    alert('Todavía no hay ningún plano cargado para '+currentSuc.name+'. Un administrador tiene que subirlo con "↑ Subir plano".');
+    alert('Todavía no hay ningún plano cargado para '+currentSuc.name+'.');
     return;
   }
   if(floors.length===1){ enterFloor(floors[0]); return; }
