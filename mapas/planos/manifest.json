@@ -3,8 +3,8 @@
     { "id": "LIMPIO", "name": "Plano", "file": "BHI Limpio.dxf", "piso": "GENERAL" }
   ],
   "CO2": [
-    { "id": "LIMPIO1", "name": "Plano 1", "file": "Cordoba Circunvalacion Limpio.dxf", "piso": "GENERAL" },
-    { "id": "LIMPIO2", "name": "Plano 2", "file": "Cordoba Circunvalacion Limpio 2.dxf", "piso": "GENERAL" }
+    { "id": "LIMPIO1", "name": "Nave 1", "file": "Cordoba Circunvalacion Limpio.dxf", "piso": "NAVE 1" },
+    { "id": "LIMPIO2", "name": "Nave 2", "file": "Cordoba Circunvalacion Limpio 2.dxf", "piso": "NAVE 2" }
   ],
   "CRD": [
     { "id": "GRAL", "name": "General", "file": "CRD-Mterio Salud Chubut-R03.dxf", "piso": "GENERAL" }
