@@ -1172,9 +1172,14 @@ function segsIntersect(a1,a2,b1,b2){const d1x=a2[0]-a1[0],d1y=a2[1]-a1[1],d2x=b2
 function polysOverlap(pA,pB){const onVert=(p,poly)=>poly.some(v=>Math.abs(v[0]-p[0])<1e-9&&Math.abs(v[1]-p[1])<1e-9);for(const p of pA) if(!onVert(p,pB)&&pip(p,pB)) return true;for(const p of pB) if(!onVert(p,pA)&&pip(p,pA)) return true;for(let i=0;i<pA.length;i++){const a1=pA[i],a2=pA[(i+1)%pA.length];for(let j=0;j<pB.length;j++){if(segsIntersect(a1,a2,pB[j],pB[(j+1)%pB.length])) return true;}}return false;}
 function checkOverlap(pts,excl=-1){return areas.some((a,i)=>i!==excl&&polysOverlap(pts,a.pts));}
 function isCedido(n){return ESPACIOS_CEDIDOS.includes((n||'').toUpperCase().trim());}
+// Nombre puesto por el usuario. Los "Área N" automáticos cuentan como sin nombre,
+// para que en ese caso se sigan mostrando las actividades.
+function getCustomName(a){const n=((a&&a.name)||'').trim();return /^Área \d+$/.test(n)?'':n;}
 function getAreaLabel(a){
+  const custom=getCustomName(a);
+  if(custom) return custom;
   const acts=(a&&a.activities)||[];
-  if(!acts.length) return a.name||'Área';
+  if(!acts.length) return 'Área';
   const names=acts.map(x=>x.name).join(' + ');
   const clients=[...new Set(acts.filter(x=>x.client).map(x=>x.client))];
   return clients.length===1?`${names} — ${getClientDesc(clients[0])}`:names;
@@ -1277,8 +1282,8 @@ function render(){
 function openModal(pts,existing,aIdx){
   pendingPts=pts;editingIdx=aIdx!=null?aIdx:-1;
   document.getElementById('overlapWarn').style.display=checkOverlap(pts,editingIdx)?'block':'none';
-  const defaultName=editingIdx>=0?(areas[editingIdx].name||('Área '+(editingIdx+1))):('Área '+(areas.length+1));
-  document.getElementById('modalTitle').innerHTML=`<input id="areaNameInp" value="${defaultName}" placeholder="Nombre del área">`;
+  const defaultName=editingIdx>=0?getCustomName(areas[editingIdx]):'';
+  document.getElementById('modalTitle').innerHTML=`<input id="areaNameInp" value="${defaultName.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" placeholder="Nombre del área (opcional)">`;
   document.getElementById('modalSub').textContent='Superficie total: '+polyArea(pts).toFixed(2)+' m²';
   setTimeout(()=>document.getElementById('areaNameInp')?.select(),50);
   modalRows=existing?existing.activities.map(a=>({name:a.name,pct:a.pct,client:a.client||'',piso:a.piso||'PB',observacion:a.observacion||'',otrosMode:!!(a.client&&!CLIENTES.find(c=>c.codigo===a.client))})):[{name:'',pct:100,client:'',piso:'PB',observacion:'',otrosMode:false}];
@@ -1393,7 +1398,7 @@ function saveModal(){
   const tot=valid.reduce((s,r)=>s+r.pct,0);
   if(tot!==100&&!confirm('Los porcentajes suman '+tot+'% (no 100%). ¿Guardar igual?')) return;
   const pts=pendingPts,totalArea=polyArea(pts);
-  const areaName=document.getElementById('areaNameInp')?.value.trim()||('Área '+(editingIdx>=0?editingIdx+1:areas.length+1));
+  const areaName=document.getElementById('areaNameInp')?.value.trim()||'';
   const color=editingIdx>=0?areas[editingIdx].color:AREA_COLORS[colIdx%AREA_COLORS.length];
   if(editingIdx>=0) areas[editingIdx]={pts,totalArea,color,name:areaName,activities:valid};
   else{areas.push({pts,totalArea,color,name:areaName,activities:valid});colIdx++;}
@@ -1428,7 +1433,7 @@ function updateList(){
 
 function selectArea(i){selectedArea=selectedArea===i?null:i;updateList();render();}
 function editArea(i){selectedArea=i;openModal(areas[i].pts,areas[i],i);updateList();render();}
-function deleteArea(i){if(!confirm('¿Eliminar "'+(areas[i].name||'Área '+(i+1))+'"?')) return;areas.splice(i,1);if(selectedArea===i) selectedArea=null;else if(selectedArea>i) selectedArea--;updateList();saveAreas();render();}
+function deleteArea(i){if(!confirm('¿Eliminar "'+getAreaLabel(areas[i])+'"?')) return;areas.splice(i,1);if(selectedArea===i) selectedArea=null;else if(selectedArea>i) selectedArea--;updateList();saveAreas();render();}
 
 // ── Etiquetas de layout (modo "Anotaciones de layout") ──────────────────────
 // Puntos con texto libre sobre el plano — número de pasillo, altura, etc.
@@ -1870,7 +1875,7 @@ const rows=[meta,[],headers];
       const cedido=isCedido(act.name)?'SI':'NO';
             const clientCod=CLIENTES.find(c=>c.codigo===act.client)?act.client:'';
 const familia=getFamilia(act.name);
-rows.push([currentSuc?currentSuc.code:'',a.name||('Área '+(i+1)),'A'+(n++),familia,act.name,+a.totalArea.toFixed(4),+(act.pct/100).toFixed(6),+m2.toFixed(4),a._piso||act.piso||'PB',cedido,clientCod,getClientDesc(act.client||''),act.observacion||'']);
+rows.push([currentSuc?currentSuc.code:'',getCustomName(a)||('Área '+(i+1)),'A'+(n++),familia,act.name,+a.totalArea.toFixed(4),+(act.pct/100).toFixed(6),+m2.toFixed(4),a._piso||act.piso||'PB',cedido,clientCod,getClientDesc(act.client||''),act.observacion||'']);
     });
   });
   const ws=XLSX.utils.aoa_to_sheet(rows);
