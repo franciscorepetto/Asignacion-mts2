@@ -396,14 +396,22 @@ body.modo-layout #layoutPanel{display:block}
       </select>
     </div>
     
-    <div class="dropdown-section">
+    <div class="dropdown-section" id="otraActSection" style="display:none">
+      <label>Otra actividad</label>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="otraActInp" placeholder="Escribí el nombre de la actividad..." style="flex:1;padding:8px;border:1.5px solid #a805e0;border-radius:6px;font-family:'Montserrat',sans-serif;font-size:12px;outline:none" onkeydown="if(event.key==='Enter'){event.preventDefault();addOtraActividad();}">
+        <button class="btn-primary" type="button" style="flex:0 0 auto;padding:6px 14px" onclick="addOtraActividad()">Agregar</button>
+      </div>
+    </div>
+
+    <div class="dropdown-section" id="familiaSection">
       <label>Familia</label>
       <select id="familiaSelect" onchange="updateActividades()" disabled>
         <option value="">— seleccionar —</option>
       </select>
     </div>
     
-    <div class="dropdown-section">
+    <div class="dropdown-section" id="actSection">
       <label>Actividad</label>
       <select id="actSelect" onchange="selectActividad()" disabled>
         <option value="">— seleccionar —</option>
@@ -1172,9 +1180,16 @@ function segsIntersect(a1,a2,b1,b2){const d1x=a2[0]-a1[0],d1y=a2[1]-a1[1],d2x=b2
 function polysOverlap(pA,pB){const onVert=(p,poly)=>poly.some(v=>Math.abs(v[0]-p[0])<1e-9&&Math.abs(v[1]-p[1])<1e-9);for(const p of pA) if(!onVert(p,pB)&&pip(p,pB)) return true;for(const p of pB) if(!onVert(p,pA)&&pip(p,pA)) return true;for(let i=0;i<pA.length;i++){const a1=pA[i],a2=pA[(i+1)%pA.length];for(let j=0;j<pB.length;j++){if(segsIntersect(a1,a2,pB[j],pB[(j+1)%pB.length])) return true;}}return false;}
 function checkOverlap(pts,excl=-1){return areas.some((a,i)=>i!==excl&&polysOverlap(pts,a.pts));}
 function isCedido(n){return ESPACIOS_CEDIDOS.includes((n||'').toUpperCase().trim());}
+// Nombre puesto por el usuario. Los "Área N" automáticos de versiones anteriores
+// cuentan como sin nombre, para que se sigan mostrando las actividades.
+function escHtml(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escAttr(s){return escHtml(s).replace(/"/g,'&quot;');}
+function getCustomName(a){const n=((a&&a.name)||'').trim();return /^Área \d+$/.test(n)?'':n;}
 function getAreaLabel(a){
+  const custom=getCustomName(a);
+  if(custom) return custom;
   const acts=(a&&a.activities)||[];
-  if(!acts.length) return a.name||'Área';
+  if(!acts.length) return 'Área';
   const names=acts.map(x=>x.name).join(' + ');
   const clients=[...new Set(acts.filter(x=>x.client).map(x=>x.client))];
   return clients.length===1?`${names} — ${getClientDesc(clients[0])}`:names;
@@ -1277,13 +1292,14 @@ function render(){
 function openModal(pts,existing,aIdx){
   pendingPts=pts;editingIdx=aIdx!=null?aIdx:-1;
   document.getElementById('overlapWarn').style.display=checkOverlap(pts,editingIdx)?'block':'none';
-  const defaultName=editingIdx>=0?(areas[editingIdx].name||('Área '+(editingIdx+1))):('Área '+(areas.length+1));
-  document.getElementById('modalTitle').innerHTML=`<input id="areaNameInp" value="${defaultName}" placeholder="Nombre del área">`;
+  const defaultName=editingIdx>=0?getCustomName(areas[editingIdx]):'';
+  document.getElementById('modalTitle').innerHTML=`<input id="areaNameInp" value="${escAttr(defaultName)}" placeholder="Nombre del área (opcional)">`;
   document.getElementById('modalSub').textContent='Superficie total: '+polyArea(pts).toFixed(2)+' m²';
   setTimeout(()=>document.getElementById('areaNameInp')?.select(),50);
-  modalRows=existing?existing.activities.map(a=>({name:a.name,pct:a.pct,client:a.client||'',piso:a.piso||'PB',observacion:a.observacion||'',otrosMode:!!(a.client&&!CLIENTES.find(c=>c.codigo===a.client))})):[{name:'',pct:100,client:'',piso:'PB',observacion:'',otrosMode:false}];
+  modalRows=existing?existing.activities.map(a=>({name:a.name,pct:a.pct,client:a.client||'',piso:a.piso||'PB',observacion:a.observacion||'',custom:!!a.custom,otrosMode:!!(a.client&&!CLIENTES.find(c=>c.codigo===a.client))})):[{name:'',pct:100,client:'',piso:'PB',observacion:'',otrosMode:false}];
   const agrupSel=document.getElementById('agrupSelect');
-  agrupSel.innerHTML='<option value="">— seleccionar —</option>'+Object.keys(ACTIVIDADES_ESTRUCTURA).map(a=>`<option value="${a}">${a}</option>`).join('');
+  agrupSel.innerHTML='<option value="">— seleccionar —</option>'+Object.keys(ACTIVIDADES_ESTRUCTURA).map(a=>`<option value="${a}">${a}</option>`).join('')+'<option value="__otra__">✏ Otra actividad (escribir a mano)</option>';
+  showOtraAct(false);
   document.getElementById('familiaSelect').innerHTML='<option value="">— seleccionar —</option>';
   document.getElementById('familiaSelect').disabled=true;
   document.getElementById('actSelect').innerHTML='<option value="">— seleccionar —</option>';
@@ -1296,6 +1312,8 @@ function updateFamilias(){
   const agrup=document.getElementById('agrupSelect').value;
   const famSel=document.getElementById('familiaSelect');
   const actSel=document.getElementById('actSelect');
+  showOtraAct(agrup==='__otra__');
+  if(agrup==='__otra__'){setTimeout(()=>document.getElementById('otraActInp')?.focus(),30);return;}
   if(!agrup){famSel.disabled=true;actSel.disabled=true;famSel.innerHTML='<option value="">— seleccionar —</option>';actSel.innerHTML='<option value="">— seleccionar —</option>';return;}
   famSel.disabled=false;
   famSel.innerHTML='<option value="">— seleccionar —</option>'+Object.keys(ACTIVIDADES_ESTRUCTURA[agrup]).map(f=>`<option value="${f}">${f}</option>`).join('');
@@ -1312,6 +1330,27 @@ function updateActividades(){
   actSel.innerHTML='<option value="">— seleccionar —</option>'+ACTIVIDADES_ESTRUCTURA[agrup][fam].map(a=>`<option value="${a}">${a}</option>`).join('');
 }
 
+function showOtraAct(on){
+  document.getElementById('familiaSection').style.display=on?'none':'';
+  document.getElementById('actSection').style.display=on?'none':'';
+  document.getElementById('otraActSection').style.display=on?'':'none';
+  if(!on) document.getElementById('otraActInp').value='';
+}
+
+function addOtraActividad(){
+  const inp=document.getElementById('otraActInp');
+  const act=inp.value.trim().toUpperCase();
+  if(!act){inp.focus();return;}
+  addActToRows(act,true);
+  inp.value='';
+}
+
+function addActToRows(act,custom){
+  const emptyIdx=modalRows.findIndex(r=>!r.name);
+  if(emptyIdx>=0){modalRows[emptyIdx].name=act;modalRows[emptyIdx].custom=!!custom;}else{const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:act,pct:Math.max(1,100-used),client:'',piso:'PB',observacion:'',custom:!!custom,otrosMode:false});}
+  renderModalRows();
+}
+
 function selectActividad(){
   const act=document.getElementById('actSelect').value;
   if(!act) return;
@@ -1323,9 +1362,7 @@ function selectActividad(){
       alert(`⚠ "${act}" ${motivo}.\nVerificá si corresponde incluirla en el dibujo.`);
     }
   }
-  const emptyIdx=modalRows.findIndex(r=>!r.name);
-  if(emptyIdx>=0){modalRows[emptyIdx].name=act;}else{const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:act,pct:Math.max(1,100-used),client:'',piso:'PB',observacion:'',otrosMode:false});}
-  renderModalRows();
+  addActToRows(act,false);
 }
 
 function renderModalRows(){
@@ -1337,7 +1374,7 @@ function renderModalRows(){
     const d=document.createElement('div');d.className='modal-row';
     d.innerHTML=`
       <div class="modal-row-top">
-        <div style="flex:1;font-size:11px;font-weight:600;color:var(--text)">${row.name||'Sin actividad'}</div>
+        <div style="flex:1;font-size:11px;font-weight:600;color:var(--text)">${escHtml(row.name)||'Sin actividad'}${row.custom?' <span style="font-size:9px;font-weight:700;color:#a805e0">(OTRA)</span>':''}</div>
         <input type="range" min="1" max="100" value="${row.pct}" oninput="modalRows[${i}].pct=+this.value;this.nextElementSibling.textContent=this.value+'%';renderPctBar()">
         <span class="pct-val">${row.pct}%</span>
         <button class="del-act" onclick="modalRows.splice(${i},1);renderModalRows()">×</button>
@@ -1380,6 +1417,7 @@ function addActRow(){
   const used=modalRows.reduce((s,r)=>s+r.pct,0);
   modalRows.push({name:'',pct:Math.max(1,100-used),client:'',piso:'PB',observacion:'',otrosMode:false});
   document.getElementById('agrupSelect').value='';
+  showOtraAct(false);
   document.getElementById('familiaSelect').innerHTML='<option value="">— seleccionar —</option>';
   document.getElementById('familiaSelect').disabled=true;
   document.getElementById('actSelect').innerHTML='<option value="">— seleccionar —</option>';
@@ -1393,7 +1431,7 @@ function saveModal(){
   const tot=valid.reduce((s,r)=>s+r.pct,0);
   if(tot!==100&&!confirm('Los porcentajes suman '+tot+'% (no 100%). ¿Guardar igual?')) return;
   const pts=pendingPts,totalArea=polyArea(pts);
-  const areaName=document.getElementById('areaNameInp')?.value.trim()||('Área '+(editingIdx>=0?editingIdx+1:areas.length+1));
+  const areaName=document.getElementById('areaNameInp')?.value.trim()||'';
   const color=editingIdx>=0?areas[editingIdx].color:AREA_COLORS[colIdx%AREA_COLORS.length];
   if(editingIdx>=0) areas[editingIdx]={pts,totalArea,color,name:areaName,activities:valid};
   else{areas.push({pts,totalArea,color,name:areaName,activities:valid});colIdx++;}
@@ -1418,7 +1456,7 @@ function updateList(){
       return `<div class="act-row"><div class="act-dot" style="background:${col}"></div><div class="act-name" title="${act.name}">${short}</div><div class="act-pct">${act.pct}%</div><div class="act-m2">${m2} m²</div>${act.client?`<div class="act-client" title="${act.client}">${getClientDesc(act.client)}</div>`:''}</div>`;
     }).join('');
     const displayName=getAreaLabel(a);
-    return `<div class="sitem${isSel?' selected':''}" id="sitem${i}"><div class="sitem-header" onclick="selectArea(${i})"><div class="scolor-dot" style="background:${a.color}"></div><div class="sname" style="color:${a.color}">${displayName}</div><div class="sarea-badge">${a.totalArea.toFixed(1)} m²</div><button class="sdel sedit" onclick="event.stopPropagation();editArea(${i})" title="Editar">✎</button><button class="sdel" onclick="event.stopPropagation();deleteArea(${i})" title="Eliminar">✕</button></div><div class="sitem-acts">${actHtml}</div></div>`;
+    return `<div class="sitem${isSel?' selected':''}" id="sitem${i}"><div class="sitem-header" onclick="selectArea(${i})"><div class="scolor-dot" style="background:${a.color}"></div><div class="sname" style="color:${a.color}">${escHtml(displayName)}</div><div class="sarea-badge">${a.totalArea.toFixed(1)} m²</div><button class="sdel sedit" onclick="event.stopPropagation();editArea(${i})" title="Editar">✎</button><button class="sdel" onclick="event.stopPropagation();deleteArea(${i})" title="Eliminar">✕</button></div><div class="sitem-acts">${actHtml}</div></div>`;
   }).join('');
   document.getElementById('totArea').textContent=areas.reduce((s,a)=>s+a.totalArea,0).toFixed(2)+' m²';
   document.getElementById('totN').textContent=areas.length;
@@ -1428,7 +1466,7 @@ function updateList(){
 
 function selectArea(i){selectedArea=selectedArea===i?null:i;updateList();render();}
 function editArea(i){selectedArea=i;openModal(areas[i].pts,areas[i],i);updateList();render();}
-function deleteArea(i){if(!confirm('¿Eliminar "'+(areas[i].name||'Área '+(i+1))+'"?')) return;areas.splice(i,1);if(selectedArea===i) selectedArea=null;else if(selectedArea>i) selectedArea--;updateList();saveAreas();render();}
+function deleteArea(i){if(!confirm('¿Eliminar "'+getAreaLabel(areas[i])+'"?')) return;areas.splice(i,1);if(selectedArea===i) selectedArea=null;else if(selectedArea>i) selectedArea--;updateList();saveAreas();render();}
 
 // ── Etiquetas de layout (modo "Anotaciones de layout") ──────────────────────
 // Puntos con texto libre sobre el plano — número de pasillo, altura, etc.
@@ -1611,8 +1649,9 @@ canvas.addEventListener('mouseup',e=>{
 });
 canvas.addEventListener('wheel',e=>{if(!DXF) return;e.preventDefault();const f=e.deltaY<0?1.12:0.9;ox=e.offsetX-(e.offsetX-ox)*f;oy=e.offsetY-(e.offsetY-oy)*f;scale*=f;render();},{passive:false});
 
-document.addEventListener('keydown',e=>{if(!DXF) return;if(e.code==='Space'&&mode!=='pan'){e.preventDefault();modeBeforeSpace=mode;setMode('pan');}if(e.code==='Escape'){curPts=[];canvas._snapPt=null;selectedArea=null;updateList();render();}if((e.code==='Delete'||e.code==='Backspace')&&selectedArea!==null&&document.getElementById('modalBg').style.display==='none') deleteArea(selectedArea);if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();const modalOpen=document.getElementById('modalBg').style.display!=='none';if(modalOpen&&editingIdx===-1){curPts=pendingPts?[...pendingPts]:[];closeModal(false);}else if(curPts.length>0){undoVertex();}else if(areas.length>0){areas.pop();selectedArea=null;updateList();saveAreas();render();}}});
-document.addEventListener('keyup',e=>{if(e.code==='Space'){setMode(modeBeforeSpace||(MODO==='layout'?'label':'draw'));modeBeforeSpace=null;}});
+function isTypingTarget(t){return !!t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable);}
+document.addEventListener('keydown',e=>{if(!DXF) return;if(isTypingTarget(e.target)) return;if(e.code==='Space'&&mode!=='pan'){e.preventDefault();modeBeforeSpace=mode;setMode('pan');}if(e.code==='Escape'){curPts=[];canvas._snapPt=null;selectedArea=null;updateList();render();}if((e.code==='Delete'||e.code==='Backspace')&&selectedArea!==null&&document.getElementById('modalBg').style.display==='none') deleteArea(selectedArea);if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();const modalOpen=document.getElementById('modalBg').style.display!=='none';if(modalOpen&&editingIdx===-1){curPts=pendingPts?[...pendingPts]:[];closeModal(false);}else if(curPts.length>0){undoVertex();}else if(areas.length>0){areas.pop();selectedArea=null;updateList();saveAreas();render();}}});
+document.addEventListener('keyup',e=>{if(e.code==='Space'&&modeBeforeSpace!==null){setMode(modeBeforeSpace||(MODO==='layout'?'label':'draw'));modeBeforeSpace=null;}});
 
 function setMode(m){
   mode=m;
@@ -1712,7 +1751,7 @@ function exportSVG(){
   }else{exportAreas=[...areas];}
   if(!exportAreas.length){alert('No hay áreas para exportar.');return;}
 
-  const W=1100,H=720,PANEL=260,PAD=30;
+  const W=1200,H=760,PANEL=330,PAD=30;
   const mapX=PANEL,mapW=W-PANEL,mapH=H;
   const bb=DXF.bbox;
   const dxfW=bb.max_x-bb.min_x||1,dxfH=bb.max_y-bb.min_y||1;
@@ -1736,28 +1775,52 @@ function exportSVG(){
     const cx=a.pts.reduce((s,p)=>s+p[0],0)/a.pts.length;
     const cy=a.pts.reduce((s,p)=>s+p[1],0)/a.pts.length;
     const label=getAreaLabel(a);
+    // Etiqueta con fondo blanco, recortada al ancho del área
+    const sxs=a.pts.map(p=>sx(p[0]));
+    const maxChars=Math.max(4,Math.floor((Math.max(...sxs)-Math.min(...sxs)-8)/5.6));
+    const disp=label.length>maxChars?label.slice(0,maxChars-1)+'…':label;
+    const tw=disp.length*5.6+10,lx=sx(cx),ly=sy(cy);
+    areasSVG+=`<g class="area-g" id="area-g-${idx}">`;
     areasSVG+=`<polygon class="area-poly" id="area-${idx}" points="${pts}" fill="${a.color}" fill-opacity="0.25" stroke="${a.color}" stroke-width="2" data-idx="${idx}"/>`;
-    areasSVG+=`<text x="${sx(cx).toFixed(1)}" y="${sy(cy).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="10" font-weight="700" fill="${a.color}" font-family="sans-serif" pointer-events="none">${label}</text>`;
+    areasSVG+=`<g class="area-label" pointer-events="none"><rect x="${(lx-tw/2).toFixed(1)}" y="${(ly-8).toFixed(1)}" width="${tw.toFixed(1)}" height="16" rx="3" fill="#fff" fill-opacity="0.92" stroke="${a.color}" stroke-width="0.8"/><text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="700" fill="${a.color}" font-family="sans-serif">${escHtml(disp)}</text></g>`;
+    areasSVG+=`</g>`;
   });
+  const totalM2=exportAreas.reduce((s,a)=>s+(a.totalArea||0),0);
 
   // Panel lista
   let listItems='';
   exportAreas.forEach((a,idx)=>{
     const label=getAreaLabel(a);
-    const mts2=a.totalArea?a.totalArea.toFixed(1):'0.0';
-    const acts=a.activities.map(act=>`${act.name} (${act.pct}%)`).join('<br/>');
-    const actSummary=a.activities.map(act=>{
-  const m2=(act.pct/100*a.totalArea).toFixed(1);
-  const clientStr=act.client?` · ${getClientDesc(act.client)}`:'';
-  return `<div style="color:#5a6a6b;font-size:9px;margin-top:1px">• ${act.name} — ${m2} m²${clientStr}</div>`;
-}).join('');
-listItems+=`<div class="pitem" id="li-${idx}" onclick="toggleArea(${idx})" style="padding:7px 9px;margin:3px 0;cursor:pointer;border-radius:6px;background:#fff;font-size:10px;font-family:sans-serif;border:1.5px solid #e8f0f1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><div id="dot-${idx}" style="width:12px;height:12px;border-radius:3px;background:${a.color};flex-shrink:0"></div><div style="font-weight:700;color:#1a1a1a">${label}</div><div style="color:#5a6a6b;margin-left:auto;white-space:nowrap">${mts2} m²</div></div>${actSummary}</div>`;
+    const tot=a.totalArea||0;
+    const pctTot=totalM2?(tot/totalM2*100).toFixed(1):'0.0';
+    const pisos=[...new Set(a.activities.map(act=>a._piso||act.piso||'PB'))].join(', ');
+    const sumPct=a.activities.reduce((s,act)=>s+act.pct,0);
+    const sub=[`${pctTot}% del total`,`${a.activities.length} actividad${a.activities.length===1?'':'es'}`,`Piso: ${pisos}`];
+    const actDetail=a.activities.map(act=>{
+      const m2=(act.pct/100*tot).toFixed(1);
+      const fam=getFamilia(act.name)||(act.custom?'OTROS':'');
+      const meta=[fam,act.client?getClientDesc(act.client):'',isCedido(act.name)?'Espacio cedido':''].filter(Boolean).map(escHtml).join(' · ');
+      return `<xhtml:div style="margin-top:4px;padding:4px 6px;background:#f6fafa;border-radius:4px">`
+        +`<xhtml:div style="display:flex;gap:6px;align-items:baseline"><xhtml:span style="font-weight:700;color:#1a1a1a;flex:1">${escHtml(act.name)}</xhtml:span><xhtml:span style="color:#1fa8b0;font-weight:700;white-space:nowrap">${act.pct}% · ${m2} m²</xhtml:span></xhtml:div>`
+        +(meta?`<xhtml:div style="color:#5a6a6b;font-size:8.5px;margin-top:1px">${meta}</xhtml:div>`:'')
+        +(act.observacion?`<xhtml:div style="color:#8a9a9b;font-size:8.5px;font-style:italic;margin-top:1px">${escHtml(act.observacion)}</xhtml:div>`:'')
+        +`</xhtml:div>`;
+    }).join('');
+    const warn=sumPct!==100?`<xhtml:div style="color:#e05548;font-size:8.5px;margin-top:3px">⚠ Los % suman ${sumPct}%</xhtml:div>`:'';
+    listItems+=`<xhtml:div class="pitem" id="li-${idx}" onmouseenter="hl(${idx},true)" onmouseleave="hl(${idx},false)" style="padding:7px 9px;margin:4px 0;border-radius:6px;background:#fff;font-size:10px;font-family:sans-serif;border:1.5px solid #e8f0f1;border-left:4px solid ${a.color}">`
+      +`<xhtml:div onclick="toggleArea(${idx})" title="Mostrar / ocultar en el plano" style="display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none">`
+      +`<xhtml:div id="chk-${idx}" style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${a.color};background:${a.color};color:#fff;font-size:10px;line-height:13px;text-align:center;flex-shrink:0">✓</xhtml:div>`
+      +`<xhtml:div style="font-weight:800;color:#1a1a1a;flex:1;min-width:0">${escHtml(label)}</xhtml:div>`
+      +`<xhtml:div style="color:#1a1a1a;font-weight:700;white-space:nowrap">${tot.toFixed(1)} m²</xhtml:div></xhtml:div>`
+      +`<xhtml:div style="color:#5a6a6b;font-size:8.5px;margin:2px 0 0 20px">${sub.map(escHtml).join(' · ')}</xhtml:div>`
+      +`<xhtml:div style="margin-left:20px">${actDetail}${warn}</xhtml:div></xhtml:div>`;
   });
 
   // Datos para el JS embebido
-  const areasData=exportAreas.map(a=>({name:getAreaLabel(a),totalArea:a.totalArea?+a.totalArea.toFixed(2):0,color:a.color,activities:a.activities.map(act=>({name:act.name,pct:act.pct,piso:act.piso||'',obs:act.observacion||''}))}));
-  const areasJSON=JSON.stringify(areasData).replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  const sucName=currentSuc?currentSuc.name:'Plano';
+  const areasData=exportAreas.map(a=>({name:escHtml(getAreaLabel(a)),totalArea:a.totalArea?+a.totalArea.toFixed(2):0,color:a.color,activities:a.activities.map(act=>({name:escHtml(act.name),pct:act.pct,piso:act.piso||'',client:escHtml(act.client?getClientDesc(act.client):''),obs:escHtml(act.observacion||'')}))}));
+  // Va dentro de un CDATA: se escapan '<' y '>' como unicode para no cortar el bloque
+  const areasJSON=JSON.stringify(areasData).replace(/</g,'\\u003c').replace(/>/g,'\\u003e');
+  const sucName=escHtml(currentSuc?currentSuc.name:'Plano');
   const fecha=new Date().toLocaleDateString('es-AR');
 
   const svgContent=`<?xml version="1.0" encoding="UTF-8"?>
@@ -1772,15 +1835,24 @@ listItems+=`<div class="pitem" id="li-${idx}" onclick="toggleArea(${idx})" style
 </g>
 <rect x="0" y="0" width="${PANEL}" height="${H}" fill="#f8fafc" stroke="#d8eef0" stroke-width="1"/>
 <foreignObject x="0" y="0" width="${PANEL}" height="${H}">
-  <xhtml:div style="width:${PANEL}px;height:${H}px;box-sizing:border-box;padding:10px;display:flex;flex-direction:column;gap:6px;overflow:hidden">
+  <xhtml:div xmlns="http://www.w3.org/1999/xhtml" style="width:${PANEL}px;height:${H}px;box-sizing:border-box;padding:10px;display:flex;flex-direction:column;gap:6px;overflow:hidden">
     <xhtml:div style="font-weight:800;font-size:14px;color:#1a1a1a">${sucName}</xhtml:div>
     <xhtml:div style="font-size:10px;color:#5a6a6b">${fecha}</xhtml:div>
-    <xhtml:div style="font-size:10px;font-weight:700;color:#1fa8b0;letter-spacing:.08em;text-transform:uppercase">Áreas (${exportAreas.length})</xhtml:div>
+    <xhtml:div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 8px;background:#fff;border:1.5px solid #e8f0f1;border-radius:6px;font-size:10px">
+      <xhtml:span style="color:#5a6a6b">Total asignado</xhtml:span>
+      <xhtml:span style="font-weight:800;color:#1fa8b0">${totalM2.toFixed(1)} m²</xhtml:span>
+    </xhtml:div>
+    <xhtml:div style="display:flex;align-items:center;gap:6px">
+      <xhtml:div style="font-size:10px;font-weight:700;color:#1fa8b0;letter-spacing:.08em;text-transform:uppercase;flex:1">Áreas (<xhtml:span id="visCount">${exportAreas.length}</xhtml:span>/${exportAreas.length})</xhtml:div>
+      <xhtml:div onclick="setAll(true)" style="cursor:pointer;font-size:9px;font-weight:700;color:#1fa8b0;border:1px solid #1fa8b0;border-radius:4px;padding:2px 6px">Mostrar todas</xhtml:div>
+      <xhtml:div onclick="setAll(false)" style="cursor:pointer;font-size:9px;font-weight:700;color:#5a6a6b;border:1px solid #c8d4d5;border-radius:4px;padding:2px 6px">Ocultar todas</xhtml:div>
+    </xhtml:div>
+    <xhtml:div style="font-size:8.5px;color:#8a9a9b">Clic en el nombre de un área para prenderla o apagarla en el plano.</xhtml:div>
     <xhtml:div id="areaList" style="flex:1;overflow-y:auto;min-height:0">${listItems}</xhtml:div>
   </xhtml:div>
 </foreignObject>
-<foreignObject id="tip-fo" x="0" y="0" width="230" height="300" style="display:none;pointer-events:none">
-  <xhtml:div id="tip-content" style="padding:8px 10px;font-size:10px;font-family:sans-serif;line-height:1.6;color:#1a1a1a;background:#fff;border:1.5px solid #d8eef0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.15);width:210px"></xhtml:div>
+<foreignObject id="tip-fo" x="0" y="0" width="250" height="360" style="display:none;pointer-events:none">
+  <xhtml:div xmlns="http://www.w3.org/1999/xhtml" id="tip-content" style="padding:8px 10px;font-size:10px;font-family:sans-serif;line-height:1.6;color:#1a1a1a;background:#fff;border:1.5px solid #d8eef0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.15);width:210px"></xhtml:div>
 </foreignObject>
 <script>//<![CDATA[
 var areas=${areasJSON};
@@ -1808,6 +1880,7 @@ document.querySelectorAll('.area-poly').forEach(function(el){
       h+='<div style="margin-top:3px;padding-top:3px;border-top:1px solid #e8f0f1">';
       h+='<span style="font-weight:700;color:#1a1a1a">'+act.name+'</span><br/>';
       h+='<span style="color:#5a6a6b">'+act.pct+'% · '+m2+' m²'+(act.piso?' · '+act.piso:'')+'</span>';
+      if(act.client)h+='<br/><span style="color:#5a6a6b">Cliente: '+act.client+'</span>';
       if(act.obs)h+='<br/><span style="color:#a0b4b5">'+act.obs+'</span>';
       h+='</div>';
     });
@@ -1819,24 +1892,27 @@ document.querySelectorAll('.area-poly').forEach(function(el){
 function moveTip(e){
   var svg=document.querySelector('svg');var r=svg.getBoundingClientRect();
   var x=e.clientX-r.left+14,y=e.clientY-r.top+14;
-  if(x+220>r.width)x=e.clientX-r.left-230;
+  if(x+240>r.width)x=e.clientX-r.left-250;
   tipFo.setAttribute('x',x);tipFo.setAttribute('y',y);
 }
 var hidden={};
-function toggleArea(idx){
-  hidden[idx]=!hidden[idx];
-  var el=document.getElementById('area-'+idx);
-  var dot=document.getElementById('dot-'+idx);
+function setVisible(idx,vis){
+  hidden[idx]=!vis;
+  var g=document.getElementById('area-g-'+idx);
+  var chk=document.getElementById('chk-'+idx);
   var li=document.getElementById('li-'+idx);
-  if(hidden[idx]){
-    if(el){el.setAttribute('fill-opacity','0');el.setAttribute('stroke-opacity','0');}
-    if(dot)dot.style.opacity='0.25';
-    if(li)li.style.opacity='0.4';
-  }else{
-    if(el){el.setAttribute('fill-opacity','0.25');el.setAttribute('stroke-opacity','1');}
-    if(dot)dot.style.opacity='1';
-    if(li)li.style.opacity='1';
-  }
+  var a=areas[idx];
+  if(g)g.style.display=vis?'':'none';
+  if(chk){chk.style.background=vis?a.color:'#fff';chk.textContent=vis?'✓':'';}
+  if(li)li.style.opacity=vis?'1':'0.45';
+  var n=0;for(var i=0;i<areas.length;i++)if(!hidden[i])n++;
+  var vc=document.getElementById('visCount');if(vc)vc.textContent=n;
+}
+function toggleArea(idx){setVisible(idx,!!hidden[idx]);}
+function setAll(vis){for(var i=0;i<areas.length;i++)setVisible(i,vis);}
+function hl(idx,on){
+  var el=document.getElementById('area-'+idx);
+  if(el){el.setAttribute('stroke-width',on?'4':'2');el.setAttribute('fill-opacity',on?'0.45':'0.25');}
 }
 //]]><\/script>
 </svg>`;
@@ -1869,8 +1945,8 @@ const rows=[meta,[],headers];
       const m2=(act.pct/100*a.totalArea);
       const cedido=isCedido(act.name)?'SI':'NO';
             const clientCod=CLIENTES.find(c=>c.codigo===act.client)?act.client:'';
-const familia=getFamilia(act.name);
-rows.push([currentSuc?currentSuc.code:'',a.name||('Área '+(i+1)),'A'+(n++),familia,act.name,+a.totalArea.toFixed(4),+(act.pct/100).toFixed(6),+m2.toFixed(4),a._piso||act.piso||'PB',cedido,clientCod,getClientDesc(act.client||''),act.observacion||'']);
+const familia=getFamilia(act.name)||(act.custom?'OTROS':'');
+rows.push([currentSuc?currentSuc.code:'',getCustomName(a)||('Área '+(i+1)),'A'+(n++),familia,act.name,+a.totalArea.toFixed(4),+(act.pct/100).toFixed(6),+m2.toFixed(4),a._piso||act.piso||'PB',cedido,clientCod,getClientDesc(act.client||''),act.observacion||'']);
     });
   });
   const ws=XLSX.utils.aoa_to_sheet(rows);
