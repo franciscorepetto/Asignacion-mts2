@@ -1174,6 +1174,7 @@ function checkOverlap(pts,excl=-1){return areas.some((a,i)=>i!==excl&&polysOverl
 function isCedido(n){return ESPACIOS_CEDIDOS.includes((n||'').toUpperCase().trim());}
 // Nombre puesto por el usuario. Los "Área N" automáticos cuentan como sin nombre,
 // para que en ese caso se sigan mostrando las actividades.
+function escHtml(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function getCustomName(a){const n=((a&&a.name)||'').trim();return /^Área \d+$/.test(n)?'':n;}
 function getAreaLabel(a){
   const custom=getCustomName(a);
@@ -1717,7 +1718,7 @@ function exportSVG(){
   }else{exportAreas=[...areas];}
   if(!exportAreas.length){alert('No hay áreas para exportar.');return;}
 
-  const W=1100,H=720,PANEL=260,PAD=30;
+  const W=1200,H=760,PANEL=330,PAD=30;
   const mapX=PANEL,mapW=W-PANEL,mapH=H;
   const bb=DXF.bbox;
   const dxfW=bb.max_x-bb.min_x||1,dxfH=bb.max_y-bb.min_y||1;
@@ -1741,28 +1742,54 @@ function exportSVG(){
     const cx=a.pts.reduce((s,p)=>s+p[0],0)/a.pts.length;
     const cy=a.pts.reduce((s,p)=>s+p[1],0)/a.pts.length;
     const label=getAreaLabel(a);
+    // Etiqueta sobre un recuadro blanco para que las líneas del plano no la tapen.
+    // El tamaño de letra se adapta al área y, si no entra, se recorta con "…".
+    const sxs=a.pts.map(p=>sx(p[0])),sys=a.pts.map(p=>sy(p[1]));
+    const bw=Math.max(...sxs)-Math.min(...sxs),bh=Math.max(...sys)-Math.min(...sys);
+    const CW=0.66; // ancho aprox. de un caracter en negrita, relativo al tamaño de letra
+    const fs=Math.max(7,Math.min(13,bh*0.3,(bw-14)/(label.length*CW)));
+    const maxChars=Math.max(3,Math.floor((bw-14)/(fs*CW)));
+    const disp=label.length>maxChars?label.slice(0,maxChars-1)+'…':label;
+    const tw=disp.length*fs*CW+10,th=fs+7,lx=sx(cx),ly=sy(cy);
+    areasSVG+=`<g id="area-g-${idx}">`;
     areasSVG+=`<polygon class="area-poly" id="area-${idx}" points="${pts}" fill="${a.color}" fill-opacity="0.25" stroke="${a.color}" stroke-width="2" data-idx="${idx}"/>`;
-    areasSVG+=`<text x="${sx(cx).toFixed(1)}" y="${sy(cy).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="10" font-weight="700" fill="${a.color}" font-family="sans-serif" pointer-events="none">${label}</text>`;
+    areasSVG+=`<g pointer-events="none"><rect x="${(lx-tw/2).toFixed(1)}" y="${(ly-th/2).toFixed(1)}" width="${tw.toFixed(1)}" height="${th.toFixed(1)}" rx="3" fill="#fff" fill-opacity="0.95" stroke="${a.color}" stroke-width="1.5"/>`
+      +`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="${fs.toFixed(1)}" font-weight="800" fill="#1a1a1a" font-family="Montserrat,Arial,sans-serif">${escHtml(disp)}</text></g>`;
+    areasSVG+=`</g>`;
   });
+  const totalM2=exportAreas.reduce((s,a)=>s+(a.totalArea||0),0);
 
   // Panel lista
   let listItems='';
   exportAreas.forEach((a,idx)=>{
+    // Dentro del foreignObject el HTML tiene que ir con el prefijo xhtml:,
+    // si no el navegador lo toma como SVG y no lo muestra.
     const label=getAreaLabel(a);
-    const mts2=a.totalArea?a.totalArea.toFixed(1):'0.0';
-    const acts=a.activities.map(act=>`${act.name} (${act.pct}%)`).join('<br/>');
-    const actSummary=a.activities.map(act=>{
-  const m2=(act.pct/100*a.totalArea).toFixed(1);
-  const clientStr=act.client?` · ${getClientDesc(act.client)}`:'';
-  return `<div style="color:#5a6a6b;font-size:9px;margin-top:1px">• ${act.name} — ${m2} m²${clientStr}</div>`;
-}).join('');
-listItems+=`<div class="pitem" id="li-${idx}" onclick="toggleArea(${idx})" style="padding:7px 9px;margin:3px 0;cursor:pointer;border-radius:6px;background:#fff;font-size:10px;font-family:sans-serif;border:1.5px solid #e8f0f1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><div id="dot-${idx}" style="width:12px;height:12px;border-radius:3px;background:${a.color};flex-shrink:0"></div><div style="font-weight:700;color:#1a1a1a">${label}</div><div style="color:#5a6a6b;margin-left:auto;white-space:nowrap">${mts2} m²</div></div>${actSummary}</div>`;
+    const tot=a.totalArea||0;
+    const pctTot=totalM2?(tot/totalM2*100).toFixed(1):'0.0';
+    const pisos=[...new Set(a.activities.map(act=>a._piso||act.piso||'PB'))].join(', ');
+    const actDetail=a.activities.map(act=>{
+      const m2=(act.pct/100*tot).toFixed(1);
+      const meta=[act.client?getClientDesc(act.client):'',act.observacion||''].filter(Boolean).map(escHtml).join(' · ');
+      return `<xhtml:div style="margin-top:4px;padding:4px 6px;background:#f6fafa;border-radius:4px">`
+        +`<xhtml:div style="display:flex;gap:6px;align-items:baseline"><xhtml:span style="font-weight:700;color:#1a1a1a;flex:1">${escHtml(act.name)}</xhtml:span><xhtml:span style="color:#1fa8b0;font-weight:700;white-space:nowrap">${act.pct}% · ${m2} m²</xhtml:span></xhtml:div>`
+        +(meta?`<xhtml:div style="color:#5a6a6b;font-size:8.5px;margin-top:1px">${meta}</xhtml:div>`:'')
+        +`</xhtml:div>`;
+    }).join('');
+    listItems+=`<xhtml:div id="li-${idx}" onmouseenter="hl(${idx},true)" onmouseleave="hl(${idx},false)" style="padding:7px 9px;margin:4px 0;border-radius:6px;background:#fff;font-size:10px;font-family:sans-serif;border:1.5px solid #e8f0f1;border-left:4px solid ${a.color}">`
+      +`<xhtml:div onclick="toggleArea(${idx})" title="Prender / apagar en el plano" style="display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none">`
+      +`<xhtml:div id="chk-${idx}" style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${a.color};background:${a.color};color:#fff;font-size:10px;line-height:13px;text-align:center;flex-shrink:0">✓</xhtml:div>`
+      +`<xhtml:div style="font-weight:800;color:#1a1a1a;flex:1;min-width:0">${escHtml(label)}</xhtml:div>`
+      +`<xhtml:div style="color:#1a1a1a;font-weight:700;white-space:nowrap">${tot.toFixed(1)} m²</xhtml:div></xhtml:div>`
+      +`<xhtml:div style="color:#5a6a6b;font-size:8.5px;margin:2px 0 0 20px">${pctTot}% del total · Piso: ${escHtml(pisos)}</xhtml:div>`
+      +`<xhtml:div style="margin-left:20px">${actDetail}</xhtml:div></xhtml:div>`;
   });
 
   // Datos para el JS embebido
-  const areasData=exportAreas.map(a=>({name:getAreaLabel(a),totalArea:a.totalArea?+a.totalArea.toFixed(2):0,color:a.color,activities:a.activities.map(act=>({name:act.name,pct:act.pct,piso:act.piso||'',obs:act.observacion||''}))}));
-  const areasJSON=JSON.stringify(areasData).replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  const sucName=currentSuc?currentSuc.name:'Plano';
+  const areasData=exportAreas.map(a=>({name:escHtml(getAreaLabel(a)),totalArea:a.totalArea?+a.totalArea.toFixed(2):0,color:a.color,activities:a.activities.map(act=>({name:escHtml(act.name),pct:act.pct,piso:act.piso||'',client:escHtml(act.client?getClientDesc(act.client):''),obs:escHtml(act.observacion||'')}))}));
+  // Va dentro de un CDATA: '<' y '>' se escapan como unicode para no cortar el bloque
+  const areasJSON=JSON.stringify(areasData).replace(/</g,'\\u003c').replace(/>/g,'\\u003e');
+  const sucName=escHtml(currentSuc?currentSuc.name:'Plano');
   const fecha=new Date().toLocaleDateString('es-AR');
 
   const svgContent=`<?xml version="1.0" encoding="UTF-8"?>
@@ -1777,15 +1804,24 @@ listItems+=`<div class="pitem" id="li-${idx}" onclick="toggleArea(${idx})" style
 </g>
 <rect x="0" y="0" width="${PANEL}" height="${H}" fill="#f8fafc" stroke="#d8eef0" stroke-width="1"/>
 <foreignObject x="0" y="0" width="${PANEL}" height="${H}">
-  <xhtml:div style="width:${PANEL}px;height:${H}px;box-sizing:border-box;padding:10px;display:flex;flex-direction:column;gap:6px;overflow:hidden">
+  <xhtml:div xmlns="http://www.w3.org/1999/xhtml" style="width:${PANEL}px;height:${H}px;box-sizing:border-box;padding:10px;display:flex;flex-direction:column;gap:6px;overflow:hidden">
     <xhtml:div style="font-weight:800;font-size:14px;color:#1a1a1a">${sucName}</xhtml:div>
     <xhtml:div style="font-size:10px;color:#5a6a6b">${fecha}</xhtml:div>
-    <xhtml:div style="font-size:10px;font-weight:700;color:#1fa8b0;letter-spacing:.08em;text-transform:uppercase">Áreas (${exportAreas.length})</xhtml:div>
+    <xhtml:div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 8px;background:#fff;border:1.5px solid #e8f0f1;border-radius:6px;font-size:10px">
+      <xhtml:span style="color:#5a6a6b">Total asignado</xhtml:span>
+      <xhtml:span style="font-weight:800;color:#1fa8b0">${totalM2.toFixed(1)} m²</xhtml:span>
+    </xhtml:div>
+    <xhtml:div style="display:flex;align-items:center;gap:6px">
+      <xhtml:div style="font-size:10px;font-weight:700;color:#1fa8b0;letter-spacing:.08em;text-transform:uppercase;flex:1">Áreas (<xhtml:span id="visCount">${exportAreas.length}</xhtml:span>/${exportAreas.length})</xhtml:div>
+      <xhtml:div onclick="setAll(true)" style="cursor:pointer;font-size:9px;font-weight:700;color:#1fa8b0;border:1px solid #1fa8b0;border-radius:4px;padding:2px 6px">Prender todas</xhtml:div>
+      <xhtml:div onclick="setAll(false)" style="cursor:pointer;font-size:9px;font-weight:700;color:#5a6a6b;border:1px solid #c8d4d5;border-radius:4px;padding:2px 6px">Apagar todas</xhtml:div>
+    </xhtml:div>
+    <xhtml:div style="font-size:8.5px;color:#8a9a9b">Clic en el nombre de un área para prenderla o apagarla en el plano.</xhtml:div>
     <xhtml:div id="areaList" style="flex:1;overflow-y:auto;min-height:0">${listItems}</xhtml:div>
   </xhtml:div>
 </foreignObject>
-<foreignObject id="tip-fo" x="0" y="0" width="230" height="300" style="display:none;pointer-events:none">
-  <xhtml:div id="tip-content" style="padding:8px 10px;font-size:10px;font-family:sans-serif;line-height:1.6;color:#1a1a1a;background:#fff;border:1.5px solid #d8eef0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.15);width:210px"></xhtml:div>
+<foreignObject id="tip-fo" x="0" y="0" width="250" height="360" style="display:none;pointer-events:none">
+  <xhtml:div xmlns="http://www.w3.org/1999/xhtml" id="tip-content" style="padding:8px 10px;font-size:10px;font-family:sans-serif;line-height:1.6;color:#1a1a1a;background:#fff;border:1.5px solid #d8eef0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.15);width:210px"></xhtml:div>
 </foreignObject>
 <script>//<![CDATA[
 var areas=${areasJSON};
@@ -1813,6 +1849,7 @@ document.querySelectorAll('.area-poly').forEach(function(el){
       h+='<div style="margin-top:3px;padding-top:3px;border-top:1px solid #e8f0f1">';
       h+='<span style="font-weight:700;color:#1a1a1a">'+act.name+'</span><br/>';
       h+='<span style="color:#5a6a6b">'+act.pct+'% · '+m2+' m²'+(act.piso?' · '+act.piso:'')+'</span>';
+      if(act.client)h+='<br/><span style="color:#5a6a6b">Cliente: '+act.client+'</span>';
       if(act.obs)h+='<br/><span style="color:#a0b4b5">'+act.obs+'</span>';
       h+='</div>';
     });
@@ -1824,24 +1861,26 @@ document.querySelectorAll('.area-poly').forEach(function(el){
 function moveTip(e){
   var svg=document.querySelector('svg');var r=svg.getBoundingClientRect();
   var x=e.clientX-r.left+14,y=e.clientY-r.top+14;
-  if(x+220>r.width)x=e.clientX-r.left-230;
+  if(x+240>r.width)x=e.clientX-r.left-250;
   tipFo.setAttribute('x',x);tipFo.setAttribute('y',y);
 }
 var hidden={};
-function toggleArea(idx){
-  hidden[idx]=!hidden[idx];
-  var el=document.getElementById('area-'+idx);
-  var dot=document.getElementById('dot-'+idx);
+function setVisible(idx,vis){
+  hidden[idx]=!vis;
+  var g=document.getElementById('area-g-'+idx);
+  var chk=document.getElementById('chk-'+idx);
   var li=document.getElementById('li-'+idx);
-  if(hidden[idx]){
-    if(el){el.setAttribute('fill-opacity','0');el.setAttribute('stroke-opacity','0');}
-    if(dot)dot.style.opacity='0.25';
-    if(li)li.style.opacity='0.4';
-  }else{
-    if(el){el.setAttribute('fill-opacity','0.25');el.setAttribute('stroke-opacity','1');}
-    if(dot)dot.style.opacity='1';
-    if(li)li.style.opacity='1';
-  }
+  if(g)g.style.display=vis?'':'none';
+  if(chk){chk.style.background=vis?areas[idx].color:'#fff';chk.textContent=vis?'✓':'';}
+  if(li)li.style.opacity=vis?'1':'0.45';
+  var n=0;for(var i=0;i<areas.length;i++)if(!hidden[i])n++;
+  document.getElementById('visCount').textContent=n;
+}
+function toggleArea(idx){setVisible(idx,!!hidden[idx]);}
+function setAll(vis){for(var i=0;i<areas.length;i++)setVisible(i,vis);}
+function hl(idx,on){
+  var el=document.getElementById('area-'+idx);
+  if(el){el.setAttribute('stroke-width',on?'4':'2');el.setAttribute('fill-opacity',on?'0.45':'0.25');}
 }
 //]]><\/script>
 </svg>`;
