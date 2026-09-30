@@ -171,18 +171,6 @@ body.modo-layout #layoutPanel{display:block}
 .act-check-fte{font-size:9px;font-weight:700;color:var(--text3);white-space:nowrap}
 .act-check-fte.has-fte{color:#f0a500}
 .act-panel-head{font-size:10px;font-weight:700;color:var(--text2);padding:4px 2px 8px;display:flex;justify-content:space-between}
-.act-overlay{position:absolute;bottom:52px;right:62px;z-index:10;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,.1);width:240px;display:none;flex-direction:column;overflow:hidden}
-.act-ov-head{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--surface2);border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
-.act-ov-title{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-dark)}
-.act-ov-toggle{font-size:12px;color:var(--text3);border:none;background:none;cursor:pointer;font-family:'Montserrat',sans-serif;line-height:1}
-.act-ov-body{overflow-y:auto;padding:6px 8px;max-height:200px}
-.act-ov-body::-webkit-scrollbar{width:3px}
-.act-ov-body::-webkit-scrollbar-thumb{background:var(--brand-mid);border-radius:2px}
-.act-ov-row{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid #f5f5f5;font-size:10px}
-.act-ov-row:last-child{border-bottom:none}
-.act-ov-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.act-ov-name{flex:1;font-weight:600;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.act-ov-fte{font-weight:500;color:var(--text2);font-size:9px;white-space:nowrap;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -303,13 +291,6 @@ body.modo-layout #layoutPanel{display:block}
     <div class="cwrap" id="cwrap">
       <canvas id="fp"></canvas>
       <div id="floorTabs" style="display:none;position:absolute;top:14px;left:14px;z-index:10;gap:6px;flex-wrap:wrap"></div>
-      <div class="act-overlay costeo-only" id="actOverlay">
-  <div class="act-ov-head" onclick="toggleActOverlay()">
-    <span class="act-ov-title" id="actOvTitle">Actividades</span>
-    <button class="act-ov-toggle" id="actOvBtn">▾</button>
-  </div>
-  <div class="act-ov-body" id="actOvBody"></div>
-</div>
       <div class="tbar">
         <div class="tbtn" onclick="zoom(1.2)" title="Zoom in">+</div>
         <div class="tbtn" onclick="zoom(0.83)" title="Zoom out">−</div>
@@ -945,32 +926,6 @@ const icon=isCov?(d.tieneFte?'✓':'✕'):isWarn?'!':'';
       return `<div class="act-check-item ${cls}"><div class="act-check-icon">${icon}</div><div class="act-check-name" title="${d.actividad}">${short}</div><div class="act-check-fte ${d.fteVal>0?'has-fte':''}">${fteStr}</div></div>`;
     }).join('');
 }
-function renderActOverlay(){
-  const ov=document.getElementById('actOverlay');
-  if(!currentSuc||EXCLUDED_ACT.includes(currentSuc.code)){ov.style.display='none';return;}
-  const data=actData[currentSuc.code];
-  if(!data||!data.length){ov.style.display='none';return;}
-  ov.style.display='flex';
-  const assigned=getAssignedActivities();
-  const visible=data.filter(d=>d.tieneFte||assigned.has(d.actividad.toUpperCase()));
-  const fteTotal=data.filter(d=>d.tieneFte).length;
-  const fteCov=data.filter(d=>d.tieneFte&&assigned.has(d.actividad.toUpperCase())).length;
-  document.getElementById('actOvTitle').textContent=`Actividades (${fteCov}/${fteTotal})`;
-  document.getElementById('actOvBody').innerHTML=visible.map(d=>{
-    const isCov=assigned.has(d.actividad.toUpperCase());
-    const dotCol=isCov?(d.tieneFte?'#22c55e':'#e05548'):d.tieneFte?'#f0a500':'#d1d5db';
-    const short=d.actividad.length>22?d.actividad.slice(0,20)+'..':d.actividad;
-    const fteStr=d.fteVal>0?`${d.fteVal} FTE`:'';
-    return `<div class="act-ov-row"><div class="act-ov-dot" style="background:${dotCol}"></div><div class="act-ov-name" title="${d.actividad}">${short}</div>${fteStr?`<div class="act-ov-fte">— ${fteStr}</div>`:''}</div>`;
-  }).join('');
-}
-function toggleActOverlay(){
-  const body=document.getElementById('actOvBody');
-  const btn=document.getElementById('actOvBtn');
-  const hide=body.style.display!=='none';
-  body.style.display=hide?'none':'';
-  btn.textContent=hide?'▸':'▾';
-}
 // Los planos ya no viven hardcodeados en el código: se cargan dinámicamente
 // desde Supabase (tabla sucursales_upload) a medida que un admin los sube
 // confirmando que están actualizados. Ver loadUploadedPlans().
@@ -1097,7 +1052,7 @@ async function enterFloor(floor){
   layoutZones=[];editingZoneIdx=-1;
   try{const savedZ=localStorage.getItem(`layoutzones_${currentSuc.code}_${floor.id}`);if(savedZ) layoutZones=JSON.parse(savedZ);}catch(e){}
   renderZoneList();
-    renderFloorTabs();initCanvas();renderActOverlay();
+    renderFloorTabs();initCanvas();
   if(MODO==='layout') setMode('pan');
 }
 async function switchFloor(floorId){
@@ -1429,7 +1384,6 @@ function updateList(){
   document.getElementById('totArea').textContent=areas.reduce((s,a)=>s+a.totalArea,0).toFixed(2)+' m²';
   document.getElementById('totN').textContent=areas.length;
     if(document.getElementById('actPanel').style.display!=='none') renderActPanel();
-    renderActOverlay();
 }
 
 function selectArea(i){selectedArea=selectedArea===i?null:i;updateList();render();}
