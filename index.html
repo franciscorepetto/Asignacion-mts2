@@ -793,13 +793,23 @@ function _parseCSVEstructura(csv){
   return struct;
 }
 
-fetch('actividades.csv')
-  .then(r=>r.text())
+// Lee un CSV respetando acentos y Ñ: Excel suele guardar los CSV en
+// Windows-1252 (Latin-1) en vez de UTF-8; si el archivo no es UTF-8 válido se
+// decodifica como Windows-1252.
+async function fetchCSVText(url){
+  const r=await fetch(url);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const buf=await r.arrayBuffer();
+  let txt;
+  try{txt=new TextDecoder('utf-8',{fatal:true}).decode(buf);}
+  catch(e){txt=new TextDecoder('windows-1252').decode(buf);}
+  return txt.replace(/^\uFEFF/,'');
+}
+fetchCSVText('actividades.csv')
   .then(csv=>{ACTIVIDADES_ESTRUCTURA=_parseCSVEstructura(csv);})
   .catch(e=>console.error('No se pudo cargar actividades.csv',e));
 let CLIENTES=[];
-fetch('clientes.csv')
-  .then(r=>r.text())
+fetchCSVText('clientes.csv')
   .then(csv=>{CLIENTES=csv.trim().split(/\r?\n/).slice(1).map(line=>{const p=line.split(';');return{codigo:(p[0]||'').trim(),descripcion:(p[1]||'').trim()};}).filter(c=>c.codigo&&c.descripcion).filter((c,i,arr)=>arr.findIndex(x=>x.codigo===c.codigo)===i).sort((a,b)=>a.descripcion.localeCompare(b.descripcion,'es'));})  .catch(e=>console.error('No se pudo cargar clientes.csv',e));
 function getClientDesc(cod){const c=CLIENTES.find(c=>c.codigo===cod);return c?c.descripcion:cod;}
 const ESPACIOS_CEDIDOS=['ESPACIOS CEDIDOS AG','ESPACIOS CEDIDOS AS','ESPACIOS CEDIDOS SE'];
@@ -866,9 +876,7 @@ let currentSuc=null,DXF=null,currentFloor=null;
 const EXCLUDED_ACT=['STV','SPY','ST3','EES'];
 (async function loadActData(){
   try{
-    const r=await fetch('datos-act_sucursales.csv');
-    if(!r.ok) return;
-    const txt=await r.text();
+    const txt=await fetchCSVText('datos-act_sucursales.csv');
     const lines=txt.replace(/^\uFEFF/,'').split('\n').filter(l=>l.trim());
     for(let i=1;i<lines.length;i++){
       const c=lines[i].split(';');
