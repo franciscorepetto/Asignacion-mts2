@@ -20,6 +20,9 @@
   "FLO": [
     { "id": "BASE", "name": "Plano Base", "file": "Copia de FLO-Flores-Plano Base-V02.dxf", "piso": "GENERAL" }
   ],
+  "FCO": [
+    { "id": "PLANTA", "name": "Planta", "file": "San Francisco.dxf", "piso": "GENERAL" }
+  ],
   "FMA": [
     { "id": "PB", "name": "Planta Baja", "file": "Formosa Planta Baja.dxf", "piso": "PB" },
     { "id": "PA", "name": "Planta Alta", "file": "Formosa Planta Alta.dxf", "piso": "PLANTA ALTA" }
