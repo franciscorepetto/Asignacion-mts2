@@ -1295,14 +1295,6 @@ function updateActividades(){
 function selectActividad(){
   const act=document.getElementById('actSelect').value;
   if(!act) return;
-  if(currentSuc&&!EXCLUDED_ACT.includes(currentSuc.code)){
-    const data=actData[currentSuc.code]||[];
-    const entry=data.find(d=>d.actividad.toUpperCase()===act.toUpperCase());
-    if(!entry||!entry.tieneFte){
-      const motivo=!entry?'no figura en la nómina de esta sucursal':'no tiene FTE asignado en la nómina';
-      alert(`⚠ "${act}" ${motivo}.\nVerificá si corresponde incluirla en el dibujo.`);
-    }
-  }
   const emptyIdx=modalRows.findIndex(r=>!r.name);
   if(emptyIdx>=0){modalRows[emptyIdx].name=act;}else{const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:act,pct:Math.max(1,100-used),client:'',piso:'PB',observacion:'',otrosMode:false});}
   renderModalRows();
