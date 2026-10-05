@@ -1901,7 +1901,7 @@ function hl(idx,on){
       const familia=getFamilia(act.name);
       const esComun=familia.toUpperCase()==='COMUN';
       const etapa=(act.etapa||'').trim()||getCustomName(a)||(esComun?capitalizar(act.name):'');
-      rows.push([suc,nro,familia,esComun?'COMUN':act.name,etapa,+a.totalArea.toFixed(4),+(act.pct/100).toFixed(6),+m2.toFixed(4),a._piso||act.piso||'PB']);
+      rows.push([suc,nro,familia,esComun?'COMUN':act.name,etapa,+a.totalArea.toFixed(1),+(act.pct/100).toFixed(6),+m2.toFixed(1),a._piso||act.piso||'PB']);
     });
   });
   const ws=XLSX.utils.aoa_to_sheet(rows);
