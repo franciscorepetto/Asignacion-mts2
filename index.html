@@ -1261,7 +1261,7 @@ function openModal(pts,existing,aIdx){
   document.getElementById('modalTitle').innerHTML=`<input id="areaNameInp" value="${defaultName.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" placeholder="Nombre del área (opcional)">`;
   document.getElementById('modalSub').textContent='Superficie total: '+polyArea(pts).toFixed(2)+' m²';
   setTimeout(()=>document.getElementById('areaNameInp')?.select(),50);
-  modalRows=existing?existing.activities.map(a=>({name:a.name,pct:a.pct,client:a.client||'',piso:a.piso||'PB',observacion:a.observacion||'',otrosMode:!!(a.client&&!CLIENTES.find(c=>c.codigo===a.client))})):[{name:'',pct:100,client:'',piso:'PB',observacion:'',otrosMode:false}];
+  modalRows=existing?existing.activities.map(a=>({name:a.name,pct:a.pct,client:a.client||'',piso:a.piso||'PB',etapa:a.etapa||'',observacion:a.observacion||'',otrosMode:!!(a.client&&!CLIENTES.find(c=>c.codigo===a.client))})):[{name:'',pct:100,client:'',piso:'PB',etapa:'',observacion:'',otrosMode:false}];
   const agrupSel=document.getElementById('agrupSelect');
   agrupSel.innerHTML='<option value="">— seleccionar —</option>'+Object.keys(ACTIVIDADES_ESTRUCTURA).map(a=>`<option value="${a}">${a}</option>`).join('');
   document.getElementById('familiaSelect').innerHTML='<option value="">— seleccionar —</option>';
@@ -1296,7 +1296,7 @@ function selectActividad(){
   const act=document.getElementById('actSelect').value;
   if(!act) return;
   const emptyIdx=modalRows.findIndex(r=>!r.name);
-  if(emptyIdx>=0){modalRows[emptyIdx].name=act;}else{const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:act,pct:Math.max(1,100-used),client:'',piso:'PB',observacion:'',otrosMode:false});}
+  if(emptyIdx>=0){modalRows[emptyIdx].name=act;}else{const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:act,pct:Math.max(1,100-used),client:'',piso:'PB',etapa:'',observacion:'',otrosMode:false});}
   renderModalRows();
 }
 
@@ -1321,6 +1321,10 @@ function renderModalRows(){
           <select class="sm" onchange="modalRows[${i}].piso=this.value" style="flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;padding:5px 7px;border-radius:6px;outline:none">
             ${['PB','1RO','2DO','3RO','SUBSUELO','ENTREPISO'].map(p=>`<option value="${p}"${p===row.piso?' selected':''}>${p}</option>`).join('')}
                    </select>
+        </div>
+        <div class="field-row">
+          <label class="piso-lbl">Etapa</label>
+          <input type="text" placeholder="Si se deja vacío: nombre del área" value="${escHtml(row.etapa||'').replace(/"/g,'&quot;')}" oninput="modalRows[${i}].etapa=this.value" style="flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;padding:5px 7px;border-radius:6px;outline:none">
         </div>
         <div class="field-row">
           <label class="piso-lbl">Observación</label>
@@ -1363,7 +1367,7 @@ function splitActRow(i){
 
 function addActRow(){
   const used=modalRows.reduce((s,r)=>s+r.pct,0);
-  modalRows.push({name:'',pct:Math.max(1,100-used),client:'',piso:'PB',observacion:'',otrosMode:false});
+  modalRows.push({name:'',pct:Math.max(1,100-used),client:'',piso:'PB',etapa:'',observacion:'',otrosMode:false});
   document.getElementById('agrupSelect').value='';
   document.getElementById('familiaSelect').innerHTML='<option value="">— seleccionar —</option>';
   document.getElementById('familiaSelect').disabled=true;
@@ -1879,26 +1883,31 @@ function hl(idx,on){
   }else{exportAreas=[...areas];}
   if(!exportAreas.length){alert('No hay áreas para exportar.');return;}
   const wb=XLSX.utils.book_new();
- const headers=['AF','SECTOR','N°','ETAPA','ACTIVIDAD','Mts2 sin reparto','%','Mts2','PISO','ESPACIOS CEDIDOS','CODIGO CLIENTE','NOMBRE CLIENTE','OBSERVACION'];
-const fecha=new Date().toLocaleDateString('es-AR');
-const meta=['Sucursal: '+(currentSuc?currentSuc.code:''),'Fecha: '+fecha];
-const rows=[meta,[],headers];
-  const allActs=[];Object.values(ACTIVIDADES_ESTRUCTURA).forEach(agrup=>Object.values(agrup).forEach(fam=>allActs.push(...fam)));
-  const masterActs=new Set(allActs.map(a=>a.toUpperCase().trim()));
-  let n=1;
-  exportAreas.forEach((a,i)=>{
+  // Mismo formato que la planilla de distribución de m2: una fila por actividad,
+  // N° por área (todas las filas de un área comparten número), Sector = familia
+  // de la actividad y Etapa = descripción (la de la actividad o, si no tiene,
+  // el nombre del área). Las áreas comunes salen como actividad COMUN y la
+  // etapa explica qué son (Pasillo, Cocina, Baños...).
+  const headers=['AF','N°','Sector','Actividades','Etapa','Mts2 sin reparto','%','Mts2','Piso'];
+  const rows=[headers];
+  const suc=currentSuc?currentSuc.code:'';
+  const capitalizar=t=>{t=(t||'').toLowerCase();return t.charAt(0).toUpperCase()+t.slice(1);};
+  let nArea=0;
+  exportAreas.forEach(a=>{
+    if(!a.activities||!a.activities.length) return;
+    const nro='A'+(++nArea);
     a.activities.forEach(act=>{
       const m2=(act.pct/100*a.totalArea);
-      const cedido=isCedido(act.name)?'SI':'NO';
-            const clientCod=CLIENTES.find(c=>c.codigo===act.client)?act.client:'';
-const familia=getFamilia(act.name);
-rows.push([currentSuc?currentSuc.code:'',getCustomName(a)||('Área '+(i+1)),'A'+(n++),familia,act.name,+a.totalArea.toFixed(4),+(act.pct/100).toFixed(6),+m2.toFixed(4),a._piso||act.piso||'PB',cedido,clientCod,getClientDesc(act.client||''),act.observacion||'']);
+      const familia=getFamilia(act.name);
+      const esComun=familia.toUpperCase()==='COMUN';
+      const etapa=(act.etapa||'').trim()||getCustomName(a)||(esComun?capitalizar(act.name):'');
+      rows.push([suc,nro,familia,esComun?'COMUN':act.name,etapa,+a.totalArea.toFixed(4),+(act.pct/100).toFixed(6),+m2.toFixed(4),a._piso||act.piso||'PB']);
     });
   });
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:6},{wch:22},{wch:6},{wch:20},{wch:28},{wch:16},{wch:8},{wch:12},{wch:10},{wch:16},{wch:16},{wch:16}];
+  ws['!cols']=[{wch:6},{wch:6},{wch:22},{wch:28},{wch:24},{wch:16},{wch:8},{wch:12},{wch:8}];
   ws['!freeze']={xSplit:0,ySplit:1};
-  ws['!autofilter']={ref:'A1:L1'};
+  ws['!autofilter']={ref:'A1:I1'};
   XLSX.utils.book_append_sheet(wb,ws,'BASE');
   const fname='BASE_'+(currentSuc?currentSuc.code:'SUC')+'_'+new Date().toISOString().slice(0,10)+'.xlsx';
   XLSX.writeFile(wb,fname);
