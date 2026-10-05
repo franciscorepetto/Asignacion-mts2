@@ -1886,7 +1886,7 @@ function hl(idx,on){
   // Mismo formato que la planilla de distribución de m2: una fila por actividad,
   // N° por área (todas las filas de un área comparten número), Sector = familia
   // de la actividad y Etapa = descripción (la de la actividad o, si no tiene,
-  // el nombre del área). Las áreas comunes salen como actividad COMUN y la
+  // el nombre del área y, si tampoco hay, la familia). Las áreas comunes salen como actividad COMUN y la
   // etapa explica qué son (Pasillo, Cocina, Baños...).
   const headers=['AF','N°','Sector','Actividades','Etapa','Mts2 sin reparto','%','Mts2','Piso'];
   const rows=[headers];
@@ -1900,7 +1900,7 @@ function hl(idx,on){
       const m2=(act.pct/100*a.totalArea);
       const familia=getFamilia(act.name);
       const esComun=familia.toUpperCase()==='COMUN';
-      const etapa=(act.etapa||'').trim()||getCustomName(a)||(esComun?capitalizar(act.name):'');
+      const etapa=(act.etapa||'').trim()||getCustomName(a)||(esComun?capitalizar(act.name):familia);
       rows.push([suc,nro,familia,esComun?'COMUN':act.name,etapa,+a.totalArea.toFixed(1),+(act.pct/100).toFixed(6),+m2.toFixed(1),a._piso||act.piso||'PB']);
     });
   });
