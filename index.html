@@ -1619,19 +1619,39 @@ function setMode(m){
 function zoomToSlider(val){const cx=canvas.width/2,cy=canvas.height/2;const target=baseScale*Math.pow(10,(val-50)/40);const f=target/scale;ox=cx-(cx-ox)*f;oy=cy-(cy-oy)*f;scale=target;render();}
 function syncSlider(){const sl=document.getElementById('zoomSlider');if(sl&&baseScale>0)sl.value=Math.max(1,Math.min(100,Math.round(50+40*Math.log10(scale/baseScale))));}
   function undoVertex(){if(curPts.length){curPts.pop();render();}}
+// Guarda en el navegador las áreas de un JSON de trabajo. Acepta los dos
+// formatos que genera guardarTrabajo(): por pisos ({suc, multiFloor, floors:
+// {idPiso:[áreas]}}) y el viejo de un solo plano ({suc, areas:[...]}).
+// Devuelve false si el archivo no trae áreas en ninguno de los dos formatos.
+function aplicarTrabajo(data,code){
+  if(data&&data.floors&&typeof data.floors==='object'){
+    Object.entries(data.floors).forEach(([fid,arr])=>{
+      if(Array.isArray(arr)) localStorage.setItem(`areas_${code}_${fid}`,JSON.stringify(arr));
+    });
+    return true;
+  }
+  if(data&&Array.isArray(data.areas)){
+    const floors=MULTI_FLOOR[code];
+    const key=floors&&floors.length?`areas_${code}_${(currentFloor||floors[0]).id}`:`areas_${code}`;
+    localStorage.setItem(key,JSON.stringify(data.areas));
+    return true;
+  }
+  return false;
+}
 async function cargarTrabajoSplash(input){
   const file=input.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=async e=>{
     try{
       const data=JSON.parse(e.target.result);
-      if(!data.suc||!data.areas) throw new Error();
+      if(!data.suc||!(data.floors||data.areas)) throw new Error();
       const suc=SUCURSALES.find(s=>s.code===data.suc);
       if(!suc||!suc.available){alert('Sucursal no disponible.');return;}
-      currentSuc=suc;
+      currentSuc=suc;currentFloor=null;
+      if(!aplicarTrabajo(data,suc.code)) throw new Error();
+      if(window.filterSucursales)window.filterSucursales(document.getElementById('sucSearch')?.value||'');
+      // enterFloor() lee las áreas de cada piso desde el navegador.
       await enterLayout();
-      areas=data.areas;colIdx=areas.length;
-      saveAreas();updateList();render();
     }catch(err){alert('Archivo inválido.');}
   };
   reader.readAsText(file);
@@ -1664,8 +1684,11 @@ function cargarTrabajo(input){
     try{
       const data=JSON.parse(e.target.result);
       if(data.suc&&data.suc!==currentSuc.code&&!confirm('Este archivo es de '+data.suc+' pero estás en '+currentSuc.code+'. ¿Cargar igual?'))return;
-      areas=data.areas;colIdx=areas.length;
-      saveAreas();updateList();render();
+      if(!aplicarTrabajo(data,currentSuc.code)) throw new Error();
+      const key=currentFloor?`areas_${currentSuc.code}_${currentFloor.id}`:`areas_${currentSuc.code}`;
+      areas=JSON.parse(localStorage.getItem(key)||'[]');colIdx=areas.length;selectedArea=null;
+      updateList();render();
+      if(window.filterSucursales)window.filterSucursales(document.getElementById('sucSearch')?.value||'');
     }catch(err){alert('Archivo inválido.');}
   };
   reader.readAsText(file);
