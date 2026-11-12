@@ -107,5 +107,9 @@
     { "id": "N1", "name": "Nave 1", "file": "Tortunave1.dxf", "piso": "NAVE 1" },
     { "id": "N2", "name": "Nave 2", "file": "tortunave2.dxf", "piso": "NAVE 2" },
     { "id": "N3", "name": "Nave 3", "file": "tortunave3.dxf", "piso": "NAVE 3" }
+  ],
+  "ROS": [
+    { "id": "PB", "name": "Planta Baja", "file": "ROS/Planta_Baja.dxf", "piso": "PB" },
+    { "id": "PA", "name": "Planta Alta", "file": "ROS/Planta_Alta.dxf", "piso": "1RO" }
   ]
 }
