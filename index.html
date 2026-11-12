@@ -438,6 +438,10 @@ body.modo-layout .tbtn.layout-only{display:flex}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
       </button>
       <div class="menu-pop" role="menu">
+        <button class="upload-plan-btn" role="menuitem" type="button" id="uploadPlanBtn" style="display:none" onclick="closeMenus();openUploadModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          Subir plano (.dxf)…
+        </button>
         <button class="upload-plan-btn" role="menuitem" type="button" id="managePlanBtn" style="display:none" onclick="closeMenus();openManageModal()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
           Gestionar planos
@@ -845,6 +849,7 @@ async function initAuth(){
     document.getElementById('managePlanBtn').style.display = isAdmin ? 'flex' : 'none';
     document.getElementById('wipePlanBtn').style.display = isAdmin ? 'flex' : 'none';
     document.getElementById('manageUsersBtn').style.display = isAdmin ? 'flex' : 'none';
+    document.getElementById('uploadPlanBtn').style.display = isAdmin ? 'flex' : 'none';
     document.getElementById('adminMenu').style.display = isAdmin ? '' : 'none';
     document.getElementById('userAvatar').textContent = (currentUser.email||'?').charAt(0);
     document.getElementById('userInfo').style.display = 'flex';
@@ -1665,8 +1670,8 @@ function render(){
       ctx.fillStyle='#121718';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(dispLabel,lx,ly-fs*0.9);
     });
   });
-  DXF.polys.forEach(p=>{if(!p.pts||p.pts.length<2) return;ctx.beginPath();p.pts.forEach((pt,i)=>{const[sx,sy]=toS(pt[0],pt[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});if(p.closed) ctx.closePath();ctx.strokeStyle=p.layer==='Contorno'?'#1a1a1a':'#2a3a3b';ctx.lineWidth=(p.pts.length===4&&p.closed)?0.6:1.3;ctx.setLineDash([]);ctx.stroke();});
-  DXF.lines.forEach(l=>{const[lx1,ly1]=toS(l.x1,l.y1),[lx2,ly2]=toS(l.x2,l.y2);ctx.beginPath();ctx.moveTo(lx1,ly1);ctx.lineTo(lx2,ly2);ctx.strokeStyle='#2a3a3b';ctx.lineWidth=1;ctx.setLineDash([]);ctx.stroke();});
+  DXF.polys.forEach(p=>{if(!p.pts||p.pts.length<2) return;ctx.beginPath();p.pts.forEach((pt,i)=>{const[sx,sy]=toS(pt[0],pt[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});if(p.closed) ctx.closePath();const ref=p.layer==='REFERENCIA';ctx.strokeStyle=ref?'#c6cfd2':p.layer==='Contorno'?'#1a1a1a':'#2a3a3b';ctx.lineWidth=ref?0.8:(p.pts.length===4&&p.closed)?0.6:1.3;ctx.setLineDash([]);ctx.stroke();});
+  DXF.lines.forEach(l=>{const[lx1,ly1]=toS(l.x1,l.y1),[lx2,ly2]=toS(l.x2,l.y2);ctx.beginPath();ctx.moveTo(lx1,ly1);ctx.lineTo(lx2,ly2);const ref=l.layer==='REFERENCIA';ctx.strokeStyle=ref?'#c6cfd2':'#2a3a3b';ctx.lineWidth=ref?0.8:1;ctx.setLineDash([]);ctx.stroke();});
   (DXF.hatches||[]).forEach(h=>{ctx.beginPath();h.loops.forEach(loop=>{loop.forEach((pt,i)=>{const[sx,sy]=toS(pt[0],pt[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});ctx.closePath();});ctx.fillStyle='rgba(30,40,40,.55)';ctx.fill('evenodd');});
   areaLabelDraws.forEach(f=>f());
   if(MODO==='layout') layoutZones.forEach(z=>{
@@ -1717,7 +1722,7 @@ function openModal(pts,existing,aIdx){
   document.getElementById('modalTitle').innerHTML=`<input id="areaNameInp" value="${defaultName.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" placeholder="Nombre del área (opcional)">`;
   document.getElementById('modalSub').textContent='Superficie total: '+fmtM2(polyArea(pts),2)+(editingIdx>=0?'':' · nueva área');
   setTimeout(()=>document.getElementById('areaNameInp')?.select(),50);
-  modalRows=existing?existing.activities.map(a=>({name:a.name,pct:a.pct,client:a.client||'',piso:a.piso||'PB',etapa:a.etapa||'',observacion:a.observacion||'',otrosMode:!!(a.client&&!CLIENTES.find(c=>c.codigo===a.client))})):[{name:'',pct:100,client:'',piso:'PB',etapa:'',observacion:'',otrosMode:false}];
+  modalRows=existing?existing.activities.map(a=>({name:a.name,pct:a.pct,client:a.client||'',piso:a.piso||'PB',etapa:a.etapa||'',observacion:a.observacion||'',otrosMode:!!(a.client&&!CLIENTES.find(c=>c.codigo===a.client))})):[{name:'',pct:100,client:'',piso:defaultPiso(),etapa:'',observacion:'',otrosMode:false}];
   const agrupSel=document.getElementById('agrupSelect');
   agrupSel.innerHTML='<option value="">Seleccionar…</option>'+Object.keys(ACTIVIDADES_ESTRUCTURA).map(a=>`<option value="${a}">${a}</option>`).join('');
   document.getElementById('familiaSelect').innerHTML='<option value="">Seleccionar…</option>';
@@ -1752,15 +1757,20 @@ function selectActividad(){
   const act=document.getElementById('actSelect').value;
   if(!act) return;
   const emptyIdx=modalRows.findIndex(r=>!r.name);
-  if(emptyIdx>=0){modalRows[emptyIdx].name=act;}else{const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:act,pct:Math.max(1,100-used),client:'',piso:'PB',etapa:'',observacion:'',otrosMode:false});}
+  if(emptyIdx>=0){modalRows[emptyIdx].name=act;}else{const used=modalRows.reduce((s,r)=>s+r.pct,0);modalRows.push({name:act,pct:Math.max(1,100-used),client:'',piso:defaultPiso(),etapa:'',observacion:'',otrosMode:false});}
   renderModalRows();
 }
+
+const PISOS_OPC=['PB','1RO','2DO','3RO','SUBSUELO','ENTREPISO'];
+// Piso por defecto de una actividad nueva: el del plano abierto (manifest.json,
+// campo "piso"), si es uno de los valores de la planilla; si no, PB.
+function defaultPiso(){const p=(currentFloor&&currentFloor.piso||'').toUpperCase();return PISOS_OPC.includes(p)?p:'PB';}
 
 function renderModalRows(){
   const c=document.getElementById('actRows');c.innerHTML='';
   renderPctBar();
   if(!modalRows.length){c.innerHTML='<div class="list-empty" style="padding:16px">Sin actividades. Elegí una arriba.</div>';return;}
-  const PISOS=['PB','1RO','2DO','3RO','SUBSUELO','ENTREPISO'];
+  const PISOS=PISOS_OPC;
   modalRows.forEach((row,i)=>{
     const d=document.createElement('div');d.className='modal-row';
     const id='r'+i;
@@ -1838,7 +1848,7 @@ function splitActRow(i){
 
 function addActRow(){
   const used=modalRows.reduce((s,r)=>s+r.pct,0);
-  modalRows.push({name:'',pct:Math.max(1,100-used),client:'',piso:'PB',etapa:'',observacion:'',otrosMode:false});
+  modalRows.push({name:'',pct:Math.max(1,100-used),client:'',piso:defaultPiso(),etapa:'',observacion:'',otrosMode:false});
   document.getElementById('agrupSelect').value='';
   document.getElementById('familiaSelect').innerHTML='<option value="">Seleccionar…</option>';
   document.getElementById('familiaSelect').disabled=true;
@@ -2232,8 +2242,8 @@ function exportSVG(){
 
   // Plano DXF
   let dxfSVG='';
-  DXF.lines.forEach(l=>{dxfSVG+=`<line x1="${sx(l.x1).toFixed(1)}" y1="${sy(l.y1).toFixed(1)}" x2="${sx(l.x2).toFixed(1)}" y2="${sy(l.y2).toFixed(1)}" stroke="#2a3a3b" stroke-width="0.8"/>`;});
-  DXF.polys.forEach(p=>{if(!p.pts||p.pts.length<2)return;const d=p.pts.map((pt,i)=>`${i?'L':'M'}${sx(pt[0]).toFixed(1)},${sy(pt[1]).toFixed(1)}`).join(' ')+(p.closed?'Z':'');dxfSVG+=`<path d="${d}" stroke="#2a3a3b" stroke-width="0.8" fill="none"/>`;});
+  DXF.lines.forEach(l=>{dxfSVG+=`<line x1="${sx(l.x1).toFixed(1)}" y1="${sy(l.y1).toFixed(1)}" x2="${sx(l.x2).toFixed(1)}" y2="${sy(l.y2).toFixed(1)}" stroke="${l.layer==='REFERENCIA'?'#c6cfd2':'#2a3a3b'}" stroke-width="0.8"/>`;});
+  DXF.polys.forEach(p=>{if(!p.pts||p.pts.length<2)return;const d=p.pts.map((pt,i)=>`${i?'L':'M'}${sx(pt[0]).toFixed(1)},${sy(pt[1]).toFixed(1)}`).join(' ')+(p.closed?'Z':'');dxfSVG+=`<path d="${d}" stroke="${p.layer==='REFERENCIA'?'#c6cfd2':'#2a3a3b'}" stroke-width="0.8" fill="none"/>`;});
   (DXF.hatches||[]).forEach(h=>{const d=h.loops.map(loop=>loop.map((pt,i)=>`${i?'L':'M'}${sx(pt[0]).toFixed(1)},${sy(pt[1]).toFixed(1)}`).join(' ')+'Z').join(' ');dxfSVG+=`<path d="${d}" fill="rgba(30,40,40,.55)" fill-rule="evenodd" stroke="none"/>`;});
 
   // Áreas
@@ -2745,7 +2755,7 @@ canvas.addEventListener('mouseleave',()=>document.getElementById('areaTooltip').
 <div class="modal-bg" id="uploadModalBg" style="display:none;z-index:200" onclick="if(event.target===this)closeUploadModal()">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
     <h3 id="uploadTitle">Subir plano DXF</h3>
-    <p class="desc">El plano queda disponible para todos los usuarios.</p>
+    <p class="desc">El plano queda disponible para todos los usuarios. Tiene que ser .dxf en metros: si tenés un .dwg, guardalo como DXF desde AutoCAD o nanoCAD.</p>
 
     <div id="uploadMsgBox" class="msg-box"></div>
 
