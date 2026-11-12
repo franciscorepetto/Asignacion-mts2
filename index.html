@@ -4,305 +4,611 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OCASA — Layout</title>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#ffffff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --brand:#33c2ca;--brand-dark:#1fa8b0;--brand-light:#e8f9fa;--brand-mid:#b2e8eb;
-  --bg:#f4f6f7;--surface:#fff;--surface2:#f0f8f9;--border:#d8eef0;
-  --text:#1a1a1a;--text2:#5a6a6b;--text3:#a0b4b5;--danger:#e05548;
+  color-scheme:light;
+  --font:'Geist',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'Geist Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+  /* Marca OCASA */
+  --brand:#33c2ca;--brand-strong:#0b7c84;--brand-ink:#065a60;
+  --brand-soft:#e7f7f8;--brand-line:#bfe7ea;
+  /* Alias heredados (los usa el JS) */
+  --brand-dark:var(--brand-strong);--brand-light:var(--brand-soft);--brand-mid:var(--brand-line);
+  /* Neutros */
+  --bg:#f2f4f5;--surface:#fff;--surface2:#f7f9fa;--line:#e2e7e9;--line-strong:#cbd4d7;
+  --border:var(--line);
+  --text:#121718;--text2:#55636a;--text3:#88969c;
+  /* Estados */
+  --danger:#cf3f37;--danger-soft:#fdeeec;--danger-line:#f4c4bf;
+  --warn:#9a6200;--warn-soft:#fdf4e2;--warn-line:#f1d595;
+  --ok:#137a3c;--ok-soft:#e8f6ed;--ok-line:#a9dcbb;
+  --client:#2457d6;--client-soft:#ebf0fd;
+  --r-sm:6px;--r:10px;--r-lg:14px;
+  --sh-1:0 1px 2px rgba(16,24,26,.06),0 1px 1px rgba(16,24,26,.04);
+  --sh-2:0 4px 14px -4px rgba(16,24,26,.12),0 2px 4px rgba(16,24,26,.05);
+  --sh-3:0 24px 48px -12px rgba(16,24,26,.25),0 4px 12px rgba(16,24,26,.08);
+  --ring:0 0 0 3px rgba(51,194,202,.45);
+  --ease:cubic-bezier(.2,.7,.2,1);
 }
-body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:auto}
-header{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;border-bottom:2px solid var(--brand);background:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(51,194,202,.12)}
-.logo-text{font-size:22px;font-weight:800;letter-spacing:-.5px;color:#1a1a1a;cursor:pointer}
-.header-mid{font-size:13px;font-weight:600;color:var(--text2)}
-.header-mid span{color:var(--brand);font-weight:700}
-.hmeta{font-size:11px;font-weight:600;color:var(--text3);background:var(--brand-light);padding:4px 10px;border-radius:20px;border:1px solid var(--brand-mid);font-family:monospace}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:auto;font-size:13px;line-height:1.45;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:rgba(51,194,202,.15)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:none;box-shadow:var(--ring)}
+kbd{font-family:var(--mono);font-size:10px;font-weight:500;padding:1px 5px;border-radius:4px;background:var(--surface);border:1px solid var(--line-strong);border-bottom-width:2px;color:var(--text2)}
+.num,.sval,.sarea-badge,.act-pct,.act-m2,.pct-val,.hmeta{font-variant-numeric:tabular-nums}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ── Botones ─────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:36px;padding:0 14px;border-radius:var(--r-sm);border:1px solid transparent;font-size:13px;font-weight:550;letter-spacing:-.005em;white-space:nowrap;transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .08s;text-decoration:none}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn svg{width:16px;height:16px;flex-shrink:0}
+.btn-sm{height:30px;padding:0 10px;font-size:12px}
+.btn-block{width:100%}
+.btn-primary{background:var(--brand-strong);color:#fff;box-shadow:var(--sh-1)}
+.btn-primary:hover:not(:disabled){background:var(--brand-ink)}
+.btn-primary:disabled{background:var(--line-strong);color:#fff;cursor:not-allowed;box-shadow:none}
+.btn-secondary{background:var(--surface);border-color:var(--line-strong);color:var(--text);box-shadow:var(--sh-1)}
+.btn-secondary:hover:not(:disabled){background:var(--surface2);border-color:var(--text3)}
+.btn-ghost{background:transparent;color:var(--text2)}
+.btn-ghost:hover{background:rgba(16,24,26,.05);color:var(--text)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:#b3332c}
+.btn-danger-ghost{background:transparent;color:var(--danger)}
+.btn-danger-ghost:hover{background:var(--danger-soft)}
+.icon-btn{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;border-radius:var(--r-sm);color:var(--text3);transition:background-color .12s,color .12s;flex-shrink:0}
+.icon-btn:hover{background:rgba(16,24,26,.06);color:var(--text)}
+.icon-btn svg{width:16px;height:16px}
+
+/* ── Barra superior ──────────────────────────────────────── */
+header{display:flex;align-items:center;gap:12px;padding:0 16px 0 18px;height:56px;border-bottom:1px solid var(--line);background:var(--surface);flex-shrink:0;position:relative;z-index:30}
+.brand{display:flex;align-items:center;border:none;background:none;padding:4px;margin-left:-4px;border-radius:var(--r-sm)}
+.brand img{height:22px;width:auto;display:block}
+.topbar-sep{width:1px;height:22px;background:var(--line)}
+.header-mid{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--text2);min-width:0;white-space:nowrap;overflow:hidden}
+.header-mid span{color:var(--text);font-weight:600}
+.crumb{border:none;background:none;color:var(--text2);font-weight:500;padding:4px 6px;margin:0 -6px;border-radius:5px}
+.crumb:hover{color:var(--text);background:rgba(16,24,26,.05)}
+.crumb-sep{color:var(--line-strong)}
+.crumb-cur{color:var(--text);font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.crumb-floor{color:var(--text2);font-weight:500}
+.topbar-spacer{flex:1}
+.hmeta{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text2);background:var(--surface2);padding:4px 9px;border-radius:var(--r-sm);border:1px solid var(--line);white-space:nowrap}
+#rectArea{color:var(--brand-ink);background:var(--brand-soft);border-color:var(--brand-line)}
 .user-info{display:flex;align-items:center;gap:8px}
-.user-email{font-size:11px;font-weight:600;color:var(--text2)}
-.user-role{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--brand-light);color:var(--brand-dark);border:1px solid var(--brand-mid);text-transform:uppercase;letter-spacing:.08em}
-.user-role.admin{background:#fff3d4;color:#a05a00;border-color:#f5c842}
-.logout-btn{padding:5px 11px;background:none;border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:10px;font-weight:600;border-radius:8px;cursor:pointer;transition:all .15s}
-.logout-btn:hover{border-color:var(--danger);color:var(--danger)}
-.upload-plan-btn{display:flex;align-items:center;gap:5px;padding:5px 11px;background:var(--brand-light);border:1.5px solid var(--brand-mid);color:var(--brand-dark);font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;border-radius:8px;cursor:pointer;transition:all .15s}
-.upload-plan-btn:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
-.back-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;background:none;border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;border-radius:8px;cursor:pointer;transition:all .15s}
-.back-btn:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-light)}
-#splash{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px}
-#modoSplash{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px}
-#funcSplash{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px}
-#noAccessMsg{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px;text-align:center}
+.user-chip{display:flex;align-items:center;gap:8px;padding:3px 4px 3px 3px;border-radius:999px}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--brand-soft);color:var(--brand-ink);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:650;text-transform:uppercase;border:1px solid var(--brand-line)}
+.user-meta{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.user-email{font-size:12px;font-weight:550;color:var(--text);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-role{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+.user-role.admin{color:var(--warn)}
+.logout-btn{}
+.upload-plan-btn{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border:none;background:none;border-radius:var(--r-sm);font-size:13px;font-weight:500;color:var(--text);text-align:left}
+.upload-plan-btn:hover{background:var(--surface2)}
+.upload-plan-btn svg{width:16px;height:16px;color:var(--text2)}
+.upload-plan-btn.danger{color:var(--danger)}
+.upload-plan-btn.danger svg{color:var(--danger)}
+.upload-plan-btn.danger:hover{background:var(--danger-soft)}
+.upload-plan-btn:disabled{opacity:.6;cursor:progress}
+.menu{position:relative}
+.menu-pop{position:absolute;right:0;top:calc(100% + 6px);min-width:220px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-2);padding:5px;display:none;z-index:40}
+.menu.open .menu-pop{display:block;animation:pop .14s var(--ease)}
+.menu-sep{height:1px;background:var(--line);margin:4px 2px}
+.back-btn{}
+@keyframes pop{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+
+/* ── Pantallas de inicio ─────────────────────────────────── */
+#splash,#modoSplash,#funcSplash,#noAccessMsg{flex:1;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;overflow:auto}
+#splash{display:none}
+#modoSplash{display:flex}
+#funcSplash{display:none}
+#noAccessMsg{display:none;text-align:center}
+.launch-inner{width:100%;max-width:960px}
+.eyebrow{font-size:12px;font-weight:600;color:var(--brand-strong);letter-spacing:.02em;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.eyebrow .step{font-family:var(--mono);font-weight:500;color:var(--text3)}
+.launch h1{font-size:34px;line-height:1.12;font-weight:650;letter-spacing:-.025em;color:var(--text);text-wrap:balance;max-width:20ch}
+.lede{font-size:15px;color:var(--text2);margin-top:12px;max-width:52ch;line-height:1.55;text-wrap:pretty}
+.choice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:36px}
+.choice{position:relative;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:10px;padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-1);transition:border-color .15s,box-shadow .2s,transform .2s var(--ease);min-height:210px}
+.choice:hover{border-color:var(--brand-line);box-shadow:var(--sh-2);transform:translateY(-2px)}
+.choice:active{transform:translateY(0)}
+.choice-ico{width:44px;height:44px;border-radius:11px;background:var(--brand-soft);color:var(--brand-strong);display:flex;align-items:center;justify-content:center;margin-bottom:6px}
+.choice-ico svg{width:22px;height:22px}
+.choice-title{font-size:17px;font-weight:620;letter-spacing:-.01em}
+.choice-desc{font-size:13px;color:var(--text2);line-height:1.55;max-width:40ch}
+.choice-go{margin-top:auto;padding-top:10px;font-size:13px;font-weight:600;color:var(--brand-strong);display:flex;align-items:center;gap:6px}
+.choice-go svg{width:15px;height:15px;transition:transform .2s var(--ease)}
+.choice:hover .choice-go svg{transform:translateX(3px)}
+.tag{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;font-size:11px;font-weight:550;background:var(--surface2);color:var(--text2);border:1px solid var(--line);white-space:nowrap}
+.tag.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn-line)}
+.choice .tag{position:absolute;top:20px;right:20px}
+
+.launch-split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,460px);gap:56px;align-items:start}
+.launch-side{padding-top:8px}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:32px;max-width:420px}
+.stat{padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.stat-v{font-size:24px;font-weight:650;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat-k{font-size:12px;color:var(--text2);margin-top:2px}
+.side-actions{margin-top:28px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.side-note{font-size:12px;color:var(--text3);max-width:44ch}
+
+.splash-card{background:var(--surface);border-radius:var(--r-lg);padding:20px;width:100%;box-shadow:var(--sh-2);border:1px solid var(--line)}
+.splash-card h2{font-size:16px;font-weight:620;margin-bottom:4px;letter-spacing:-.01em}
+.splash-card p{font-size:13px;color:var(--text2);line-height:1.55}
+.splash-logo{display:none}
+.splash-sub{display:none}
+.slabel{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.search{position:relative;margin-bottom:10px}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text3);pointer-events:none}
+.suc-search,.input,select.input{width:100%;height:38px;padding:0 12px;border:1px solid var(--line-strong);border-radius:var(--r-sm);font-size:13px;color:var(--text);background:var(--surface);transition:border-color .15s,box-shadow .15s}
+.suc-search{padding-left:34px;height:40px;font-size:14px}
+.suc-search:focus,.input:focus{outline:none;border-color:var(--brand);box-shadow:var(--ring)}
+.suc-search::placeholder,.input::placeholder{color:var(--text3)}
+.suc-list{max-height:min(440px,48vh);overflow-y:auto;overscroll-behavior:contain;border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px;background:var(--surface)}
+.suc-list::-webkit-scrollbar,.slist::-webkit-scrollbar,.modal::-webkit-scrollbar,.modal-body::-webkit-scrollbar{width:8px}
+.suc-list::-webkit-scrollbar-thumb,.slist::-webkit-scrollbar-thumb,.modal::-webkit-scrollbar-thumb,.modal-body::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:8px;border:2px solid var(--surface)}
+.suc-item{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:none;border-bottom:1px solid var(--line);background:var(--surface);text-align:left;transition:background-color .12s;position:relative}
+.suc-item:last-child{border-bottom:none}
+.suc-item:hover:not(.unavailable){background:var(--surface2)}
+.suc-item:focus-visible{box-shadow:inset 0 0 0 2px var(--brand)}
+.suc-item.active{background:var(--brand-soft)}
+.suc-item.active::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;background:var(--brand-strong)}
+.suc-item.unavailable,.suc-item-soon{cursor:default}
+.suc-item-soon .suc-item-name,.suc-item-soon .suc-item-code{color:var(--text3)}
+.suc-item-code{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--brand-strong);min-width:36px}
+.suc-item-name{font-size:13px;font-weight:500;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.suc-item-badge{font-size:11px;font-weight:550;padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--text2);border:1px solid var(--line);white-space:nowrap}
+.suc-item-badge.soon{color:var(--text3)}
+.suc-item-badge.has-data{background:var(--ok-soft);color:var(--ok);border-color:var(--ok-line)}
 .suc-item.modo-item{flex-direction:column;align-items:flex-start;gap:4px;padding:14px 16px}
-.modo-item .suc-item-name{font-weight:700}
-.modo-item .modo-desc{font-size:11px;color:var(--text2);font-weight:500;white-space:normal;line-height:1.5}
+.modo-item .suc-item-name{font-weight:600}
+.modo-item .modo-desc{font-size:12px;color:var(--text2);white-space:normal;line-height:1.5}
+.list-empty{padding:28px 16px;text-align:center;color:var(--text3);font-size:13px}
+.enter-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:42px;padding:0 16px;background:var(--brand-strong);color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:600;transition:background-color .15s,transform .08s;box-shadow:var(--sh-1)}
+.enter-btn:hover:not(:disabled){background:var(--brand-ink)}
+.enter-btn:active:not(:disabled){transform:translateY(1px)}
+.enter-btn:disabled{background:var(--line-strong);box-shadow:none;cursor:not-allowed}
+.coming-note{font-size:12px;color:var(--text3);text-align:center;margin-top:10px}
+
+/* ── Modo costeo / layout ────────────────────────────────── */
 body.modo-layout .costeo-only{display:none!important}
 .layout-only{display:none}
 body.modo-layout .layout-only{display:flex}
-#layoutPanel{display:none;padding:14px;font-size:12px;color:var(--text2);line-height:1.7}
+#layoutPanel{display:none;padding:14px 16px;font-size:13px;color:var(--text2);line-height:1.6;overflow-y:auto;flex:1}
 body.modo-layout #layoutPanel{display:block}
-.label-item{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--border);font-size:11px}
-.label-item:last-child{border-bottom:none}
-.label-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.label-text{flex:1;font-weight:600;color:var(--text);word-break:break-word}
-.label-tipo{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
-.label-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:2px 4px}
-.label-del:hover{color:#c0392b}
-.splash-logo{font-size:48px;font-weight:800;letter-spacing:-2px;color:#1a1a1a;margin-bottom:4px}
-.splash-sub{font-size:14px;font-weight:500;color:var(--text2);margin-bottom:48px;letter-spacing:.02em}
-.splash-card{background:#fff;border-radius:16px;padding:32px;width:100%;max-width:480px;box-shadow:0 4px 24px rgba(51,194,202,.12);border:1.5px solid var(--border)}
-.splash-card h2{font-size:18px;font-weight:700;margin-bottom:6px;color:var(--text)}
-.splash-card p{font-size:12px;color:var(--text2);margin-bottom:24px;line-height:1.6}
-.splash-label{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand-dark);margin-bottom:8px}
-.suc-search{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;outline:none;margin-bottom:8px;color:var(--text);background:#fff}
-.suc-search:focus{border-color:var(--brand)}
-.suc-list{max-height:240px;overflow-y:auto;border:1.5px solid var(--border);border-radius:10px;margin-bottom:16px}
-.suc-list::-webkit-scrollbar{width:4px}
-.suc-list::-webkit-scrollbar-thumb{background:var(--brand-mid);border-radius:2px}
-.suc-item{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s}
-.suc-item:last-child{border-bottom:none}
-.suc-item:hover:not(.unavailable){background:var(--brand-light)}
-.suc-item.active{background:var(--brand-light);border-left:3px solid var(--brand)}
-.suc-item.unavailable{opacity:0.4;cursor:not-allowed}
-.suc-item-code{font-size:11px;font-weight:800;color:var(--brand-dark);min-width:38px}
-.suc-item-name{font-size:12px;font-weight:500;color:var(--text);flex:1}
-.suc-item-badge{font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:var(--brand-mid);color:var(--brand-dark)}
-.suc-item-badge.soon{background:#f0eeee;color:var(--text3)}
-.suc-item-badge.has-data{background:#d4f5e9;color:#0a7a4a}
-.enter-btn{width:100%;padding:13px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.04em;box-shadow:0 2px 12px rgba(51,194,202,.35)}
-.enter-btn:hover{background:var(--brand-dark)}
-.enter-btn:disabled{background:var(--text3);box-shadow:none;cursor:not-allowed}
-.coming-note{font-size:10px;color:var(--text3);text-align:center;margin-top:12px;font-weight:500}
+.panel-title{font-size:14px;font-weight:620;color:var(--text);margin-bottom:6px}
+.label-item{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:var(--r-sm);font-size:13px}
+.label-item:hover{background:var(--surface2)}
+.label-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.label-text{flex:1;font-weight:550;color:var(--text);word-break:break-word}
+.label-tipo{font-size:11px;color:var(--text3)}
+.label-del{width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text3);font-size:14px;border-radius:5px}
+.label-del:hover{color:var(--danger);background:var(--danger-soft)}
+.layout-section{margin-top:16px}
+
+/* ── Espacio de trabajo ──────────────────────────────────── */
 #app{flex:1;display:none;flex-direction:column;overflow:hidden;min-height:0}
 .main{display:flex;flex:1;overflow:hidden;min-height:0}
-.sidebar{width:288px;flex-shrink:0;background:#fff;border-right:2px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-.ss{padding:14px;border-bottom:1px solid var(--border)}
-.slabel{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand-dark);margin-bottom:7px}
-.mbtns{display:flex;gap:6px}
-.mbtn{flex:1;padding:8px;background:var(--bg);border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;border-radius:8px;cursor:pointer;transition:all .15s;text-align:center}
-.mbtn.active{background:var(--brand);color:#fff;border-color:var(--brand);box-shadow:0 2px 8px rgba(51,194,202,.35)}
-.mbtn:hover:not(.active){border-color:var(--brand);color:var(--brand)}
-.instr{padding:10px 12px;background:var(--brand-light);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.7;border-left:3px solid var(--brand)}
-.instr strong{color:var(--brand-dark);font-weight:700}
-.slist{flex:1;overflow-y:auto;padding:8px}
-.slist::-webkit-scrollbar{width:4px}
-.slist::-webkit-scrollbar-thumb{background:var(--brand-mid);border-radius:2px}
-.sitem{border-radius:10px;margin-bottom:6px;border:1.5px solid var(--border);overflow:hidden;transition:all .15s;background:#fff}
-.sitem:hover{box-shadow:0 2px 8px rgba(51,194,202,.1)}
-.sitem.selected{border-color:var(--brand);box-shadow:0 0 0 3px rgba(51,194,202,.15)}
-.sitem-header{display:flex;align-items:center;gap:8px;padding:9px 10px;cursor:pointer}
-.sitem-header:hover{background:var(--brand-light)}
-.scolor-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
-.sname{font-size:11px;font-weight:700;flex:1}
-.sarea-badge{font-size:10px;font-weight:600;color:var(--brand-dark);background:var(--brand-light);padding:2px 7px;border-radius:20px;border:1px solid var(--brand-mid)}
-.sdel{width:22px;height:22px;border:none;background:none;color:var(--text3);cursor:pointer;font-size:14px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .1s}
-.sdel:hover{background:#fce8e8;color:var(--danger)}
-.sedit:hover{background:var(--brand-light);color:var(--brand)}
-.sitem-acts{padding:6px 10px 8px;background:var(--surface2);border-top:1px solid var(--border)}
-.act-row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
-.act-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.act-name{font-size:10px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.act-pct{font-size:10px;font-weight:600;color:var(--text2);min-width:30px;text-align:right}
-.act-m2{font-size:10px;font-weight:700;color:var(--brand-dark);min-width:46px;text-align:right}
-.act-client{font-size:10px;font-weight:600;color:#a805e0;min-width:60px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.summary{padding:12px 14px;border-top:2px solid var(--border);background:var(--surface2)}
-.srow{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
-.skey{font-size:11px;font-weight:500;color:var(--text2)}
-.sval{font-size:13px;font-weight:700;color:var(--brand-dark)}
-.expbtn{margin:0 14px 12px;padding:10px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;cursor:pointer;width:calc(100% - 28px);letter-spacing:.04em;transition:all .15s;box-shadow:0 2px 8px rgba(51,194,202,.3)}
-.expbtn:hover{background:var(--brand-dark)}
-.cwrap{flex:1;position:relative;overflow:hidden;background:var(--bg);min-width:0}
-#fp{position:absolute;top:0;left:0;display:block}
-.tbar{position:absolute;top:14px;right:14px;display:flex;flex-direction:column;gap:5px;z-index:10}
-.tbtn{width:34px;height:34px;background:#fff;border:1.5px solid var(--border);color:var(--text2);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s;user-select:none;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.tbtn:hover{background:var(--brand-light);color:var(--brand);border-color:var(--brand)}
-.tbtn.active-tool{background:var(--brand);color:#fff;border-color:var(--brand)}
-.zoom-slider{writing-mode:vertical-lr;direction:rtl;width:4px;height:80px;accent-color:var(--brand);cursor:pointer;margin:2px auto;display:block;}
-.scalebar{position:absolute;bottom:14px;right:14px;background:#fff;border:1.5px solid var(--border);padding:5px 10px;border-radius:20px;font-size:10px;font-weight:600;color:var(--text2)}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:100;display:flex;align-items:center;justify-content:center}
-.modal{background:#fff;border-radius:14px;padding:22px;min-width:400px;max-width:520px;box-shadow:0 12px 48px rgba(0,0,0,.16);border-top:4px solid var(--brand);max-height:90vh;overflow-y:auto}
-.modal h3{font-size:15px;font-weight:800;margin-bottom:2px}
-.modal .sub{font-size:11px;font-weight:500;color:var(--text2);margin-bottom:12px}
-.pct-bar{height:5px;background:var(--border);border-radius:3px;margin-bottom:14px;overflow:hidden}
-.pct-bar-fill{height:100%;border-radius:3px;transition:width .2s,background .2s}
-.modal-row{margin-bottom:7px;background:var(--brand-light);padding:10px 12px;border-radius:10px;border:1.5px solid var(--brand-mid)}
-.modal-row-top{display:flex;align-items:center;gap:8px}
-.modal-row-top select{flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:500;padding:5px 7px;border-radius:6px;outline:none}
-.modal-row-top select:focus{border-color:var(--brand)}
-.modal-row-top input[type=range]{flex:0 0 80px;accent-color:var(--brand)}
-.pct-val{font-size:12px;font-weight:700;min-width:34px;text-align:right;color:var(--brand-dark)}
-.split-act{border:1px solid var(--brand-mid);background:#fff;color:var(--brand-dark);font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;padding:3px 7px;border-radius:5px;cursor:pointer;white-space:nowrap;flex-shrink:0}
-.split-act:hover{background:var(--brand-mid);color:#fff}
-.del-act{width:22px;height:22px;border:none;background:none;color:var(--text3);cursor:pointer;font-size:16px;flex-shrink:0;border-radius:5px;transition:all .1s}
-.del-act:hover{background:#fce8e8;color:var(--danger)}
-.extra-fields{margin-top:8px;padding-top:8px;border-top:1px dashed var(--brand-mid);display:flex;flex-direction:column;gap:6px}
-.field-row{display:flex;align-items:center;gap:8px}
-.field-row label{font-size:10px;font-weight:700;white-space:nowrap;min-width:80px}
-.field-row label.client-lbl{color:#a805e0}
-.field-row label.piso-lbl{color:var(--brand-dark)}
-.field-row input, .field-row select.sm{flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;padding:5px 8px;border-radius:6px;outline:none}
-.field-row input:focus{border-color:var(--brand)}
-.field-row input.client-inp:focus{border-color:#a805e0}
-.add-row-btn{width:100%;padding:8px;border:1.5px dashed var(--brand-mid);background:none;color:var(--brand-dark);font-size:11px;font-weight:600;font-family:'Montserrat',sans-serif;cursor:pointer;border-radius:8px;margin-bottom:12px;transition:all .15s}
-.add-row-btn:hover{background:var(--brand-light);border-color:var(--brand)}
-.modal-footer{display:flex;gap:8px}
-.btn-primary{flex:1;padding:10px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:12px;cursor:pointer;transition:all .15s}
-.btn-primary:hover{background:var(--brand-dark)}
-.btn-secondary{padding:10px 16px;background:none;border:1.5px solid var(--border);color:var(--text2);border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
-.btn-secondary:hover{border-color:var(--brand);color:var(--brand)}
-.overlap-warn{background:#fff8e5;border:1.5px solid #f5c842;color:#7a5e00;padding:9px 12px;border-radius:8px;font-size:11px;font-weight:500;margin-bottom:12px}
-#areaNameInp{font-size:15px;font-weight:800;border:none;border-bottom:2px solid var(--brand);outline:none;font-family:'Montserrat',sans-serif;width:100%;background:transparent;color:var(--text);padding-bottom:2px}
-.dropdown-section{margin-bottom:12px;padding:12px;background:var(--surface2);border-radius:8px;border:1.5px solid var(--brand-mid)}
-.dropdown-section label{display:block;font-size:10px;font-weight:700;color:var(--brand-dark);margin-bottom:6px}
-.dropdown-section select{width:100%;padding:8px;border:1.5px solid var(--border);border-radius:6px;font-family:'Montserrat',sans-serif;font-size:11px;background:#fff;outline:none}
-.dropdown-section select:focus{border-color:var(--brand)}
-.dropdown-section select:disabled{background:var(--bg);color:var(--text3);cursor:not-allowed}
-.sidebar-tabs{display:flex;border-bottom:2px solid var(--border);flex-shrink:0}
-.stab{flex:1;padding:9px 0;text-align:center;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);cursor:pointer;border:none;border-bottom:3px solid transparent;background:none;font-family:'Montserrat',sans-serif;transition:all .15s}
-.stab.active{color:var(--brand-dark);border-bottom-color:var(--brand)}
-.act-check-item{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:8px;margin-bottom:3px;border:1.5px solid var(--border);background:#fff}
-.act-check-item.covered{background:#f0fdf4;border-color:#86efac}
-.act-check-item.fte-warn{background:#fff8e5;border-color:#f0a500}
-.act-check-item.drawn-no-fte{background:#fef2f2;border-color:#fca5a5}
-.act-check-item.drawn-no-fte .act-check-icon{border-color:#e05548;background:#e05548;color:#fff}
-.act-check-icon{width:16px;height:16px;border-radius:4px;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800}
-.act-check-item.covered .act-check-icon{border-color:#22c55e;background:#22c55e;color:#fff}
-.act-check-item.fte-warn .act-check-icon{border-color:#f0a500;color:#f0a500}
-.act-check-name{font-size:10px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.act-check-fte{font-size:9px;font-weight:700;color:var(--text3);white-space:nowrap}
-.act-check-fte.has-fte{color:#f0a500}
-.act-panel-head{font-size:10px;font-weight:700;color:var(--text2);padding:4px 2px 8px;display:flex;justify-content:space-between}
+.sidebar{width:328px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+.ss{padding:14px 16px 12px}
+.instr{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;padding:12px 14px;background:var(--surface2);border-radius:var(--r);font-size:12px;color:var(--text2);line-height:1.5;border:1px solid var(--line)}
+.instr-ico{grid-row:span 3;width:30px;height:30px;border-radius:8px;background:var(--brand-soft);color:var(--brand-strong);display:flex;align-items:center;justify-content:center}
+.instr-ico svg{width:16px;height:16px}
+.instr strong{color:var(--text);font-weight:600;font-size:13px}
+.instr ol{list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:2px}
+.instr li{counter-increment:s;display:flex;gap:6px}
+.instr li::before{content:counter(s);font-family:var(--mono);font-size:10px;color:var(--text3);min-width:10px;padding-top:2px}
+.sidebar-tabs{display:flex;gap:2px;margin:0 16px;padding:3px;background:var(--bg);border-radius:var(--r-sm);flex-shrink:0}
+.stab{flex:1;height:30px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:550;color:var(--text2);border:none;background:none;border-radius:5px;transition:background-color .15s,color .15s,box-shadow .15s}
+.stab:hover{color:var(--text)}
+.stab.active{background:var(--surface);color:var(--text);box-shadow:var(--sh-1)}
+.stab .count{font-family:var(--mono);font-size:10px;color:var(--text3);font-weight:500}
+#panelAreasLabel{padding:14px 16px 6px!important;margin:0}
+.slist{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:4px 12px 12px;min-height:0}
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:28px 16px;color:var(--text3);font-size:12px;line-height:1.5}
+.empty svg{width:28px;height:28px;color:var(--line-strong)}
+.empty strong{color:var(--text2);font-weight:600;font-size:13px}
+.sitem{border-radius:var(--r);margin-bottom:8px;border:1px solid var(--line);overflow:hidden;transition:border-color .15s,box-shadow .15s;background:var(--surface)}
+.sitem:hover{border-color:var(--line-strong)}
+.sitem.selected{border-color:var(--brand);box-shadow:0 0 0 3px rgba(51,194,202,.18)}
+.sitem-header{display:flex;align-items:center;gap:8px;padding:9px 6px 9px 12px;cursor:pointer;min-width:0}
+.sitem-header:focus-visible{box-shadow:inset 0 0 0 2px var(--brand);border-radius:var(--r)}
+.scolor-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.sname{font-size:13px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)!important}
+.sarea-badge{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text2);white-space:nowrap}
+.sdel{width:26px;height:26px;border:none;background:none;color:var(--text3);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background-color .12s,color .12s;opacity:.0}
+.sitem:hover .sdel,.sitem.selected .sdel,.sdel:focus-visible{opacity:1}
+.sdel svg{width:14px;height:14px}
+.sdel:hover{background:var(--danger-soft);color:var(--danger)}
+.sedit:hover{background:var(--brand-soft);color:var(--brand-strong)}
+@media (hover:none){.sdel{opacity:1}}
+.sitem-acts{padding:4px 12px 10px 30px;display:flex;flex-direction:column;gap:3px}
+.act-row{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}
+.act-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.act-name{font-size:12px;color:var(--text2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.act-pct{font-family:var(--mono);font-size:11px;color:var(--text3);min-width:30px;text-align:right}
+.act-m2{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text);min-width:54px;text-align:right}
+.act-client{flex-basis:100%;padding-left:14px;font-size:11px;font-weight:500;color:var(--client);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sidebar-foot{border-top:1px solid var(--line);padding:12px 16px 16px;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
+.summary{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:baseline;padding:2px 2px 6px}
+.srow{display:contents}
+.skey{font-size:12px;color:var(--text2)}
+.sval{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text);text-align:right}
+.summary .srow:first-child .sval{font-family:var(--font);font-size:20px;font-weight:650;letter-spacing:-.02em}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.expbtn{}
+
+.cwrap{flex:1;position:relative;overflow:hidden;background:var(--bg);min-width:0;background-image:radial-gradient(circle at 1px 1px,rgba(16,24,26,.07) 1px,transparent 0);background-size:20px 20px}
+#fp{position:absolute;top:0;left:0;display:block;touch-action:none}
+.floor-tabs{position:absolute;top:14px;left:14px;z-index:10;display:flex;gap:2px;padding:3px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-2);flex-wrap:wrap;max-width:calc(100% - 28px)}
+.floor-tab{height:30px;padding:0 12px;border:none;background:none;border-radius:7px;font-size:12px;font-weight:550;color:var(--text2);transition:background-color .15s,color .15s}
+.floor-tab:hover{background:var(--surface2);color:var(--text)}
+.floor-tab.active{background:var(--text);color:#fff}
+.tbar{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:2px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh-2);z-index:10}
+.tsep{width:1px;height:22px;background:var(--line);margin:0 4px}
+.tbtn{position:relative;width:36px;height:36px;background:none;border:none;color:var(--text2);border-radius:8px;display:flex;align-items:center;justify-content:center;transition:background-color .12s,color .12s;user-select:none}
+.tbtn svg{width:18px;height:18px}
+.tbtn:hover{background:var(--surface2);color:var(--text)}
+.tbtn.layout-only{display:none}
+body.modo-layout .tbtn.layout-only{display:flex}
+.tbtn.active-tool{background:var(--brand-soft);color:var(--brand-ink);box-shadow:inset 0 0 0 1px var(--brand-line)}
+[data-tip]::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 10px);left:50%;transform:translate(-50%,4px);background:var(--text);color:#fff;font-size:11px;font-weight:500;padding:5px 8px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s,transform .12s;z-index:20}
+[data-tip]:hover::after,[data-tip]:focus-visible::after{opacity:1;transform:translate(-50%,0);transition-delay:.25s}
+.zoom-slider{width:84px;accent-color:var(--brand-strong);margin:0 4px;cursor:pointer}
+.scalebar{position:absolute;bottom:22px;right:16px;background:var(--surface);border:1px solid var(--line);padding:4px 9px;border-radius:var(--r-sm);font-family:var(--mono);font-size:11px;color:var(--text2);box-shadow:var(--sh-1)}
+
+/* ── Modales ─────────────────────────────────────────────── */
+.modal-bg{position:fixed;inset:0;background:rgba(14,22,24,.42);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;animation:fade .15s ease-out}
+.modal{background:var(--surface);border-radius:var(--r-lg);padding:22px;width:100%;max-width:440px;box-shadow:var(--sh-3);max-height:calc(100dvh - 48px);overflow-y:auto;overscroll-behavior:contain;animation:rise .2s var(--ease)}
+.modal.modal-flex{display:flex;flex-direction:column;padding:0;overflow:hidden}
+.modal-lg{max-width:640px}
+.modal-sm{max-width:400px}
+.modal-head{display:flex;align-items:flex-start;gap:12px;padding:18px 20px 14px;border-bottom:1px solid var(--line)}
+.modal-head-main{flex:1;min-width:0}
+.modal-body{padding:16px 20px;overflow-y:auto;overscroll-behavior:contain;flex:1;min-height:0}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid var(--line);background:var(--surface2)}
+.modal h3{font-size:16px;font-weight:620;letter-spacing:-.01em;margin-bottom:2px;text-wrap:balance}
+.modal .sub{font-size:12px;color:var(--text2);font-variant-numeric:tabular-nums}
+.modal p.desc{font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:16px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+@keyframes fade{from{opacity:0}}
+@keyframes rise{from{opacity:0;transform:translateY(8px) scale(.985)}}
+#areaNameInp{font-size:16px;font-weight:620;letter-spacing:-.01em;border:none;border-bottom:1px dashed var(--line-strong);border-radius:0;outline:none;width:100%;background:transparent;color:var(--text);padding:2px 0 4px}
+#areaNameInp:hover{border-bottom-color:var(--text3)}
+#areaNameInp:focus{border-bottom:1px solid var(--brand);box-shadow:none}
+#areaNameInp::placeholder{color:var(--text3)}
+.overlap-warn{display:flex;gap:8px;align-items:flex-start;background:var(--warn-soft);border:1px solid var(--warn-line);color:var(--warn);padding:9px 12px;border-radius:var(--r-sm);font-size:12px;font-weight:500;margin-bottom:14px}
+.picker{padding:12px;background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);margin-bottom:18px}
+.picker-head{font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.picker-head span{font-weight:400;color:var(--text3)}
+.picker-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field>span,.field-label{font-size:11px;font-weight:550;color:var(--text2)}
+.field select,.field input,.dropdown-section select,.dropdown-section input,.field-row input,.field-row select{width:100%;height:34px;padding:0 10px;border:1px solid var(--line-strong);border-radius:var(--r-sm);font-size:13px;background-color:var(--surface);color:var(--text);min-width:0;transition:border-color .15s,box-shadow .15s}
+.field select:focus,.field input:focus,.dropdown-section select:focus,.dropdown-section input:focus,.field-row input:focus,.field-row select:focus{outline:none;border-color:var(--brand);box-shadow:var(--ring)}
+.field select:disabled,.dropdown-section select:disabled{background-color:var(--bg);color:var(--text3);cursor:not-allowed}
+.dropdown-section{margin-bottom:12px}
+.dropdown-section label{display:block;font-size:11px;font-weight:550;color:var(--text2);margin-bottom:5px}
+.alloc-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+.alloc-head .t{font-size:12px;font-weight:600}
+.pct-total{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--warn)}
+.pct-total.ok{color:var(--ok)}
+.pct-total.over{color:var(--danger)}
+.pct-bar{height:6px;background:var(--bg);border-radius:6px;margin-bottom:12px;overflow:hidden}
+.pct-bar-fill{height:100%;border-radius:6px;transition:width .2s var(--ease),background-color .2s}
+.modal-row{margin-bottom:8px;background:var(--surface);padding:12px;border-radius:var(--r);border:1px solid var(--line)}
+.modal-row-top{display:flex;align-items:center;gap:10px}
+.row-name{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis}
+.row-name.empty-name{color:var(--text3);font-weight:500}
+.row-pct{display:flex;align-items:center;gap:6px}
+.row-pct input[type=range]{width:96px;accent-color:var(--brand-strong)}
+.pct-num{width:62px;height:30px;padding:0 6px;border:1px solid var(--line-strong);border-radius:var(--r-sm);font-family:var(--mono);font-size:12px;text-align:right;background:var(--surface)}
+.pct-num:focus{outline:none;border-color:var(--brand);box-shadow:var(--ring)}
+.pct-unit{font-family:var(--mono);font-size:12px;color:var(--text3);margin-left:-2px}
+.pct-val{display:none}
+.split-act{height:28px;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line-strong);background:var(--surface);color:var(--text2);font-size:12px;font-weight:550;padding:0 8px;border-radius:var(--r-sm);white-space:nowrap;flex-shrink:0;transition:background-color .12s,color .12s,border-color .12s}
+.split-act:hover{background:var(--client-soft);color:var(--client);border-color:#c3d2f7}
+.split-act svg{width:14px;height:14px}
+.del-act{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:none;background:none;color:var(--text3);flex-shrink:0;border-radius:var(--r-sm);transition:background-color .12s,color .12s}
+.del-act:hover{background:var(--danger-soft);color:var(--danger)}
+.del-act svg{width:15px;height:15px}
+.extra-fields{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field-row{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field-row.full{grid-column:1/-1}
+.field-row label{font-size:11px;font-weight:550;color:var(--text2)}
+.field-row label.client-lbl{color:var(--client)}
+.field-row input.client-inp{border-color:#c3d2f7}
+.add-row-btn{width:100%;height:38px;display:flex;align-items:center;justify-content:center;gap:6px;border:1px dashed var(--line-strong);background:none;color:var(--text2);font-size:13px;font-weight:550;border-radius:var(--r);transition:background-color .15s,border-color .15s,color .15s}
+.add-row-btn:hover{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-ink)}
+.btn-primary.legacy,.btn-secondary.legacy{flex:1}
+.floor-opts{display:flex;flex-direction:column;gap:8px}
+.floor-opt{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);text-align:left;transition:border-color .15s,background-color .15s,transform .15s var(--ease)}
+.floor-opt:hover{border-color:var(--brand);background:var(--brand-soft)}
+.floor-opt .fo-ico{width:32px;height:32px;border-radius:8px;background:var(--surface2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--text2)}
+.floor-opt .fo-ico svg{width:16px;height:16px}
+.floor-opt .fo-name{flex:1;font-size:14px;font-weight:600}
+.floor-opt .fo-meta{font-size:12px;color:var(--text3)}
+.manage-row{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line)}
+.manage-row:last-child{border-bottom:none}
+.manage-title{font-size:13px;font-weight:600}
+.manage-sub{font-size:12px;color:var(--text2)}
+.check{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:500;cursor:pointer;padding:4px 0}
+.check input{width:16px;height:16px;accent-color:var(--brand-strong)}
+.msg-box{padding:9px 12px;border-radius:var(--r-sm);font-size:12px;font-weight:500;margin-bottom:14px;display:none}
+.msg-box.error{display:block;background:var(--danger-soft);border:1px solid var(--danger-line);color:var(--danger)}
+.msg-box.success{display:block;background:var(--ok-soft);border:1px solid var(--ok-line);color:var(--ok)}
+.radio-row{display:flex;gap:16px;margin-bottom:8px}
+.radio-row label{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text)}
+.radio-row input{accent-color:var(--brand-strong)}
+
+/* ── Panel actividades ───────────────────────────────────── */
+.act-panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 4px 10px;font-size:12px;color:var(--text2)}
+.act-panel-head b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.progress{height:4px;border-radius:4px;background:var(--bg);overflow:hidden;margin:0 4px 10px}
+.progress>i{display:block;height:100%;background:var(--ok);border-radius:4px}
+.pill-warn{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn-line);padding:1px 8px;border-radius:999px;font-size:11px;font-weight:550;white-space:nowrap}
+.act-check-item{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:var(--r-sm);margin-bottom:2px}
+.act-check-item:hover{background:var(--surface2)}
+.act-check-icon{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--line-strong);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:var(--surface)}
+.act-check-item.covered .act-check-icon{border-color:var(--ok);background:var(--ok);color:#fff}
+.act-check-item.fte-warn .act-check-icon{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
+.act-check-item.drawn-no-fte .act-check-icon{border-color:var(--danger);background:var(--danger);color:#fff}
+.act-check-item.covered .act-check-name{color:var(--text2)}
+.act-check-name{font-size:12px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.act-check-fte{font-family:var(--mono);font-size:11px;color:var(--text3);white-space:nowrap}
+.act-check-fte.has-fte{color:var(--warn)}
+
+/* ── Tooltip del plano ───────────────────────────────────── */
+.area-tip{display:none;position:fixed;z-index:50;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;box-shadow:var(--sh-2);width:260px;font-size:12px;line-height:1.5}
+.tip-title{display:flex;align-items:center;gap:7px;font-weight:620;font-size:13px;color:var(--text)}
+.tip-title i{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.tip-total{font-family:var(--mono);font-size:11px;color:var(--text2);margin:2px 0 6px 16px}
+.tip-act{border-top:1px solid var(--line);padding-top:5px;margin-top:5px}
+.tip-act-top{display:flex;justify-content:space-between;gap:10px}
+.tip-act-name{font-weight:550;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tip-act-name.cedido{color:var(--client)}
+.tip-act-val{font-family:var(--mono);font-size:11px;color:var(--text2);white-space:nowrap}
+.tip-client{color:var(--client);font-size:11px}
+.tip-obs{color:var(--text3);font-size:11px}
+
+/* ── Avisos ──────────────────────────────────────────────── */
+.toasts{position:fixed;bottom:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none}
+.toast{display:flex;align-items:flex-start;gap:10px;max-width:380px;padding:11px 14px;background:var(--text);color:#fff;border-radius:var(--r);box-shadow:var(--sh-3);font-size:13px;line-height:1.45;pointer-events:auto;animation:toastIn .22s var(--ease)}
+.toast svg{width:16px;height:16px;flex-shrink:0;margin-top:1px}
+.toast.error svg{color:#ff9d95}
+.toast.success svg{color:#7fdca0}
+.toast.info svg{color:var(--brand)}
+.toast.out{opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width:900px){
+  .launch-split{grid-template-columns:minmax(0,1fr);gap:28px}
+  .launch h1{font-size:28px}
+  .stats{margin-top:20px}
+  .user-meta{display:none}
+}
+@media (max-width:760px){
+  header{padding:0 10px;gap:8px}
+  .topbar-sep,#coords,.user-chip,.hide-sm{display:none!important}
+  .header-mid .crumb,.header-mid .crumb-sep:first-of-type{display:none}
+  .main{flex-direction:column-reverse}
+  .sidebar{width:100%;height:45%;border-right:none;border-top:1px solid var(--line)}
+  .cwrap{min-height:55%}
+  .picker-grid,.extra-fields{grid-template-columns:1fr}
+  .modal-row-top{flex-wrap:wrap}
+  .row-name{flex-basis:100%}
+  .modal-bg{padding:12px;align-items:flex-end}
+  #splash,#modoSplash,#funcSplash,#noAccessMsg{padding:28px 16px;justify-content:flex-start}
+  .tbar{bottom:10px;max-width:calc(100% - 20px);overflow-x:auto}
+  .zoom-slider{display:none}
+  .scalebar{display:none}
+  .toasts{left:16px;right:16px;align-items:stretch}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
 </style>
 </head>
 <body>
 
 <header>
-  <img src="logo-ocasa.svg" alt="OCASA" style="height:26px;cursor:pointer" onclick="goBack()">
-  <div class="header-mid" id="headerMid">Layout de Sucursales</div>
-  <div class="hmeta" id="coords" style="display:none">x: —  y: —</div>
-  <div class="hmeta" id="rectArea" style="display:none">— m²</div>
-  <button class="back-btn" id="backBtn" style="display:none" onclick="goBack()">← Volver</button>
+  <button class="brand" type="button" onclick="goBack()" aria-label="OCASA — volver al inicio"><img src="logo-ocasa.svg" alt="OCASA" width="96" height="22"></button>
+  <span class="topbar-sep" aria-hidden="true"></span>
+  <nav class="header-mid" id="headerMid" aria-label="Ubicación">Layout de sucursales</nav>
+  <div class="topbar-spacer"></div>
+  <div class="hmeta" id="rectArea" style="display:none" aria-live="polite">— m²</div>
+  <div class="hmeta" id="coords" style="display:none" title="Coordenadas del cursor sobre el plano">x —  y —</div>
+  <button class="btn btn-ghost btn-sm back-btn" type="button" id="backBtn" style="display:none" onclick="goBack()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    <span class="hide-sm">Cambiar sucursal</span>
+  </button>
   <div class="user-info" id="userInfo" style="display:none">
-    <button class="upload-plan-btn" id="managePlanBtn" style="display:none" onclick="openManageModal()" title="Ver y borrar planos cargados">
-      🗂 Gestionar planos
-    </button>
-    <button class="upload-plan-btn" id="wipePlanBtn" style="display:none;background:#fce8e8;color:#c0392b;border-color:#f5a0a0" onclick="wipeAllPlans()" title="Borrar todos los planos cargados en la plataforma">
-      🗑 Limpiar planos
-    </button>
-    <button class="upload-plan-btn" id="manageUsersBtn" style="display:none" onclick="openManageUsersModal()" title="Elegir a qué funciones accede cada usuario">
-      👥 Usuarios
-    </button>
-    <span class="user-role" id="userRoleBadge">usuario</span>
-    <span class="user-email" id="userEmailLabel"></span>
-    <button class="logout-btn" onclick="doLogout()">Salir</button>
+    <div class="menu" id="adminMenu" style="display:none">
+      <button class="btn btn-secondary btn-sm" type="button" id="adminMenuBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Administración" onclick="toggleMenu('adminMenu')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+        <span class="hide-sm">Administración</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="menu-pop" role="menu">
+        <button class="upload-plan-btn" role="menuitem" type="button" id="managePlanBtn" style="display:none" onclick="closeMenus();openManageModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+          Gestionar planos
+        </button>
+        <button class="upload-plan-btn" role="menuitem" type="button" id="manageUsersBtn" style="display:none" onclick="closeMenus();openManageUsersModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Usuarios y accesos
+        </button>
+        <div class="menu-sep" role="separator"></div>
+        <button class="upload-plan-btn danger" role="menuitem" type="button" id="wipePlanBtn" style="display:none" onclick="closeMenus();wipeAllPlans()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Borrar todos los planos…
+        </button>
+      </div>
+    </div>
+    <div class="user-chip">
+      <span class="avatar" id="userAvatar" aria-hidden="true">·</span>
+      <span class="user-meta"><span class="user-email" id="userEmailLabel" translate="no"></span><span class="user-role" id="userRoleBadge">usuario</span></span>
+    </div>
+    <button class="btn btn-ghost btn-sm logout-btn" type="button" onclick="doLogout()">Salir</button>
   </div>
 </header>
 
-<div id="splash">
-  <div class="splash-logo">OCASA</div>
-  <div class="splash-sub">Sistema de asignación de actividades por layout</div>
-  <div class="splash-card">
-    <h2>Seleccioná tu sucursal</h2>
-    <p>Elegí la sucursal sobre la que vas a trabajar. Vas a poder dibujar las áreas del layout y asignarles actividades de costeo.</p>
-    <div class="slabel">Sucursales disponibles</div>
-    <input type="text" id="sucSearch" class="suc-search" placeholder="Buscar por nombre o código..." oninput="filterSucursales(this.value)">
-<div class="suc-list" id="sucGrid"></div>
-    <button class="enter-btn" id="enterBtn" disabled onclick="enterLayout()">Ingresar al layout →</button>
-        <label class="enter-btn" style="background:#fff;color:var(--text2);border:1.5px solid var(--border);box-shadow:none;margin-top:8px;cursor:pointer;text-align:center;display:block;box-sizing:border-box">
-      📂 Cargar layout con actividades (.json)
-      <input type="file" accept=".json" style="display:none" onchange="cargarTrabajoSplash(this)">
-    </label>
-    <div class="coming-note">Las sucursales marcadas como "Próximamente" están en proceso de carga.</div>
-  </div>
-</div>
-
-<div id="modoSplash">
-  <div class="splash-logo">OCASA</div>
-  <div class="splash-sub">Sistema de asignación de actividades por layout</div>
-  <div class="splash-card">
-    <h2>Elegí qué vas a hacer</h2>
-    <p>Antes de abrir un plano, elegí con qué función vas a trabajar.</p>
-    <div class="suc-list">
-      <div class="suc-item modo-item" onclick="selectModo('costeo')">
-        <span class="suc-item-name">📊 Asignación de costeo</span>
-        <span class="modo-desc">Dibujar áreas sobre el plano y asignarles actividades y % de costeo.</span>
-      </div>
-      <div class="suc-item modo-item" onclick="selectModo('layout')">
-        <span class="suc-item-name">📐 Anotaciones de layout</span>
-        <span class="modo-desc">Pasillos, alturas, posiciones de espacios cedidos, zonas especiales. (en construcción)</span>
-      </div>
+<main id="modoSplash" class="launch">
+  <div class="launch-inner">
+    <p class="eyebrow">Layout de sucursales <span class="step">· paso 1 de 2</span></p>
+    <h1>¿Con qué vas a trabajar hoy?</h1>
+    <p class="lede">Elegí la función antes de abrir un plano. Después vas a elegir la sucursal y el piso.</p>
+    <div class="choice-grid">
+      <button class="choice" type="button" onclick="selectModo('costeo')">
+        <span class="choice-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="5" rx="1"/><rect x="12" y="8" width="3" height="9" rx="1"/><rect x="17" y="5" width="3" height="12" rx="1"/></svg></span>
+        <span class="choice-title">Asignación de costeo</span>
+        <span class="choice-desc">Dibujá áreas sobre el plano, asignales actividades y porcentajes, y exportá la tabla BASE.</span>
+        <span class="choice-go">Empezar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </button>
+      <button class="choice" type="button" onclick="selectModo('layout')">
+        <span class="tag warn">En construcción</span>
+        <span class="choice-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2M11.5 9.5l2-2M8.5 6.5l2-2M17.5 15.5l2-2"/></svg></span>
+        <span class="choice-title">Anotaciones de layout</span>
+        <span class="choice-desc">Marcá pasillos, alturas, espacios cedidos con sus posiciones y zonas especiales.</span>
+        <span class="choice-go">Empezar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </button>
     </div>
   </div>
-</div>
+</main>
 
-<div id="funcSplash">
-  <div class="splash-logo">OCASA</div>
-  <div class="splash-sub">Sistema de asignación de actividades por layout</div>
-  <div class="splash-card">
-    <h2>Elegí qué vas a hacer</h2>
-    <p>Tu usuario tiene acceso a más de una función. Elegí con cuál querés trabajar.</p>
-    <div class="slabel">Funciones disponibles</div>
-    <div class="suc-list" id="funcGrid"></div>
+<main id="splash" class="launch">
+  <div class="launch-inner launch-split">
+    <div class="launch-side">
+      <p class="eyebrow">Layout de sucursales <span class="step">· paso 2 de 2</span></p>
+      <h1>Elegí la sucursal</h1>
+      <p class="lede" id="splashLede">Buscala por nombre o código IATA. Las áreas que dibujes quedan guardadas en este navegador.</p>
+      <div class="stats" aria-live="polite">
+        <div class="stat"><div class="stat-v" id="statPlanos">—</div><div class="stat-k">sucursales con plano</div></div>
+        <div class="stat"><div class="stat-v" id="statAreas">—</div><div class="stat-k">áreas guardadas acá</div></div>
+      </div>
+      <div class="side-actions">
+        <label class="btn btn-secondary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          Abrir trabajo guardado (.json)
+          <input type="file" accept=".json" class="sr-only" onchange="cargarTrabajoSplash(this)">
+        </label>
+        <span class="side-note">Abre la sucursal del archivo con todas sus áreas por piso.</span>
+      </div>
+    </div>
+    <div class="splash-card">
+      <label class="slabel" for="sucSearch"><span>Sucursales</span><span class="num" id="sucCount"></span></label>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="sucSearch" class="suc-search" placeholder="Ej: Córdoba, MDZ…" autocomplete="off" spellcheck="false" oninput="filterSucursales(this.value)" onkeydown="sucSearchKey(event)">
+      </div>
+      <div class="suc-list" id="sucGrid" role="listbox" aria-label="Sucursales"></div>
+      <button class="enter-btn" type="button" id="enterBtn" disabled onclick="enterLayout()">Elegí una sucursal</button>
+      <div class="coming-note">Las marcadas como “Próximamente” todavía no tienen plano cargado.</div>
+    </div>
   </div>
-</div>
+</main>
 
-<div id="noAccessMsg">
-  <div class="splash-logo">OCASA</div>
-  <div class="splash-card" style="text-align:center">
-    <h2>Todavía no tenés funciones habilitadas</h2>
-    <p>Pedile a un administrador que te habilite el acceso a alguna función de la plataforma desde "👥 Usuarios".</p>
+<main id="funcSplash" class="launch">
+  <div class="launch-inner" style="max-width:520px">
+    <p class="eyebrow">Layout de sucursales</p>
+    <h1>Elegí la función</h1>
+    <p class="lede">Tu usuario tiene acceso a más de una función.</p>
+    <div class="splash-card" style="margin-top:28px">
+      <div class="slabel">Funciones disponibles</div>
+      <div class="suc-list" id="funcGrid" style="margin-bottom:0"></div>
+    </div>
   </div>
-</div>
+</main>
+
+<main id="noAccessMsg" class="launch">
+  <div class="launch-inner" style="max-width:480px">
+    <div class="splash-card" style="padding:32px;text-align:center">
+      <h2>Todavía no tenés funciones habilitadas</h2>
+      <p style="margin-top:6px">Pedile a un administrador que te dé acceso desde “Administración → Usuarios y accesos”.</p>
+    </div>
+  </div>
+</main>
 
 <div id="app">
   <div class="main">
-    <div class="sidebar">
+    <aside class="sidebar" aria-label="Panel del plano">
       <div class="ss">
-        <div class="instr" id="instrTxt">
-          <strong>Modo dibujo:</strong><br>
-          1. Clic = vértice del área<br>
-          2. Doble clic = cerrar polígono<br>
-          3. Asigná actividades y %
-        </div>
+        <div class="instr" id="instrTxt"></div>
       </div>
-      <div class="sidebar-tabs costeo-only">
-  <button class="stab active" id="tabAreas" onclick="switchTab('areas')">Áreas</button>
-  <button class="stab" id="tabActs" onclick="switchTab('acts')">Actividades</button>
-</div>
-<div class="slabel costeo-only" style="padding:8px 14px 4px" id="panelAreasLabel">Áreas definidas</div>
-      <div class="slist costeo-only" id="sList"><div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin áreas aún.</div></div>
-<div class="slist costeo-only" id="actPanel" style="display:none;padding:8px"></div>
-     <button class="expbtn costeo-only" style="background:#e05548" onclick="limpiarAreas()">🗑 Limpiar todas las áreas</button>
-<button class="expbtn costeo-only" onclick="exportXLSX()">↓ Exportar tabla BASE (.xlsx)</button>
-<button class="expbtn costeo-only" style="background:var(--brand-dark)" onclick="guardarTrabajo()">↓ Exportar actividades (.json)</button>
-<button class="expbtn costeo-only" style="background:#059669" onclick="exportSVG()">↓ Exportar plano (.svg)</button>
-      <div class="summary costeo-only">
-        <div class="srow"><span class="skey">Total asignado</span><span class="sval" id="totArea">0.00 m²</span></div>
-        <div class="srow"><span class="skey">Áreas</span><span class="sval" id="totN">0</span></div>
+      <div class="sidebar-tabs costeo-only" role="tablist" aria-label="Vista del panel">
+        <button class="stab active" type="button" role="tab" aria-selected="true" id="tabAreas" onclick="switchTab('areas')">Áreas <span class="count" id="tabAreasCount">0</span></button>
+        <button class="stab" type="button" role="tab" aria-selected="false" id="tabActs" onclick="switchTab('acts')">Actividades</button>
+      </div>
+      <div class="slabel costeo-only" id="panelAreasLabel"><span>Áreas de este piso</span></div>
+      <div class="slist costeo-only" id="sList"></div>
+      <div class="slist costeo-only" id="actPanel" style="display:none"></div>
+      <div class="sidebar-foot costeo-only">
+        <div class="summary">
+          <div class="srow"><span class="skey">Total asignado en el piso</span><span class="sval" id="totArea">0,00 m²</span></div>
+          <div class="srow"><span class="skey">Áreas</span><span class="sval" id="totN">0</span></div>
+        </div>
+        <button class="btn btn-primary btn-block" type="button" onclick="exportXLSX()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Exportar tabla BASE (.xlsx)
+        </button>
+        <div class="btn-row">
+          <button class="btn btn-secondary btn-sm" type="button" onclick="guardarTrabajo()" title="Guarda todas las áreas de todos los pisos para abrirlas después">Guardar .json</button>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="exportSVG()" title="Plano interactivo con las áreas, para compartir">Plano .svg</button>
+        </div>
+        <button class="btn btn-danger-ghost btn-sm btn-block" type="button" onclick="limpiarAreas()">Borrar todas las áreas del piso…</button>
       </div>
       <div id="layoutPanel">
-        <strong style="color:var(--text);display:block;margin-bottom:8px;padding:0 10px">📐 Anotaciones de layout</strong>
-        <div style="padding:0 10px 12px;color:var(--text2)">Tocá 🏷 para poner una etiqueta puntual (pasillo, altura), o ✏/▭ para marcar una zona (espacio cedido con posiciones, zona especial).</div>
-        <div class="slabel" style="padding:8px 10px 4px">Etiquetas (<span id="labelCount">0</span>)</div>
-        <div id="labelList"><div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin etiquetas aún.</div></div>
-        <div class="slabel" style="padding:8px 10px 4px">Zonas (<span id="zoneCount">0</span>)</div>
-        <div id="zoneList"><div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin zonas aún.</div></div>
+        <div class="panel-title">Anotaciones de layout</div>
+        <p>Usá <b>Etiqueta</b> para marcar un punto (pasillo, altura) o <b>Polígono / Rectángulo</b> para marcar una zona (espacio cedido, zona especial).</p>
+        <div class="layout-section">
+          <div class="slabel"><span>Etiquetas</span><span class="num" id="labelCount">0</span></div>
+          <div id="labelList"></div>
+        </div>
+        <div class="layout-section">
+          <div class="slabel"><span>Zonas</span><span class="num" id="zoneCount">0</span></div>
+          <div id="zoneList"></div>
+        </div>
       </div>
-    </div>
+    </aside>
     <div class="cwrap" id="cwrap">
-      <canvas id="fp"></canvas>
-      <div id="floorTabs" style="display:none;position:absolute;top:14px;left:14px;z-index:10;gap:6px;flex-wrap:wrap"></div>
-      <div class="tbar">
-        <div class="tbtn" onclick="zoom(1.2)" title="Zoom in">+</div>
-        <div class="tbtn" onclick="zoom(0.83)" title="Zoom out">−</div>
-<input type="range" class="zoom-slider" id="zoomSlider" min="1" max="100" value="50" oninput="zoomToSlider(this.value)" title="Zoom">
-        <div class="tbtn" onclick="resetView()" title="Encuadrar">⊡</div>
-        <div class="tbtn active-tool" id="btnD" onclick="setMode('draw')" title="Polígono">✏</div>
-        <div class="tbtn" id="btnR" onclick="setMode('rect')" title="Rectángulo">▭</div>
-        <div class="tbtn" id="btnPan" onclick="setMode('pan')" title="Mover (Espacio)">✋</div>
-        <div class="tbtn layout-only" id="btnLabel" onclick="setMode('label')" title="Etiqueta">🏷</div>
-        <div class="tbtn" onclick="undoVertex()" title="Deshacer vértice">↩</div>
+      <canvas id="fp" aria-label="Plano de la sucursal"></canvas>
+      <div id="floorTabs" class="floor-tabs" role="tablist" aria-label="Pisos" style="display:none"></div>
+      <div class="tbar" role="toolbar" aria-label="Herramientas del plano">
+        <button class="tbtn active-tool" type="button" id="btnD" onclick="setMode('draw')" aria-label="Polígono" data-tip="Polígono · P">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7 12 3l7 5-2 11H7Z"/><circle cx="5" cy="7" r="1.6" fill="currentColor"/><circle cx="12" cy="3" r="1.6" fill="currentColor"/><circle cx="19" cy="8" r="1.6" fill="currentColor"/><circle cx="17" cy="19" r="1.6" fill="currentColor"/><circle cx="7" cy="19" r="1.6" fill="currentColor"/></svg>
+        </button>
+        <button class="tbtn" type="button" id="btnR" onclick="setMode('rect')" aria-label="Rectángulo" data-tip="Rectángulo · R">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="1.5"/></svg>
+        </button>
+        <button class="tbtn layout-only" type="button" id="btnLabel" onclick="setMode('label')" aria-label="Etiqueta" data-tip="Etiqueta · E">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z"/><circle cx="7.5" cy="7.5" r="1.2" fill="currentColor"/></svg>
+        </button>
+        <button class="tbtn" type="button" id="btnPan" onclick="setMode('pan')" aria-label="Mover" data-tip="Mover · H o Espacio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-4 0M14 10V4a2 2 0 0 0-4 0v2M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+        </button>
+        <span class="tsep" aria-hidden="true"></span>
+        <button class="tbtn" type="button" onclick="undoVertex()" aria-label="Deshacer último vértice" data-tip="Deshacer · Ctrl+Z">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+        </button>
+        <span class="tsep" aria-hidden="true"></span>
+        <button class="tbtn" type="button" onclick="zoom(0.83)" aria-label="Alejar" data-tip="Alejar · −">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>
+        </button>
+        <input type="range" class="zoom-slider" id="zoomSlider" min="1" max="100" value="50" oninput="zoomToSlider(this.value)" aria-label="Zoom">
+        <button class="tbtn" type="button" onclick="zoom(1.2)" aria-label="Acercar" data-tip="Acercar · +">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>
+        </button>
+        <button class="tbtn" type="button" onclick="resetView()" aria-label="Encuadrar plano" data-tip="Encuadrar · F">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/></svg>
+        </button>
       </div>
       <div class="scalebar" id="scalebar">—</div>
     </div>
@@ -310,10 +616,10 @@ body.modo-layout #layoutPanel{display:block}
 </div>
 
 <div class="modal-bg" id="labelModalBg" style="display:none" onclick="if(event.target===this)closeLabelModal()">
-  <div class="modal" style="min-width:300px;max-width:340px">
-    <h3 id="labelModalTitle">Etiqueta</h3>
+  <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="labelModalTitle">
+    <h3 id="labelModalTitle" style="margin-bottom:14px">Etiqueta</h3>
     <div class="dropdown-section">
-      <label>Tipo</label>
+      <label for="labelTipo">Tipo</label>
       <select id="labelTipo">
         <option value="pasillo">Pasillo</option>
         <option value="altura">Altura</option>
@@ -321,89 +627,201 @@ body.modo-layout #layoutPanel{display:block}
       </select>
     </div>
     <div class="dropdown-section">
-      <label>Texto</label>
-      <input type="text" id="labelTexto" placeholder="Ej: Pasillo 3, H: 6.5m..." style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:6px;font-family:'Montserrat',sans-serif;font-size:12px;outline:none" onkeydown="if(event.key==='Enter')saveLabelModal()">
+      <label for="labelTexto">Texto</label>
+      <input type="text" id="labelTexto" autocomplete="off" placeholder="Ej: Pasillo 3, H: 6,5 m…" onkeydown="if(event.key==='Enter')saveLabelModal()">
     </div>
-    <div style="display:flex;gap:8px;margin-top:16px">
-      <button class="btn-secondary" style="flex:1" onclick="closeLabelModal()">Cancelar</button>
-      <button class="btn-secondary" id="labelDeleteBtn" style="display:none;color:#c0392b;border-color:#f5a0a0" onclick="deleteCurrentLabel()">Borrar</button>
-      <button class="btn-primary" onclick="saveLabelModal()">Guardar</button>
+    <div class="modal-footer">
+      <button class="btn btn-danger-ghost" type="button" id="labelDeleteBtn" style="display:none;margin-right:auto" onclick="deleteCurrentLabel()">Borrar</button>
+      <button class="btn btn-secondary" type="button" onclick="closeLabelModal()">Cancelar</button>
+      <button class="btn btn-primary" type="button" onclick="saveLabelModal()">Guardar etiqueta</button>
     </div>
   </div>
 </div>
 
 <div class="modal-bg" id="zoneModalBg" style="display:none" onclick="if(event.target===this)closeZoneModal()">
-  <div class="modal" style="min-width:320px;max-width:380px">
+  <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="zoneModalTitle">
     <h3 id="zoneModalTitle">Zona</h3>
-    <div class="sub" id="zoneModalSub"></div>
+    <div class="sub" id="zoneModalSub" style="margin-bottom:14px"></div>
     <div class="dropdown-section">
-      <label>Tipo</label>
+      <label for="zoneTipo">Tipo</label>
       <select id="zoneTipo" onchange="toggleZoneFields()">
         <option value="cedido">Espacio cedido</option>
         <option value="especial">Zona especial</option>
       </select>
     </div>
     <div class="dropdown-section" id="zonePosicionesWrap">
-      <label>Cantidad de posiciones</label>
-      <input type="number" id="zonePosiciones" min="0" placeholder="Ej: 12" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:6px;font-family:'Montserrat',sans-serif;font-size:12px;outline:none">
+      <label for="zonePosiciones">Cantidad de posiciones</label>
+      <input type="number" id="zonePosiciones" min="0" inputmode="numeric" placeholder="Ej: 12">
     </div>
     <div class="dropdown-section">
-      <label>Nota (opcional)</label>
-      <input type="text" id="zoneNota" placeholder="Ej: Cuarentena" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:6px;font-family:'Montserrat',sans-serif;font-size:12px;outline:none" onkeydown="if(event.key==='Enter')saveZoneModal()">
+      <label for="zoneNota">Nota (opcional)</label>
+      <input type="text" id="zoneNota" autocomplete="off" placeholder="Ej: Cuarentena…" onkeydown="if(event.key==='Enter')saveZoneModal()">
     </div>
-    <div style="display:flex;gap:8px;margin-top:16px">
-      <button class="btn-secondary" style="flex:1" onclick="closeZoneModal()">Cancelar</button>
-      <button class="btn-secondary" id="zoneDeleteBtn" style="display:none;color:#c0392b;border-color:#f5a0a0" onclick="deleteCurrentZone()">Borrar</button>
-      <button class="btn-primary" onclick="saveZoneModal()">Guardar</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-bg" id="floorSelBg" style="display:none">
-  <div class="modal" style="min-width:300px;max-width:360px;text-align:center">
-    <h3 id="floorSelTitle" style="margin-bottom:16px">Seleccioná el piso</h3>
-    <div id="floorSelBtns" style="display:flex;flex-direction:column;gap:8px"></div>
-    <button class="btn-secondary" style="width:100%;margin-top:14px" onclick="closeFSel()">← Volver</button>
-  </div>
-</div>
-  <div class="modal-bg" id="modalBg" style="display:none" onclick="if(event.target===this)closeModal(true)">
-  <div class="modal">
-    <h3 id="modalTitle">Área</h3>
-    <div class="sub" id="modalSub"></div>
-    <div id="overlapWarn" class="overlap-warn" style="display:none">⚠ Esta área se superpone con otra existente.</div>
-    
-    <div class="dropdown-section">
-      <label>Agrupación</label>
-      <select id="agrupSelect" onchange="updateFamilias()">
-        <option value="">— seleccionar —</option>
-      </select>
-    </div>
-    
-    <div class="dropdown-section">
-      <label>Familia</label>
-      <select id="familiaSelect" onchange="updateActividades()" disabled>
-        <option value="">— seleccionar —</option>
-      </select>
-    </div>
-    
-    <div class="dropdown-section">
-      <label>Actividad</label>
-      <select id="actSelect" onchange="selectActividad()" disabled>
-        <option value="">— seleccionar —</option>
-      </select>
-    </div>
-    
-    <div class="pct-bar"><div class="pct-bar-fill" id="pctFill" style="width:0%"></div></div>
-    <div id="actRows"></div>
-    <button class="add-row-btn" onclick="addActRow()">+ Agregar otra actividad</button>
     <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModal(true)">Cancelar</button>
-      <button class="btn-primary" onclick="saveModal()">Guardar área</button>
+      <button class="btn btn-danger-ghost" type="button" id="zoneDeleteBtn" style="display:none;margin-right:auto" onclick="deleteCurrentZone()">Borrar</button>
+      <button class="btn btn-secondary" type="button" onclick="closeZoneModal()">Cancelar</button>
+      <button class="btn btn-primary" type="button" onclick="saveZoneModal()">Guardar zona</button>
     </div>
   </div>
 </div>
 
+<div class="modal-bg" id="floorSelBg" style="display:none" onclick="if(event.target===this)closeFSel()">
+  <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="floorSelTitle">
+    <h3 id="floorSelTitle">Elegí el piso</h3>
+    <p class="desc" id="floorSelSub">Podés cambiar de piso después desde el plano.</p>
+    <div id="floorSelBtns" class="floor-opts"></div>
+    <div class="modal-footer"><button class="btn btn-secondary" type="button" onclick="closeFSel()">Cancelar</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg" style="display:none" onclick="if(event.target===this)closeModal(true)">
+  <div class="modal modal-lg modal-flex" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <div class="modal-head-main">
+        <h3 id="modalTitle">Área</h3>
+        <div class="sub" id="modalSub"></div>
+      </div>
+      <button class="icon-btn" type="button" onclick="closeModal(true)" aria-label="Cerrar sin guardar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="overlapWarn" class="overlap-warn" style="display:none">Esta área se superpone con otra existente. Revisá los vértices si no es intencional.</div>
+      <section class="picker" aria-labelledby="pickerHead">
+        <div class="picker-head" id="pickerHead">Agregar actividad <span>· elegí en orden</span></div>
+        <div class="picker-grid">
+          <label class="field"><span>Agrupación</span>
+            <select id="agrupSelect" onchange="updateFamilias()"><option value="">Seleccionar…</option></select>
+          </label>
+          <label class="field"><span>Familia</span>
+            <select id="familiaSelect" onchange="updateActividades()" disabled><option value="">Seleccionar…</option></select>
+          </label>
+          <label class="field"><span>Actividad</span>
+            <select id="actSelect" onchange="selectActividad()" disabled><option value="">Seleccionar…</option></select>
+          </label>
+        </div>
+      </section>
+      <div class="alloc-head"><span class="t">Reparto del área</span><span class="pct-total" id="pctTotal" aria-live="polite">0%</span></div>
+      <div class="pct-bar" aria-hidden="true"><div class="pct-bar-fill" id="pctFill" style="width:0%"></div></div>
+      <div id="actRows"></div>
+      <button class="add-row-btn" type="button" onclick="addActRow()">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Agregar otra actividad
+      </button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" type="button" onclick="closeModal(true)">Cancelar</button>
+      <button class="btn btn-primary" type="button" onclick="saveModal()">Guardar área</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="confirmBg" style="display:none">
+  <div class="modal modal-sm" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMsg">
+    <h3 id="confirmTitle">¿Confirmás?</h3>
+    <p class="desc" id="confirmMsg" style="margin:6px 0 0;white-space:pre-line"></p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" type="button" id="confirmCancel">Cancelar</button>
+      <button class="btn btn-danger" type="button" id="confirmOk">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 <script>
+
+// ── UI: avisos, confirmaciones, menús y foco en modales ────────────────────
+const ICONS={
+  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.4 3.6a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  split:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3h5v5M8 3H3v5M21 3l-7.5 7.5c-.9.9-1.5 2.2-1.5 3.5V21M3 3l7.5 7.5"/></svg>',
+  layers:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 10 5-10 5L2 7Z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></svg>',
+  shape:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7 12 3l7 5-2 11H7Z" stroke-dasharray="3 3"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
+  ok:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>',
+  err:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5h.01"/></svg>'
+};
+const NF2=new Intl.NumberFormat('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const NF1=new Intl.NumberFormat('es-AR',{minimumFractionDigits:1,maximumFractionDigits:1});
+function fmtM2(v,dec=1){return (dec===2?NF2:NF1).format(v||0)+' m²';}
+
+// Aviso no bloqueante (reemplaza a alert). type: info | success | error
+function toast(msg,type){
+  type=type||(/^(no |error|archivo inválido|todavía no|sucursal no)/i.test(msg)?'error':'info');
+  const box=document.getElementById('toasts');
+  if(!box){console.log(msg);return;}
+  const t=document.createElement('div');
+  t.className='toast '+type;
+  t.innerHTML=(type==='error'?ICONS.err:type==='success'?ICONS.ok:ICONS.info)+'<span></span>';
+  t.querySelector('span').textContent=msg;
+  box.appendChild(t);
+  const ttl=type==='error'?6000:3800;
+  setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),220);},ttl);
+}
+
+// Confirmación propia (reemplaza a confirm). Devuelve una promesa con true/false.
+function uiConfirm(msg,opts){
+  opts=opts||{};
+  return new Promise(resolve=>{
+    const bg=document.getElementById('confirmBg');
+    document.getElementById('confirmTitle').textContent=opts.title||'¿Confirmás?';
+    document.getElementById('confirmMsg').textContent=msg;
+    const ok=document.getElementById('confirmOk'),cancel=document.getElementById('confirmCancel');
+    ok.textContent=opts.ok||'Confirmar';
+    ok.className='btn '+(opts.danger===false?'btn-primary':'btn-danger');
+    const done=v=>{bg.style.display='none';ok.onclick=cancel.onclick=bg.onclick=null;bg._close=null;resolve(v);};
+    ok.onclick=()=>done(true);cancel.onclick=()=>done(false);
+    bg.onclick=e=>{if(e.target===bg) done(false);};
+    bg._close=()=>done(false);
+    bg.style.display='flex';
+  });
+}
+
+function toggleMenu(id){
+  const m=document.getElementById(id);const open=!m.classList.contains('open');
+  closeMenus();
+  if(open){m.classList.add('open');m.querySelector('[aria-haspopup]')?.setAttribute('aria-expanded','true');m.querySelector('[role=menuitem]:not([style*="display: none"]):not([style*="display:none"])')?.focus();}
+}
+function closeMenus(){document.querySelectorAll('.menu.open').forEach(m=>{m.classList.remove('open');m.querySelector('[aria-haspopup]')?.setAttribute('aria-expanded','false');});}
+document.addEventListener('click',e=>{if(!e.target.closest('.menu')) closeMenus();});
+
+// Modales: foco al abrir, volver el foco al cerrar, Escape para cerrar.
+const MODAL_CLOSERS={
+  confirmBg:()=>document.getElementById('confirmBg')._close?.(),
+  modalBg:()=>closeModal(true),labelModalBg:()=>closeLabelModal(),zoneModalBg:()=>closeZoneModal(),
+  floorSelBg:()=>closeFSel(),uploadModalBg:()=>closeUploadModal(),
+  manageModalBg:()=>closeManageModal(),manageUsersModalBg:()=>closeManageUsersModal()
+};
+function openModalEl(){return Object.keys(MODAL_CLOSERS).map(id=>document.getElementById(id)).filter(el=>el&&el.style.display!=='none').pop()||null;}
+function anyModalOpen(){return !!openModalEl();}
+document.addEventListener('DOMContentLoaded',()=>{
+  Object.keys(MODAL_CLOSERS).forEach(id=>{
+    const el=document.getElementById(id);if(!el) return;
+    let wasOpen=false;
+    new MutationObserver(()=>{
+      const open=el.style.display!=='none';
+      if(open&&!wasOpen){
+        el._returnFocus=document.activeElement;
+        setTimeout(()=>{
+          if(el.contains(document.activeElement)) return;
+          const f=id==='confirmBg'?el.querySelector('#confirmCancel'):el.querySelector('input:not([type=hidden]):not([type=radio]):not([type=range]):not([disabled]),select:not([disabled]),button.floor-opt,.modal-footer .btn-primary');
+          f?.focus();
+        },30);
+      }else if(!open&&wasOpen){
+        const r=el._returnFocus;if(r&&document.contains(r)&&r.focus) r.focus();
+      }
+      wasOpen=open;
+    }).observe(el,{attributes:true,attributeFilter:['style']});
+  });
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if(document.querySelector('.menu.open')){closeMenus();return;}
+    const m=openModalEl();
+    if(m){e.preventDefault();e.stopImmediatePropagation();MODAL_CLOSERS[m.id]();}
+  }
+},true);
 
 // ── Supabase Auth ──────────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://yxlseunaxhxozxbvzmhh.supabase.co';
@@ -427,6 +845,8 @@ async function initAuth(){
     document.getElementById('managePlanBtn').style.display = isAdmin ? 'flex' : 'none';
     document.getElementById('wipePlanBtn').style.display = isAdmin ? 'flex' : 'none';
     document.getElementById('manageUsersBtn').style.display = isAdmin ? 'flex' : 'none';
+    document.getElementById('adminMenu').style.display = isAdmin ? '' : 'none';
+    document.getElementById('userAvatar').textContent = (currentUser.email||'?').charAt(0);
     document.getElementById('userInfo').style.display = 'flex';
   }
   dataReadyPromise = (async()=>{
@@ -495,9 +915,9 @@ function buildFuncSplash(){
   document.getElementById('noAccessMsg').style.display='none';
   const grid = document.getElementById('funcGrid');
   grid.innerHTML = misFuncionalidades.map(f =>
-    `<div class="suc-item" onclick="selectFuncionalidad('${f.id}')">
-       <span class="suc-item-name" style="font-weight:700">${f.nombre}</span>
-     </div>`
+    `<button type="button" class="suc-item" onclick="selectFuncionalidad('${f.id}')">
+       <span class="suc-item-name" style="font-weight:600">${escHtml(f.nombre)}</span>
+     </button>`
   ).join('');
   document.getElementById('funcSplash').style.display='flex';
 }
@@ -518,7 +938,7 @@ function closeManageUsersModal(){
 }
 async function renderManageUsersList(){
   const box = document.getElementById('manageUsersList');
-  box.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">Cargando...</div>';
+  box.innerHTML = '<div class="list-empty">Cargando usuarios…</div>';
   try{
     if(!FUNCIONALIDADES_CATALOGO.length){
       const {data: catalogo, error: eCat} = await sb.from('funcionalidades').select('*').order('orden');
@@ -531,27 +951,27 @@ async function renderManageUsersList(){
     if(e2) throw e2;
     const grantSet = new Set((grants||[]).map(g => g.user_id+'|'+g.funcionalidad_id));
     if(!profiles || !profiles.length){
-      box.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">No hay usuarios.</div>';
+      box.innerHTML = '<div class="list-empty">Todavía no hay usuarios registrados.</div>';
       return;
     }
     if(!FUNCIONALIDADES_CATALOGO.length){
-      box.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">Todavía no hay funciones creadas en la tabla "funcionalidades".</div>';
+      box.innerHTML = '<div class="list-empty">Todavía no hay funciones creadas en la tabla “funcionalidades”.</div>';
       return;
     }
     box.innerHTML = profiles.map(p => {
       const checks = FUNCIONALIDADES_CATALOGO.map(f => {
         const checked = grantSet.has(p.id+'|'+f.id);
-        return `<label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;cursor:pointer">
-          <input type="checkbox" ${checked?'checked':''} onchange="toggleUserFuncionalidad('${p.id}','${f.id}',this.checked)"> ${f.nombre}
+        return `<label class="check">
+          <input type="checkbox" ${checked?'checked':''} onchange="toggleUserFuncionalidad('${p.id}','${f.id}',this.checked)"> ${escHtml(f.nombre)}
         </label>`;
       }).join('');
-      return `<div style="padding:10px 4px;border-bottom:1px solid var(--border)">
-        <div style="font-size:12px;font-weight:700;margin-bottom:6px">${p.nombre || p.email}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:12px">${checks}</div>
+      return `<div class="manage-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+        <div class="manage-title" translate="no">${escHtml(p.nombre || p.email)}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 16px">${checks}</div>
       </div>`;
     }).join('');
   }catch(e){
-    box.innerHTML = `<div style="padding:16px;text-align:center;color:#c0392b;font-size:12px">No se pudo cargar: ${e.message}</div>`;
+    box.innerHTML = `<div class="msg-box error">No se pudo cargar la lista: ${escHtml(e.message)}. Probá de nuevo en unos segundos.</div>`;
   }
 }
 async function toggleUserFuncionalidad(userId, funcId, granted){
@@ -564,7 +984,7 @@ async function toggleUserFuncionalidad(userId, funcId, granted){
       if(error) throw error;
     }
   }catch(e){
-    alert('No se pudo actualizar el acceso: '+e.message);
+    toast('No se pudo actualizar el acceso: '+e.message,'error');
     renderManageUsersList();
   }
 }
@@ -631,24 +1051,24 @@ function closeManageModal(){
 function renderManageList(){
   const box=document.getElementById('manageList');
   if(!uploadedPlans.length){
-    box.innerHTML='<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">Todavía no se subió ningún plano.</div>';
+    box.innerHTML='<div class="list-empty">Todavía no se subió ningún plano.</div>';
     return;
   }
   box.innerHTML=[...uploadedPlans].sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||'')||(a.piso_nombre||'').localeCompare(b.piso_nombre||'')).map(row=>{
     const fecha=row.created_at?new Date(row.created_at).toLocaleDateString('es-AR'):'';
-    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--border)">
+    return `<div class="manage-row">
       <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:700">${row.iata} — ${row.nombre}</div>
-        <div style="font-size:11px;color:var(--text2)">${row.piso_nombre}${fecha?' · '+fecha:''}</div>
+        <div class="manage-title"><span style="font-family:var(--mono);font-weight:500;color:var(--brand-strong)">${escHtml(row.iata)}</span> ${escHtml(row.nombre)}</div>
+        <div class="manage-sub">${escHtml(row.piso_nombre)}${fecha?' · '+fecha:''}</div>
       </div>
-      <button onclick="deleteUploadedPlan('${row.id}')" style="padding:7px 12px;background:#fce8e8;color:#c0392b;border:1.5px solid #f5a0a0;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Borrar</button>
+      <button type="button" class="btn btn-danger-ghost btn-sm" onclick="deleteUploadedPlan('${row.id}')">Borrar</button>
     </div>`;
   }).join('');
 }
 async function deleteUploadedPlan(id){
   const row=uploadedPlans.find(r=>String(r.id)===String(id));
   if(!row) return;
-  if(!confirm(`¿Borrar el plano "${row.piso_nombre}" de ${row.nombre}? No se puede deshacer.`)) return;
+  if(!await uiConfirm(`Se borra el archivo y el registro. No se puede deshacer.`,{title:`¿Borrar el plano “${row.piso_nombre}” de ${row.nombre}?`,ok:'Borrar plano'})) return;
   try{
     if(row.archivo_path){
       const {error:rmError}=await sb.storage.from('planos').remove([row.archivo_path]);
@@ -656,19 +1076,19 @@ async function deleteUploadedPlan(id){
     }
     const {error:delError}=await sb.from('sucursales_upload').delete().eq('id', row.id);
     if(delError) throw new Error(delError.message);
-    alert('Plano borrado. La página se va a recargar.');
-    location.reload();
+    toast('Plano borrado. Recargando…','success');
+    setTimeout(()=>location.reload(),1200);
   }catch(e){
-    alert('No se pudo borrar el plano: '+e.message);
+    toast('No se pudo borrar el plano: '+e.message,'error');
   }
 }
 
 // Borra TODOS los planos subidos a Supabase (archivo + registro), para arrancar
 // de cero y volver a cargar solo los que estén confirmados como actualizados.
 async function wipeAllPlans(){
-  if(!confirm('Esto va a borrar TODOS los planos subidos a la plataforma (archivos y registros en Supabase). No se puede deshacer.\n\n¿Confirmás que querés limpiar todo?')) return;
+  if(!await uiConfirm('Se borran todos los archivos y registros de planos subidos a la plataforma, para todos los usuarios. No se puede deshacer.',{title:'¿Borrar TODOS los planos?',ok:'Borrar todos'})) return;
   const btn=document.getElementById('wipePlanBtn');
-  btn.disabled=true;btn.textContent='Borrando...';
+  btn.disabled=true;const btnHTML=btn.innerHTML;btn.textContent='Borrando…';
   try{
     const {data:rows, error:selError}=await sb.from('sucursales_upload').select('id,archivo_path');
     if(selError) throw new Error(selError.message);
@@ -681,18 +1101,18 @@ async function wipeAllPlans(){
       const {error:delError}=await sb.from('sucursales_upload').delete().not('id','is',null);
       if(delError) throw new Error(delError.message);
     }
-    alert(`Listo. Se borraron ${paths.length} plano(s) de la plataforma. La página se va a recargar.`);
-    location.reload();
+    toast(`Listo: se borraron ${paths.length} plano(s). Recargando…`,'success');
+    setTimeout(()=>location.reload(),1500);
   }catch(e){
-    alert('No se pudo limpiar los planos: '+e.message);
-    btn.disabled=false;btn.textContent='🗑 Limpiar planos';
+    toast('No se pudieron borrar los planos: '+e.message,'error');
+    btn.disabled=false;btn.innerHTML=btnHTML;
   }
 }
 
 function openUploadModal(){
   // Poblar select de sucursales existentes
   const sel = document.getElementById('uploadSucSelect');
-  sel.innerHTML = '<option value="">— Seleccioná una sucursal —</option>';
+  sel.innerHTML = '<option value="">Seleccioná una sucursal…</option>';
   [...SUCURSALES].sort((a,b)=>a.name.localeCompare(b.name)).forEach(s=>{
     const o = document.createElement('option');
     o.value = s.code; o.textContent = `${s.code} — ${s.name}`;
@@ -719,12 +1139,8 @@ function toggleSucType(val){
 
 function showUploadMsg(text, type){
   const el = document.getElementById('uploadMsgBox');
-  if(!text){ el.style.display='none'; return; }
-  el.textContent = text;
-  el.style.display = 'block';
-  el.style.background = type==='error'?'#fce8e8':'#f0fdf4';
-  el.style.border = '1.5px solid '+(type==='error'?'#f5a0a0':'#86efac');
-  el.style.color = type==='error'?'#c0392b':'#166534';
+  el.className = 'msg-box'+(text?' '+(type==='error'?'error':'success'):'');
+  el.textContent = text||'';
 }
 
 async function submitPlanUpload(){
@@ -749,7 +1165,7 @@ async function submitPlanUpload(){
   if(!file){ showUploadMsg('Seleccioná un archivo DXF.','error'); return; }
 
   const btn = document.getElementById('uploadSubmitBtn');
-  btn.disabled=true; btn.textContent='Subiendo...';
+  btn.disabled=true; btn.textContent='Subiendo…';
 
   try{
     const filePath = `${iata}/${Date.now()}_${file.name}`;
@@ -870,8 +1286,8 @@ const SUCURSALES=[
   {code:'VDM',name:'Viedma',available:true},
   {code:'VMA',name:'Villa María',available:true}
 ];
-const AREA_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0','#b5341a','#057a3a','#c45c00','#1a4db5'];
-const ACT_COLORS=['#33c2ca','#e05548','#f0a500','#7c3aed','#0a9e7a','#e07a0a','#0a7ae0','#a805e0'];
+const AREA_COLORS=['#1fb3bc','#e05548','#e2a000','#2f6fe0','#12a150','#ea7317','#d6457f','#0b7d8a','#9a5a2a','#5f7a12','#1d3f8f','#52607a'];
+const ACT_COLORS=['#1fb3bc','#e05548','#e2a000','#2f6fe0','#12a150','#ea7317','#d6457f','#0b7d8a'];
 
 let currentSuc=null,DXF=null,currentFloor=null;
   let actData={};
@@ -898,6 +1314,8 @@ function switchTab(tab){
   const isAreas=tab==='areas';
   document.getElementById('tabAreas').classList.toggle('active',isAreas);
   document.getElementById('tabActs').classList.toggle('active',!isAreas);
+  document.getElementById('tabAreas').setAttribute('aria-selected',isAreas);
+  document.getElementById('tabActs').setAttribute('aria-selected',!isAreas);
   document.getElementById('panelAreasLabel').style.display=isAreas?'':'none';
   document.getElementById('sList').style.display=isAreas?'':'none';
   document.getElementById('actPanel').style.display=isAreas?'none':'';
@@ -915,25 +1333,25 @@ function getAssignedActivities(){
 function renderActPanel(){
   const panel=document.getElementById('actPanel');
   if(!currentSuc||EXCLUDED_ACT.includes(currentSuc.code)){
-    panel.innerHTML='<div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin datos para esta sucursal.</div>';return;
+    panel.innerHTML='<div class="empty"><strong>Sin datos de actividades</strong>Esta sucursal no tiene actividades de costeo cargadas.</div>';return;
   }
   const data=actData[currentSuc.code];
   if(!data||!data.length){
-    panel.innerHTML='<div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin actividades registradas para esta sucursal.</div>';return;
+    panel.innerHTML='<div class="empty"><strong>Sin actividades registradas</strong>No hay actividades cargadas para esta sucursal.</div>';return;
   }
   const assigned=getAssignedActivities();
   const covered=data.filter(d=>assigned.has(d.actividad.toUpperCase())).length;
   const warns=data.filter(d=>d.tieneFte&&!assigned.has(d.actividad.toUpperCase())).length;
-  const warnBadge=warns>0?`<span style="background:#fff3cd;color:#856404;padding:1px 7px;border-radius:10px;font-size:9px;font-weight:700">${warns} pendientes con FTE</span>`:'';
-  panel.innerHTML=`<div class="act-panel-head"><span>${covered}/${data.length} asignadas</span>${warnBadge}</div>`+
+  const warnBadge=warns>0?`<span class="pill-warn">${warns} con FTE sin asignar</span>`:'';
+  panel.innerHTML=`<div class="act-panel-head"><span title="Contando todos los pisos de la sucursal"><b>${covered} de ${data.length}</b> asignadas</span>${warnBadge}</div><div class="progress" aria-hidden="true"><i style="width:${data.length?Math.round(covered/data.length*100):0}%"></i></div>`+
     data.map(d=>{
       const isCov=assigned.has(d.actividad.toUpperCase());
       const isWarn=d.tieneFte&&!isCov;
       const cls=isCov?(d.tieneFte?'covered':'drawn-no-fte'):isWarn?'fte-warn':'';
 const icon=isCov?(d.tieneFte?'✓':'✕'):isWarn?'!':'';
-      const short=d.actividad.length>26?d.actividad.slice(0,24)+'..':d.actividad;
-      const fteStr=d.fteVal>0?`${d.fteVal} FTE`:'';
-      return `<div class="act-check-item ${cls}"><div class="act-check-icon">${icon}</div><div class="act-check-name" title="${d.actividad}">${short}</div><div class="act-check-fte ${d.fteVal>0?'has-fte':''}">${fteStr}</div></div>`;
+      const fteStr=d.fteVal>0?`${d.fteVal} FTE`:'';
+      const tip=isCov?(d.tieneFte?'Asignada':'Dibujada, pero la actividad no tiene FTE'):isWarn?'Tiene FTE y todavía no está en ningún área':'Sin asignar';
+      return `<div class="act-check-item ${cls}" title="${escHtml(d.actividad)} — ${tip}"><div class="act-check-icon" aria-hidden="true">${icon}</div><div class="act-check-name">${escHtml(d.actividad)}</div><div class="act-check-fte ${d.fteVal>0?'has-fte':''}">${fteStr}</div></div>`;
     }).join('');
 }
 // Los planos ya no viven hardcodeados en el código: se cargan dinámicamente
@@ -953,60 +1371,92 @@ const wrap=document.getElementById('cwrap');
 function buildSplash(){
   document.getElementById('splash').style.display='flex';
   const list=document.getElementById('sucGrid');
+  const enterBtn=document.getElementById('enterBtn');
   function renderList(filter){
     list.innerHTML='';
-    const q=(filter||'').toLowerCase();
+    const q=(filter||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    const norm=t=>t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
     // Se listan todas las sucursales habilitadas; las que todavía no tienen
     // plano subido a Supabase se muestran como "Próximamente" (no seleccionables).
     const habilitadas=SUCURSALES.filter(s=>s.available);
-    const shown=habilitadas.filter(s=>!q||s.name.toLowerCase().includes(q)||s.code.toLowerCase().includes(q))
+    const conPlanoTot=habilitadas.filter(s=>MULTI_FLOOR[s.code]&&MULTI_FLOOR[s.code].length).length;
+    const shown=habilitadas.filter(s=>!q||norm(s.name).includes(q)||norm(s.code).includes(q))
       .sort((a,b)=>{
         const pa=MULTI_FLOOR[a.code]&&MULTI_FLOOR[a.code].length?0:1;
         const pb=MULTI_FLOOR[b.code]&&MULTI_FLOOR[b.code].length?0:1;
         return pa-pb||a.name.localeCompare(b.name);
       });
+    let totAreas=0;
+    habilitadas.forEach(s=>{(MULTI_FLOOR[s.code]||[]).forEach(f=>{try{const d=localStorage.getItem(`areas_${s.code}_${f.id}`);if(d)totAreas+=JSON.parse(d).length;}catch(e){}});});
+    document.getElementById('statPlanos').textContent=conPlanoTot;
+    document.getElementById('statAreas').textContent=totAreas;
+    document.getElementById('sucCount').textContent=q?`${shown.length} de ${habilitadas.length}`:`${habilitadas.length}`;
     if(!shown.length){
-      const msg=habilitadas.length?'No se encontraron sucursales.':'No hay sucursales habilitadas.';
-      list.innerHTML=`<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">${msg}</div>`;
+      const msg=habilitadas.length?`No hay sucursales que coincidan con “${escHtml(filter)}”.`:'No hay sucursales habilitadas.';
+      list.innerHTML=`<div class="list-empty">${msg}</div>`;
       return;
     }
     shown.forEach(s=>{
-      const item=document.createElement('div');
+      const item=document.createElement('button');
+      item.type='button';
       const floors=MULTI_FLOOR[s.code];
       const conPlano=floors&&floors.length;
       let _n=0;if(conPlano) floors.forEach(f=>{try{const d=localStorage.getItem(`areas_${s.code}_${f.id}`);if(d)_n+=JSON.parse(d).length;}catch(e){}});
-      item.className='suc-item'+(conPlano?'':' suc-item-soon');
-      if(!conPlano) item.style.opacity='.55';
-      const _bc=_n>0?' has-data':'';
-      const _bt=!conPlano?'Próximamente':(_n>0?`${_n} área${_n>1?'s':''}`:'Disponible');
-      item.innerHTML=`<span class="suc-item-code">${s.code}</span><span class="suc-item-name">${s.name}</span><span class="suc-item-badge${_bc}">${_bt}</span>`;
+      item.className='suc-item'+(conPlano?'':' suc-item-soon')+(currentSuc&&currentSuc.code===s.code?' active':'');
+      item.setAttribute('role','option');
+      item.setAttribute('aria-selected',currentSuc&&currentSuc.code===s.code?'true':'false');
+      const _bc=_n>0?' has-data':(!conPlano?' soon':'');
+      const pisos=conPlano&&floors.length>1?` · ${floors.length} pisos`:'';
+      const _bt=!conPlano?'Próximamente':(_n>0?`${_n} área${_n>1?'s':''}${pisos}`:`Sin áreas${pisos}`);
+      item.innerHTML=`<span class="suc-item-code" translate="no">${s.code}</span><span class="suc-item-name">${escHtml(s.name)}</span><span class="suc-item-badge${_bc}">${_bt}</span>`;
       item.onclick=()=>{
-        if(!conPlano){ alert('Esta sucursal todavía no tiene un plano cargado.'); return; }
-        document.querySelectorAll('.suc-item').forEach(i=>i.classList.remove('active'));
-        item.classList.add('active');
+        if(!conPlano){ toast(`${s.name} todavía no tiene un plano cargado.`,'info'); return; }
+        list.querySelectorAll('.suc-item').forEach(i=>{i.classList.remove('active');i.setAttribute('aria-selected','false');});
+        item.classList.add('active');item.setAttribute('aria-selected','true');
         currentSuc=s;
-        document.getElementById('enterBtn').disabled=false;
+        enterBtn.disabled=false;
+        enterBtn.textContent=`Abrir ${s.name} →`;
+      };
+      item.ondblclick=()=>{ if(conPlano) enterLayout(); };
+      item.onkeydown=e=>{
+        if(e.key==='ArrowDown'){e.preventDefault();(item.nextElementSibling||item).focus();}
+        else if(e.key==='ArrowUp'){e.preventDefault();(item.previousElementSibling||document.getElementById('sucSearch')).focus();}
+        else if(e.key==='Enter'&&conPlano&&currentSuc&&currentSuc.code===s.code){e.preventDefault();enterLayout();}
       };
       list.appendChild(item);
     });
   }
-  renderList();
+  renderList(document.getElementById('sucSearch').value);
   window.filterSucursales=renderList;
+  setTimeout(()=>{if(matchMedia('(pointer:fine)').matches) document.getElementById('sucSearch').focus();},50);
+}
+// Teclado en el buscador: flecha abajo entra a la lista; Enter abre la única coincidencia.
+function sucSearchKey(e){
+  const list=document.getElementById('sucGrid');
+  if(e.key==='ArrowDown'){e.preventDefault();list.querySelector('.suc-item')?.focus();}
+  else if(e.key==='Enter'){
+    const items=[...list.querySelectorAll('.suc-item:not(.suc-item-soon)')];
+    if(items.length===1){items[0].click();enterLayout();}
+    else if(items.length) items[0].focus();
+  }
 }
 
 function closeFSel(){
   document.getElementById('floorSelBg').style.display='none';
   const btn=document.getElementById('enterBtn');
-  btn.disabled=false;btn.textContent='Ingresar al layout →';
+  btn.disabled=!currentSuc;btn.textContent=currentSuc?`Abrir ${currentSuc.name} →`:'Elegí una sucursal';
 }
 function showFloorSelector(){
   const floors=MULTI_FLOOR[currentSuc.code];
-  document.getElementById('floorSelTitle').textContent=currentSuc.name+' — Seleccioná el piso';
+  document.getElementById('floorSelTitle').textContent=`${currentSuc.name}: elegí el piso`;
   const btnsDiv=document.getElementById('floorSelBtns');
   btnsDiv.innerHTML='';
   floors.forEach(f=>{
+    let n=0;try{const d=localStorage.getItem(`areas_${currentSuc.code}_${f.id}`);if(d)n=JSON.parse(d).length;}catch(e){}
     const b=document.createElement('button');
-    b.className='enter-btn';b.style.margin='0';b.textContent=f.name;
+    b.type='button';b.className='floor-opt';
+    b.innerHTML=`<span class="fo-ico">${ICONS.layers}</span><span class="fo-name"></span><span class="fo-meta">${n?`${n} área${n>1?'s':''}`:'Sin áreas'}</span>`;
+    b.querySelector('.fo-name').textContent=f.name;
     b.onclick=()=>enterFloor(f);
     btnsDiv.appendChild(b);
   });
@@ -1016,10 +1466,11 @@ function renderFloorTabs(){
   const floors=currentSuc?MULTI_FLOOR[currentSuc.code]:null;
   const div=document.getElementById('floorTabs');
   if(!floors){div.style.display='none';return;}
+  if(floors.length<2){div.style.display='none';return;}
   div.style.display='flex';
   div.innerHTML=floors.map(f=>{
     const active=currentFloor&&currentFloor.id===f.id;
-    return `<button onclick="switchFloor('${f.id}')" style="padding:6px 14px;border:1.5px solid ${active?'var(--brand)':'var(--border)'};background:${active?'var(--brand)':'#fff'};color:${active?'#fff':'var(--text2)'};font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;border-radius:8px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.06)">${f.name}</button>`;
+    return `<button type="button" role="tab" aria-selected="${!!active}" class="floor-tab${active?' active':''}" onclick="switchFloor('${f.id}')">${escHtml(f.name)}</button>`;
   }).join('');
 }
 async function getFloorUrl(floor){
@@ -1035,15 +1486,15 @@ async function getFloorUrl(floor){
 async function enterFloor(floor){
   document.getElementById('floorSelBg').style.display='none';
   const btn=document.getElementById('enterBtn');
-  btn.disabled=true;btn.textContent='Cargando plano...';
+  btn.disabled=true;btn.textContent='Cargando plano…';
   try{
     const url=await getFloorUrl(floor);
     const resp=await fetch(url);
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     DXF=parseDXF(await resp.text(),{fielAlCad:!!floor.fielAlCad});
   }catch(e){
-    alert('No se pudo cargar el plano: '+e.message);
-    btn.disabled=false;btn.textContent='Ingresar al layout →';
+    toast('No se pudo cargar el plano ('+e.message+'). Revisá la conexión y probá de nuevo.','error');
+    btn.disabled=false;btn.textContent=`Abrir ${currentSuc.name} →`;
     document.getElementById('floorSelBg').style.display='flex';
     return;
   }
@@ -1051,7 +1502,7 @@ async function enterFloor(floor){
   document.getElementById('splash').style.display='none';
   const app=document.getElementById('app');
   app.style.display='flex';app.style.flexDirection='column';
-  document.getElementById('headerMid').innerHTML=`Layout · <span>${currentSuc.name}</span> — ${floor.name}`;
+  document.getElementById('headerMid').innerHTML=`<button type="button" class="crumb" onclick="goBack()">Sucursales</button><span class="crumb-sep" aria-hidden="true">/</span><span class="crumb-cur">${escHtml(currentSuc.name)}</span>${(MULTI_FLOOR[currentSuc.code]||[]).length>1?'':`<span class="crumb-sep" aria-hidden="true">/</span><span class="crumb-floor">${escHtml(floor.name)}</span>`}`;
   document.getElementById('coords').style.display='block';
   document.getElementById('backBtn').style.display='flex';
   areas=[];colIdx=0;selectedArea=null;
@@ -1063,7 +1514,7 @@ async function enterFloor(floor){
   try{const savedZ=localStorage.getItem(`layoutzones_${currentSuc.code}_${floor.id}`);if(savedZ) layoutZones=JSON.parse(savedZ);}catch(e){}
   renderZoneList();
     renderFloorTabs();initCanvas();
-  if(MODO==='layout') setMode('pan');
+  setMode(MODO==='layout'?'pan':'draw');
 }
 async function switchFloor(floorId){
   if(currentFloor&&currentFloor.id===floorId) return;
@@ -1075,9 +1526,9 @@ async function switchFloor(floorId){
     const resp=await fetch(url);
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     DXF=parseDXF(await resp.text(),{fielAlCad:!!floor.fielAlCad});
-  }catch(e){alert('No se pudo cargar el plano: '+e.message);return;}
+  }catch(e){toast('No se pudo cargar el plano ('+e.message+'). Revisá la conexión y probá de nuevo.','error');return;}
   currentFloor=floor;
-  document.getElementById('headerMid').innerHTML=`Layout · <span>${currentSuc.name}</span> — ${floor.name}`;
+  document.getElementById('headerMid').innerHTML=`<button type="button" class="crumb" onclick="goBack()">Sucursales</button><span class="crumb-sep" aria-hidden="true">/</span><span class="crumb-cur">${escHtml(currentSuc.name)}</span>${(MULTI_FLOOR[currentSuc.code]||[]).length>1?'':`<span class="crumb-sep" aria-hidden="true">/</span><span class="crumb-floor">${escHtml(floor.name)}</span>`}`;
   areas=[];colIdx=0;selectedArea=null;curPts=[];canvas._snapPt=null;
   try{const saved=localStorage.getItem(`areas_${currentSuc.code}_${floor.id}`);if(saved){areas=JSON.parse(saved);colIdx=areas.length;}}catch(e){}
   layoutLabels=[];editingLabelIdx=-1;
@@ -1092,7 +1543,7 @@ async function enterLayout(){
   if(!currentSuc) return;
   const floors=MULTI_FLOOR[currentSuc.code];
   if(!floors||!floors.length){
-    alert('Todavía no hay ningún plano cargado para '+currentSuc.name+'.');
+    toast('Todavía no hay ningún plano cargado para '+currentSuc.name+'.','info');
     return;
   }
   if(floors.length===1){ enterFloor(floors[0]); return; }
@@ -1100,18 +1551,22 @@ async function enterLayout(){
 }
 
 function goBack(){
+  if(!window.filterSucursales) return; // todavía no se eligió la función
   document.getElementById('app').style.display='none';
   document.getElementById('splash').style.display='flex';
   document.getElementById('coords').style.display='none';
   document.getElementById('backBtn').style.display='none';
-  document.getElementById('headerMid').innerHTML='Layout de Sucursales';
+  document.getElementById('headerMid').innerHTML='Layout de sucursales';
+  document.getElementById('rectArea').style.display='none';
+  document.getElementById('areaTooltip').style.display='none';
   areas=[];curPts=[];selectedArea=null;colIdx=0;canvas._snapPt=null;currentFloor=null;document.getElementById('floorTabs').style.display='none';updateList();
   layoutLabels=[];editingLabelIdx=-1;renderLabelList();
   layoutZones=[];editingZoneIdx=-1;renderZoneList();
   document.querySelectorAll('.suc-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('enterBtn').disabled=true;
-  document.getElementById('enterBtn').textContent='Ingresar al layout →';
+  document.getElementById('enterBtn').textContent='Elegí una sucursal';
   currentSuc=null;
+  if(window.filterSucursales) window.filterSucursales(document.getElementById('sucSearch').value);
 }
 
 function initCanvas(){
@@ -1124,10 +1579,11 @@ function toS(wx,wy){const bb=DXF.bbox;return[(wx-bb.min_x)*scale+ox,(bb.max_y-wy
 function toW(sx,sy){const bb=DXF.bbox;return[(sx-ox)/scale+bb.min_x,bb.max_y-(sy-oy)/scale];}
 
 function resetView(){
-  const bb=DXF.bbox,m=40;
+  // Márgenes: arriba quedan las pestañas de piso y abajo la barra de herramientas.
+  const bb=DXF.bbox,m=32,top=64,bottom=76;
   const dxfW=bb.max_x-bb.min_x,dxfH=bb.max_y-bb.min_y;
-  scale=Math.min((canvas.width-m*2)/dxfW,(canvas.height-m*2)/dxfH);baseScale=scale;
-  ox=(canvas.width-dxfW*scale)/2;oy=(canvas.height-dxfH*scale)/2;syncSlider();render();
+  scale=Math.min((canvas.width-m*2)/dxfW,(canvas.height-top-bottom)/dxfH);baseScale=scale;
+  ox=(canvas.width-dxfW*scale)/2;oy=top+(canvas.height-top-bottom-dxfH*scale)/2;syncSlider();render();
 }
 function zoom(f){const cx=canvas.width/2,cy=canvas.height/2;ox=cx-(cx-ox)*f;oy=cy-(cy-oy)*f;scale*=f;syncSlider();render();}
 
@@ -1189,9 +1645,9 @@ function render(){
     const sminY=Math.min(...spts.map(p=>p[1])),smaxY=Math.max(...spts.map(p=>p[1]));
     const maxW=Math.max(24,(smaxX-sminX)-16);
     let fs=Math.max(10,Math.min(14,scale*6));
-    ctx.font=`800 ${fs}px 'Montserrat',sans-serif`;
+    ctx.font=`600 ${fs}px 'Geist',system-ui,sans-serif`;
     let tw=ctx.measureText(label).width;
-    while(tw>maxW&&fs>8){fs-=0.5;ctx.font=`800 ${fs}px 'Montserrat',sans-serif`;tw=ctx.measureText(label).width;}
+    while(tw>maxW&&fs>8){fs-=0.5;ctx.font=`600 ${fs}px 'Geist',system-ui,sans-serif`;tw=ctx.measureText(label).width;}
     let dispLabel=label;
     if(tw>maxW){
       while(dispLabel.length>1&&ctx.measureText(dispLabel+'…').width>maxW) dispLabel=dispLabel.slice(0,-1);
@@ -1206,7 +1662,7 @@ function render(){
       ctx.fillStyle='#ffffff';
       ctx.beginPath();ctx.roundRect(lx-tw/2-6,ly-fs*1.45-4,tw+12,fs+8,4);ctx.fill();
       ctx.strokeStyle=a.color;ctx.lineWidth=1.5;ctx.setLineDash([]);ctx.stroke();
-      ctx.fillStyle=a.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(dispLabel,lx,ly-fs*0.9);
+      ctx.fillStyle='#121718';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(dispLabel,lx,ly-fs*0.9);
     });
   });
   DXF.polys.forEach(p=>{if(!p.pts||p.pts.length<2) return;ctx.beginPath();p.pts.forEach((pt,i)=>{const[sx,sy]=toS(pt[0],pt[1]);i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);});if(p.closed) ctx.closePath();ctx.strokeStyle=p.layer==='Contorno'?'#1a1a1a':'#2a3a3b';ctx.lineWidth=(p.pts.length===4&&p.closed)?0.6:1.3;ctx.setLineDash([]);ctx.stroke();});
@@ -1222,7 +1678,7 @@ function render(){
     const zcx=z.pts.reduce((s,p)=>s+p[0],0)/z.pts.length,zcy=z.pts.reduce((s,p)=>s+p[1],0)/z.pts.length;
     const[zlx,zly]=toS(zcx,zcy);
     const zlabel=zoneLabel(z);
-    ctx.font=`800 12px 'Montserrat',sans-serif`;
+    ctx.font=`600 12px 'Geist',system-ui,sans-serif`;
     const ztw=ctx.measureText(zlabel).width;
     ctx.fillStyle='#ffffff';
     ctx.beginPath();ctx.roundRect(zlx-ztw/2-7,zly-14,ztw+14,24,5);ctx.fill();
@@ -1233,7 +1689,7 @@ function render(){
     const[lsx,lsy]=toS(l.x,l.y);
     const col=LABEL_COLORS[l.tipo]||LABEL_COLORS.otro;
     ctx.beginPath();ctx.arc(lsx,lsy,5,0,2*Math.PI);ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
-    const fs=11;ctx.font=`700 ${fs}px 'Montserrat',sans-serif`;
+    const fs=11;ctx.font=`600 ${fs}px 'Geist',system-ui,sans-serif`;
     const tw=ctx.measureText(l.text).width;
     const bx=lsx+9,by=lsy-fs/2-4;
     ctx.fillStyle='#ffffff';
@@ -1259,14 +1715,14 @@ function openModal(pts,existing,aIdx){
   document.getElementById('overlapWarn').style.display=checkOverlap(pts,editingIdx)?'block':'none';
   const defaultName=editingIdx>=0?getCustomName(areas[editingIdx]):'';
   document.getElementById('modalTitle').innerHTML=`<input id="areaNameInp" value="${defaultName.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" placeholder="Nombre del área (opcional)">`;
-  document.getElementById('modalSub').textContent='Superficie total: '+polyArea(pts).toFixed(2)+' m²';
+  document.getElementById('modalSub').textContent='Superficie total: '+fmtM2(polyArea(pts),2)+(editingIdx>=0?'':' · nueva área');
   setTimeout(()=>document.getElementById('areaNameInp')?.select(),50);
   modalRows=existing?existing.activities.map(a=>({name:a.name,pct:a.pct,client:a.client||'',piso:a.piso||'PB',etapa:a.etapa||'',observacion:a.observacion||'',otrosMode:!!(a.client&&!CLIENTES.find(c=>c.codigo===a.client))})):[{name:'',pct:100,client:'',piso:'PB',etapa:'',observacion:'',otrosMode:false}];
   const agrupSel=document.getElementById('agrupSelect');
-  agrupSel.innerHTML='<option value="">— seleccionar —</option>'+Object.keys(ACTIVIDADES_ESTRUCTURA).map(a=>`<option value="${a}">${a}</option>`).join('');
-  document.getElementById('familiaSelect').innerHTML='<option value="">— seleccionar —</option>';
+  agrupSel.innerHTML='<option value="">Seleccionar…</option>'+Object.keys(ACTIVIDADES_ESTRUCTURA).map(a=>`<option value="${a}">${a}</option>`).join('');
+  document.getElementById('familiaSelect').innerHTML='<option value="">Seleccionar…</option>';
   document.getElementById('familiaSelect').disabled=true;
-  document.getElementById('actSelect').innerHTML='<option value="">— seleccionar —</option>';
+  document.getElementById('actSelect').innerHTML='<option value="">Seleccionar…</option>';
   document.getElementById('actSelect').disabled=true;
   renderModalRows();
   document.getElementById('modalBg').style.display='flex';
@@ -1276,20 +1732,20 @@ function updateFamilias(){
   const agrup=document.getElementById('agrupSelect').value;
   const famSel=document.getElementById('familiaSelect');
   const actSel=document.getElementById('actSelect');
-  if(!agrup){famSel.disabled=true;actSel.disabled=true;famSel.innerHTML='<option value="">— seleccionar —</option>';actSel.innerHTML='<option value="">— seleccionar —</option>';return;}
+  if(!agrup){famSel.disabled=true;actSel.disabled=true;famSel.innerHTML='<option value="">Seleccionar…</option>';actSel.innerHTML='<option value="">Seleccionar…</option>';return;}
   famSel.disabled=false;
-  famSel.innerHTML='<option value="">— seleccionar —</option>'+Object.keys(ACTIVIDADES_ESTRUCTURA[agrup]).map(f=>`<option value="${f}">${f}</option>`).join('');
+  famSel.innerHTML='<option value="">Seleccionar…</option>'+Object.keys(ACTIVIDADES_ESTRUCTURA[agrup]).map(f=>`<option value="${f}">${f}</option>`).join('');
   actSel.disabled=true;
-  actSel.innerHTML='<option value="">— seleccionar —</option>';
+  actSel.innerHTML='<option value="">Seleccionar…</option>';
 }
 
 function updateActividades(){
   const agrup=document.getElementById('agrupSelect').value;
   const fam=document.getElementById('familiaSelect').value;
   const actSel=document.getElementById('actSelect');
-  if(!agrup||!fam){actSel.disabled=true;actSel.innerHTML='<option value="">— seleccionar —</option>';return;}
+  if(!agrup||!fam){actSel.disabled=true;actSel.innerHTML='<option value="">Seleccionar…</option>';return;}
   actSel.disabled=false;
-  actSel.innerHTML='<option value="">— seleccionar —</option>'+ACTIVIDADES_ESTRUCTURA[agrup][fam].map(a=>`<option value="${a}">${a}</option>`).join('');
+  actSel.innerHTML='<option value="">Seleccionar…</option>'+ACTIVIDADES_ESTRUCTURA[agrup][fam].map(a=>`<option value="${a}">${a}</option>`).join('');
 }
 
 function selectActividad(){
@@ -1302,55 +1758,70 @@ function selectActividad(){
 
 function renderModalRows(){
   const c=document.getElementById('actRows');c.innerHTML='';
-  const tot=modalRows.reduce((s,r)=>s+r.pct,0);
-  document.getElementById('pctFill').style.width=Math.min(100,tot)+'%';
-  document.getElementById('pctFill').style.background=tot>100?'#e05548':tot===100?'#33c2ca':'#f0a500';
+  renderPctBar();
+  if(!modalRows.length){c.innerHTML='<div class="list-empty" style="padding:16px">Sin actividades. Elegí una arriba.</div>';return;}
+  const PISOS=['PB','1RO','2DO','3RO','SUBSUELO','ENTREPISO'];
   modalRows.forEach((row,i)=>{
     const d=document.createElement('div');d.className='modal-row';
+    const id='r'+i;
     d.innerHTML=`
       <div class="modal-row-top">
-        <div style="flex:1;font-size:11px;font-weight:600;color:var(--text)">${row.name||'Sin actividad'}</div>
-        <input type="range" min="1" max="100" value="${row.pct}" oninput="modalRows[${i}].pct=+this.value;this.nextElementSibling.textContent=this.value+'%';renderPctBar()">
-        <span class="pct-val">${row.pct}%</span>
-        ${row.name?`<button class="split-act" onclick="splitActRow(${i})" title="Repartir esta actividad entre dos clientes (una fila por cliente en el Excel)">⑂ Dividir por cliente</button>`:''}
-        <button class="del-act" onclick="modalRows.splice(${i},1);renderModalRows()">×</button>
+        <div class="row-name${row.name?'':' empty-name'}" title="${escHtml(row.name).replace(/"/g,'&quot;')}">${row.name?escHtml(row.name):'Elegí la actividad arriba'}</div>
+        <div class="row-pct">
+          <input type="range" min="1" max="100" value="${row.pct}" aria-label="Porcentaje del área" oninput="setRowPct(${i},this.value,this)">
+          <input type="number" class="pct-num" min="1" max="100" inputmode="numeric" value="${row.pct}" aria-label="Porcentaje del área" oninput="setRowPct(${i},this.value,this)"><span class="pct-unit">%</span>
+        </div>
+        ${row.name?`<button type="button" class="split-act" onclick="splitActRow(${i})" title="Repartir esta actividad entre dos clientes (una fila por cliente en el Excel)">${ICONS.split}Dividir</button>`:''}
+        <button type="button" class="del-act" onclick="modalRows.splice(${i},1);renderModalRows()" aria-label="Quitar actividad">${ICONS.trash}</button>
       </div>
       <div class="extra-fields">
         <div class="field-row">
-          <label class="piso-lbl">Piso</label>
-          <select class="sm" onchange="modalRows[${i}].piso=this.value" style="flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;padding:5px 7px;border-radius:6px;outline:none">
-            ${['PB','1RO','2DO','3RO','SUBSUELO','ENTREPISO'].map(p=>`<option value="${p}"${p===row.piso?' selected':''}>${p}</option>`).join('')}
-                   </select>
-        </div>
-        <div class="field-row">
-          <label class="piso-lbl">Etapa</label>
-          <input type="text" placeholder="Si se deja vacío: nombre del área" value="${escHtml(row.etapa||'').replace(/"/g,'&quot;')}" oninput="modalRows[${i}].etapa=this.value" style="flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;padding:5px 7px;border-radius:6px;outline:none">
-        </div>
-        <div class="field-row">
-          <label class="piso-lbl">Observación</label>
-          <input type="text" placeholder="Observación..." value="${row.observacion||''}" oninput="modalRows[${i}].observacion=this.value" style="flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;padding:5px 7px;border-radius:6px;outline:none">
-        </div>
-                  <div class="field-row">
-          <label class="client-lbl">Cliente</label>
-          <select class="sm" style="flex:1;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;padding:5px 7px;border-radius:6px;outline:none" onchange="if(this.value==='__otros__'){modalRows[${i}].client='';modalRows[${i}].otrosMode=true;renderModalRows();}else{modalRows[${i}].client=this.value;modalRows[${i}].otrosMode=false;renderModalRows();}">
-            <option value="">— seleccionar —</option>
-            ${CLIENTES.map(c=>`<option value="${c.codigo}"${c.codigo===row.client?' selected':''}>${c.descripcion}</option>`).join('')}
-            <option value="__otros__"${row.otrosMode?' selected':''}>✏ Otros (escribir a mano)</option>
+          <label for="${id}c" class="client-lbl">Cliente</label>
+          <select id="${id}c" onchange="if(this.value==='__otros__'){modalRows[${i}].client='';modalRows[${i}].otrosMode=true;renderModalRows();}else{modalRows[${i}].client=this.value;modalRows[${i}].otrosMode=false;renderModalRows();}">
+            <option value="">Sin cliente</option>
+            ${CLIENTES.map(c=>`<option value="${c.codigo}"${c.codigo===row.client?' selected':''}>${escHtml(c.descripcion)}</option>`).join('')}
+            <option value="__otros__"${row.otrosMode?' selected':''}>Otro (escribir a mano)…</option>
           </select>
         </div>
-        <div class="field-row" style="display:${row.otrosMode?'flex':'none'}">
-          <label></label>
-          <input class="client-inp" type="text" placeholder="Nombre del cliente..." value="${row.client}" oninput="modalRows[${i}].client=this.value" style="flex:1;background:#fff;border:1.5px solid #a805e0;color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;padding:5px 8px;border-radius:6px;outline:none">
+        <div class="field-row">
+          <label for="${id}p">Piso</label>
+          <select id="${id}p" onchange="modalRows[${i}].piso=this.value">
+            ${PISOS.map(p=>`<option value="${p}"${p===row.piso?' selected':''}>${p}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field-row full" style="display:${row.otrosMode?'flex':'none'}">
+          <label for="${id}o" class="client-lbl">Nombre del cliente</label>
+          <input id="${id}o" class="client-inp" type="text" autocomplete="off" placeholder="Ej: Laboratorio Sur…" value="${escHtml(row.client).replace(/"/g,'&quot;')}" oninput="modalRows[${i}].client=this.value">
+        </div>
+        <div class="field-row">
+          <label for="${id}e">Etapa</label>
+          <input id="${id}e" type="text" autocomplete="off" placeholder="Vacío = nombre del área" value="${escHtml(row.etapa||'').replace(/"/g,'&quot;')}" oninput="modalRows[${i}].etapa=this.value">
+        </div>
+        <div class="field-row">
+          <label for="${id}b">Observación</label>
+          <input id="${id}b" type="text" autocomplete="off" placeholder="Opcional…" value="${escHtml(row.observacion||'').replace(/"/g,'&quot;')}" oninput="modalRows[${i}].observacion=this.value">
         </div>
       </div>`;
     c.appendChild(d);
   });
 }
 
+// Sincroniza el slider y el número de % de una fila.
+function setRowPct(i,v,src){
+  v=Math.max(1,Math.min(100,parseInt(v,10)||1));
+  modalRows[i].pct=v;
+  const row=src.closest('.row-pct');
+  row.querySelectorAll('input').forEach(inp=>{if(inp!==src) inp.value=v;});
+  renderPctBar();
+}
+
 function renderPctBar(){
   const tot=modalRows.reduce((s,r)=>s+r.pct,0);
-  document.getElementById('pctFill').style.width=Math.min(100,tot)+'%';
-  document.getElementById('pctFill').style.background=tot>100?'#e05548':tot===100?'#33c2ca':'#f0a500';
+  const fill=document.getElementById('pctFill');
+  fill.style.width=Math.min(100,tot)+'%';
+  fill.style.background=tot>100?'var(--danger)':tot===100?'var(--ok)':'#e2a000';
+  const t=document.getElementById('pctTotal');
+  if(t){t.textContent=tot===100?'100% ✓':tot>100?`${tot}% · sobran ${tot-100}%`:`${tot}% · faltan ${100-tot}%`;t.className='pct-total'+(tot===100?' ok':tot>100?' over':'');}
 }
 
 // Duplica una actividad del área para repartirla entre clientes: misma
@@ -1369,18 +1840,18 @@ function addActRow(){
   const used=modalRows.reduce((s,r)=>s+r.pct,0);
   modalRows.push({name:'',pct:Math.max(1,100-used),client:'',piso:'PB',etapa:'',observacion:'',otrosMode:false});
   document.getElementById('agrupSelect').value='';
-  document.getElementById('familiaSelect').innerHTML='<option value="">— seleccionar —</option>';
+  document.getElementById('familiaSelect').innerHTML='<option value="">Seleccionar…</option>';
   document.getElementById('familiaSelect').disabled=true;
-  document.getElementById('actSelect').innerHTML='<option value="">— seleccionar —</option>';
+  document.getElementById('actSelect').innerHTML='<option value="">Seleccionar…</option>';
   document.getElementById('actSelect').disabled=true;
   renderModalRows();
 }
 
-function saveModal(){
+async function saveModal(){
   const valid=modalRows.filter(r=>r.name.trim());
-  if(!valid.length){alert('Agregá al menos una actividad');return;}
+  if(!valid.length){toast('Elegí al menos una actividad en Agrupación → Familia → Actividad.','error');document.getElementById('agrupSelect').focus();return;}
   const tot=valid.reduce((s,r)=>s+r.pct,0);
-  if(tot!==100&&!confirm('Los porcentajes suman '+tot+'% (no 100%). ¿Guardar igual?')) return;
+  if(tot!==100&&!await uiConfirm('Lo habitual es que el reparto sume 100%. Podés guardar igual y corregirlo después.',{title:'Los porcentajes suman '+tot+'%',ok:'Guardar igual',danger:false})) return;
   const pts=pendingPts,totalArea=polyArea(pts);
   const areaName=document.getElementById('areaNameInp')?.value.trim()||'';
   const color=editingIdx>=0?areas[editingIdx].color:AREA_COLORS[colIdx%AREA_COLORS.length];
@@ -1397,26 +1868,30 @@ function closeModal(cancel){if(cancel) curPts=[];pendingPts=null;editingIdx=-1;c
 
 function updateList(){
   const list=document.getElementById('sList');
-  if(!areas.length){list.innerHTML='<div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin áreas aún.</div>';document.getElementById('totArea').textContent='0.00 m²';document.getElementById('totN').textContent='0';return;}
+  document.getElementById('tabAreasCount').textContent=areas.length;
+  if(!areas.length){
+    list.innerHTML=`<div class="empty">${ICONS.shape}<strong>Todavía no hay áreas en este piso</strong>Dibujá un polígono (P) o un rectángulo (R) sobre el plano y asignale actividades.</div>`;
+    document.getElementById('totArea').textContent=fmtM2(0,2);document.getElementById('totN').textContent='0';return;
+  }
   list.innerHTML=areas.map((a,i)=>{
     const isSel=selectedArea===i;
     const actHtml=a.activities.map((act,ai)=>{
-      const m2=(act.pct/100*a.totalArea).toFixed(1);
-      const col=isCedido(act.name)?'#a805e0':ACT_COLORS[ai%ACT_COLORS.length];
-      const short=act.name.length>22?act.name.slice(0,20)+'..':act.name;
-      return `<div class="act-row"><div class="act-dot" style="background:${col}"></div><div class="act-name" title="${act.name}">${short}</div><div class="act-pct">${act.pct}%</div><div class="act-m2">${m2} m²</div>${act.client?`<div class="act-client" title="${act.client}">${getClientDesc(act.client)}</div>`:''}</div>`;
+      const m2=act.pct/100*a.totalArea;
+      const col=isCedido(act.name)?'var(--client)':ACT_COLORS[ai%ACT_COLORS.length];
+      return `<div class="act-row"><div class="act-dot" style="background:${col}"></div><div class="act-name" title="${escHtml(act.name)}">${escHtml(act.name)}</div><div class="act-pct">${act.pct}%</div><div class="act-m2">${fmtM2(m2)}</div>${act.client?`<div class="act-client" title="${escHtml(getClientDesc(act.client))}">${escHtml(getClientDesc(act.client))}</div>`:''}</div>`;
     }).join('');
-    const displayName=getAreaLabel(a);
-    return `<div class="sitem${isSel?' selected':''}" id="sitem${i}"><div class="sitem-header" onclick="selectArea(${i})"><div class="scolor-dot" style="background:${a.color}"></div><div class="sname" style="color:${a.color}">${displayName}</div><div class="sarea-badge">${a.totalArea.toFixed(1)} m²</div><button class="sdel sedit" onclick="event.stopPropagation();editArea(${i})" title="Editar">✎</button><button class="sdel" onclick="event.stopPropagation();deleteArea(${i})" title="Eliminar">✕</button></div><div class="sitem-acts">${actHtml}</div></div>`;
+    const displayName=escHtml(getAreaLabel(a));
+    return `<div class="sitem${isSel?' selected':''}" id="sitem${i}"><div class="sitem-header" role="button" tabindex="0" aria-pressed="${isSel}" onclick="selectArea(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectArea(${i})}" ondblclick="editArea(${i})"><div class="scolor-dot" style="background:${a.color}"></div><div class="sname" title="${displayName}">${displayName}</div><div class="sarea-badge">${fmtM2(a.totalArea)}</div><button type="button" class="sdel sedit" onclick="event.stopPropagation();editArea(${i})" aria-label="Editar área">${ICONS.edit}</button><button type="button" class="sdel" onclick="event.stopPropagation();deleteArea(${i})" aria-label="Eliminar área">${ICONS.trash}</button></div><div class="sitem-acts">${actHtml}</div></div>`;
   }).join('');
-  document.getElementById('totArea').textContent=areas.reduce((s,a)=>s+a.totalArea,0).toFixed(2)+' m²';
+  document.getElementById('totArea').textContent=fmtM2(areas.reduce((s,a)=>s+a.totalArea,0),2);
   document.getElementById('totN').textContent=areas.length;
-    if(document.getElementById('actPanel').style.display!=='none') renderActPanel();
+  if(document.getElementById('actPanel').style.display!=='none') renderActPanel();
+  if(selectedArea!==null) document.getElementById('sitem'+selectedArea)?.scrollIntoView({block:'nearest'});
 }
 
 function selectArea(i){selectedArea=selectedArea===i?null:i;updateList();render();}
 function editArea(i){selectedArea=i;openModal(areas[i].pts,areas[i],i);updateList();render();}
-function deleteArea(i){if(!confirm('¿Eliminar "'+getAreaLabel(areas[i])+'"?')) return;areas.splice(i,1);if(selectedArea===i) selectedArea=null;else if(selectedArea>i) selectedArea--;updateList();saveAreas();render();}
+async function deleteArea(i){if(!await uiConfirm(fmtM2(areas[i].totalArea)+' · '+areas[i].activities.length+' actividad(es). No se puede deshacer.',{title:'¿Eliminar “'+getAreaLabel(areas[i])+'”?',ok:'Eliminar área'})) return;areas.splice(i,1);if(selectedArea===i) selectedArea=null;else if(selectedArea>i) selectedArea--;updateList();saveAreas();render();}
 
 // ── Etiquetas de layout (modo "Anotaciones de layout") ──────────────────────
 // Puntos con texto libre sobre el plano — número de pasillo, altura, etc.
@@ -1429,8 +1904,8 @@ function saveLayoutLabels(){if(!currentSuc||!currentFloor)return;localStorage.se
 function renderLabelList(){
   const list=document.getElementById('labelList');
   document.getElementById('labelCount').textContent=layoutLabels.length;
-  if(!layoutLabels.length){list.innerHTML='<div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin etiquetas aún.</div>';return;}
-  list.innerHTML=layoutLabels.map((l,i)=>`<div class="label-item"><div class="label-dot" style="background:${LABEL_COLORS[l.tipo]||LABEL_COLORS.otro}"></div><div style="flex:1;min-width:0;cursor:pointer" onclick="editLabel(${i})"><div class="label-text">${l.text}</div><div class="label-tipo">${l.tipo}</div></div><button class="label-del" onclick="event.stopPropagation();deleteLabelDirect(${i})" title="Eliminar">✕</button></div>`).join('');
+  if(!layoutLabels.length){list.innerHTML='<div class="list-empty" style="padding:12px 4px;text-align:left">Todavía no hay etiquetas. Elegí la herramienta Etiqueta (E) y hacé clic en el plano.</div>';return;}
+  list.innerHTML=layoutLabels.map((l,i)=>`<div class="label-item"><div class="label-dot" style="background:${LABEL_COLORS[l.tipo]||LABEL_COLORS.otro}"></div><div style="flex:1;min-width:0;cursor:pointer" role="button" tabindex="0" onclick="editLabel(${i})" onkeydown="if(event.key==='Enter'){event.preventDefault();editLabel(${i})}"><div class="label-text">${escHtml(l.text)}</div><div class="label-tipo">${l.tipo}</div></div><button type="button" class="label-del" onclick="event.stopPropagation();deleteLabelDirect(${i})" aria-label="Eliminar etiqueta">${ICONS.x}</button></div>`).join('');
 }
 function openLabelModal(pt,idx){
   editingLabelIdx=(idx===undefined||idx===null)?-1:idx;
@@ -1449,7 +1924,7 @@ function closeLabelModal(){
 }
 function saveLabelModal(){
   const texto=document.getElementById('labelTexto').value.trim();
-  if(!texto){alert('Escribí un texto para la etiqueta.');return;}
+  if(!texto){toast('Escribí un texto para la etiqueta.','error');document.getElementById('labelTexto').focus();return;}
   const tipo=document.getElementById('labelTipo').value;
   if(editingLabelIdx>=0) layoutLabels[editingLabelIdx]={...layoutLabels[editingLabelIdx],text:texto,tipo};
   else if(pendingLabelPt) layoutLabels.push({x:pendingLabelPt[0],y:pendingLabelPt[1],text:texto,tipo});
@@ -1463,8 +1938,8 @@ function deleteCurrentLabel(){
   closeLabelModal();
 }
 function editLabel(i){openLabelModal(null,i);}
-function deleteLabelDirect(i){
-  if(!confirm('¿Eliminar la etiqueta "'+layoutLabels[i].text+'"?'))return;
+async function deleteLabelDirect(i){
+  if(!await uiConfirm('',{title:'¿Eliminar la etiqueta “'+layoutLabels[i].text+'”?',ok:'Eliminar'}))return;
   layoutLabels.splice(i,1);
   saveLayoutLabels();renderLabelList();render();
 }
@@ -1483,8 +1958,8 @@ function saveLayoutZones(){if(!currentSuc||!currentFloor)return;localStorage.set
 function renderZoneList(){
   const list=document.getElementById('zoneList');
   document.getElementById('zoneCount').textContent=layoutZones.length;
-  if(!layoutZones.length){list.innerHTML='<div style="padding:10px;color:var(--text3);font-size:11px;font-weight:500">Sin zonas aún.</div>';return;}
-  list.innerHTML=layoutZones.map((z,i)=>`<div class="label-item"><div class="label-dot" style="background:${ZONE_COLORS[z.tipo]||ZONE_COLORS.especial}"></div><div style="flex:1;min-width:0;cursor:pointer" onclick="editZone(${i})"><div class="label-text">${zoneLabel(z)}</div><div class="label-tipo">${z.tipo==='cedido'?'ESPACIO CEDIDO':'ZONA ESPECIAL'}</div></div><button class="label-del" onclick="event.stopPropagation();deleteZoneDirect(${i})" title="Eliminar">✕</button></div>`).join('');
+  if(!layoutZones.length){list.innerHTML='<div class="list-empty" style="padding:12px 4px;text-align:left">Todavía no hay zonas. Dibujá un polígono (P) o un rectángulo (R).</div>';return;}
+  list.innerHTML=layoutZones.map((z,i)=>`<div class="label-item"><div class="label-dot" style="background:${ZONE_COLORS[z.tipo]||ZONE_COLORS.especial}"></div><div style="flex:1;min-width:0;cursor:pointer" role="button" tabindex="0" onclick="editZone(${i})" onkeydown="if(event.key==='Enter'){event.preventDefault();editZone(${i})}"><div class="label-text">${escHtml(zoneLabel(z))}</div><div class="label-tipo">${z.tipo==='cedido'?'ESPACIO CEDIDO':'ZONA ESPECIAL'}</div></div><button type="button" class="label-del" onclick="event.stopPropagation();deleteZoneDirect(${i})" aria-label="Eliminar zona">${ICONS.x}</button></div>`).join('');
 }
 function toggleZoneFields(){
   document.getElementById('zonePosicionesWrap').style.display=document.getElementById('zoneTipo').value==='cedido'?'block':'none';
@@ -1525,8 +2000,8 @@ function deleteCurrentZone(){
   editingZoneIdx=-1;pendingZonePts=null;render();
 }
 function editZone(i){openZoneModal(null,i);}
-function deleteZoneDirect(i){
-  if(!confirm('¿Eliminar la zona "'+zoneLabel(layoutZones[i])+'"?'))return;
+async function deleteZoneDirect(i){
+  if(!await uiConfirm('',{title:'¿Eliminar la zona “'+zoneLabel(layoutZones[i])+'”?',ok:'Eliminar'}))return;
   layoutZones.splice(i,1);
   saveLayoutZones();renderZoneList();render();
 }
@@ -1534,8 +2009,8 @@ function deleteZoneDirect(i){
 canvas.addEventListener('click',e=>{if(panning||panMode&&panning) return;if(panMode) return;if(mode==='draw'){const[wx,wy]=toW(e.offsetX,e.offsetY);const snap=snapToVertex(wx,wy);curPts.push(snap||[wx,wy]);canvas._snapPt=null;render();}else if(mode==='label'){if(justDraggedLabel){justDraggedLabel=false;return;}const[wx,wy]=toW(e.offsetX,e.offsetY);openLabelModal([wx,wy]);}else{const[wx,wy]=toW(e.offsetX,e.offsetY);let found=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){found=i;break;}}selectedArea=found;updateList();render();}});
 canvas.addEventListener('dblclick',e=>{if(panMode||mode!=='draw') return;if(curPts.length<3){curPts=[];render();return;}const pts=[...curPts];curPts=[];canvas._snapPt=null;if(MODO==='layout'){openZoneModal(pts);}else{openModal(pts,null,null);}});
 canvas.addEventListener('mousemove',e=>{if(!DXF) return;const[wx,wy]=toW(e.offsetX,e.offsetY);const bb=DXF.bbox;
-document.getElementById('coords').textContent='x: '+(wx-bb.min_x).toFixed(1)+'m  y: '+(wy-bb.min_y).toFixed(1)+'m';
-if(mode==='rect'&&rectStart){const rw=Math.abs(wx-rectStart[0]),rh=Math.abs(wy-rectStart[1]);document.getElementById('rectArea').textContent=(rw*rh).toFixed(1)+' m²';document.getElementById('rectArea').style.display='block';}
+document.getElementById('coords').textContent='x '+NF1.format(wx-bb.min_x)+' m · y '+NF1.format(wy-bb.min_y)+' m';
+if(mode==='rect'&&rectStart){const rw=Math.abs(wx-rectStart[0]),rh=Math.abs(wy-rectStart[1]);document.getElementById('rectArea').textContent=fmtM2(rw*rh);document.getElementById('rectArea').style.display='block';}
 else{document.getElementById('rectArea').style.display='none';}
 if(panning&&panStart){ox=panOff[0]+(e.clientX-panStart[0]);oy=panOff[1]+(e.clientY-panStart[1]);render();}
 if(draggingLabelIdx>=0){
@@ -1549,15 +2024,12 @@ if(!panning&&curPts.length===0&&!rectStart&&document.getElementById('modalBg').s
   let hov=null;for(let i=areas.length-1;i>=0;i--){if(pip([wx,wy],areas[i].pts)){hov=i;break;}}
   if(hov!==null){
     const a=areas[hov];
-    let h=`<div style="font-weight:800;font-size:12px;color:${a.color};margin-bottom:3px">${getAreaLabel(a)}</div>`;
-    h+=`<div style="font-weight:600;color:var(--text2);margin-bottom:5px;font-size:10px">${a.totalArea.toFixed(2)} m²</div>`;
+    let h=`<div class="tip-title"><i style="background:${a.color}"></i>${escHtml(getAreaLabel(a))}</div>`;
+    h+=`<div class="tip-total">${fmtM2(a.totalArea,2)}</div>`;
     a.activities.forEach(act=>{
-      const m2=(act.pct/100*a.totalArea).toFixed(1);
-      const col=isCedido(act.name)?'#a805e0':'var(--brand-dark)';
-      h+=`<div style="border-top:1px solid var(--border);padding-top:4px;margin-top:4px">`;
-      h+=`<div style="display:flex;justify-content:space-between;gap:10px"><span style="font-weight:600;color:${col};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${act.name}</span><span style="font-weight:700;color:var(--text2);white-space:nowrap">${act.pct}% · ${m2} m²</span></div>`;
-      if(act.client) h+=`<div style="color:#a805e0;font-size:10px;margin-top:2px">${getClientDesc(act.client)}</div>`;
-      if(act.observacion) h+=`<div style="color:var(--text3);font-size:10px;margin-top:1px">${act.observacion}</div>`;
+      h+=`<div class="tip-act"><div class="tip-act-top"><span class="tip-act-name${isCedido(act.name)?' cedido':''}">${escHtml(act.name)}</span><span class="tip-act-val">${act.pct}% · ${fmtM2(act.pct/100*a.totalArea)}</span></div>`;
+      if(act.client) h+=`<div class="tip-client">${escHtml(getClientDesc(act.client))}</div>`;
+      if(act.observacion) h+=`<div class="tip-obs">${escHtml(act.observacion)}</div>`;
       h+=`</div>`;
     });
     tip.innerHTML=h;tip.style.display='block';
@@ -1599,8 +2071,24 @@ canvas.addEventListener('mouseup',e=>{
 });
 canvas.addEventListener('wheel',e=>{if(!DXF) return;e.preventDefault();const f=e.deltaY<0?1.12:0.9;ox=e.offsetX-(e.offsetX-ox)*f;oy=e.offsetY-(e.offsetY-oy)*f;scale*=f;render();},{passive:false});
 
-document.addEventListener('keydown',e=>{if(!DXF) return;if(e.code==='Space'&&mode!=='pan'){e.preventDefault();modeBeforeSpace=mode;setMode('pan');}if(e.code==='Escape'){curPts=[];canvas._snapPt=null;selectedArea=null;updateList();render();}if((e.code==='Delete'||e.code==='Backspace')&&selectedArea!==null&&document.getElementById('modalBg').style.display==='none') deleteArea(selectedArea);if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();const modalOpen=document.getElementById('modalBg').style.display!=='none';if(modalOpen&&editingIdx===-1){curPts=pendingPts?[...pendingPts]:[];closeModal(false);}else if(curPts.length>0){undoVertex();}else if(areas.length>0){areas.pop();selectedArea=null;updateList();saveAreas();render();}}});
-document.addEventListener('keyup',e=>{if(e.code==='Space'){setMode(modeBeforeSpace||(MODO==='layout'?'label':'draw'));modeBeforeSpace=null;}});
+document.addEventListener('keydown',e=>{if(!DXF||document.getElementById('app').style.display==='none') return;
+  // No interceptar teclas mientras se escribe en un campo o hay un modal abierto.
+  if(e.target.closest&&e.target.closest('input,textarea,select,[contenteditable]')) return;
+  if(anyModalOpen()&&!(openModalEl().id==='modalBg'&&(e.ctrlKey||e.metaKey)&&e.key==='z')) return;
+  if(!e.ctrlKey&&!e.metaKey&&!e.altKey){
+    const k=e.key.toLowerCase();
+    if(k==='p'){setMode('draw');return;}
+    if(k==='r'){setMode('rect');return;}
+    if(k==='h'){setMode('pan');return;}
+    if(k==='e'&&MODO==='layout'){setMode('label');return;}
+    if(k==='f'){resetView();return;}
+    if(e.key==='+'||e.key==='='){zoom(1.2);return;}
+    if(e.key==='-'||e.key==='_'){zoom(0.83);return;}
+  }
+  if(e.code==='Space'&&e.target.closest&&e.target.closest('button')) return;
+  if(e.code==='Space'&&e.repeat){e.preventDefault();return;}
+  if(e.code==='Space'&&mode!=='pan'){e.preventDefault();modeBeforeSpace=mode;setMode('pan');}if(e.code==='Escape'){curPts=[];canvas._snapPt=null;selectedArea=null;updateList();render();}if((e.code==='Delete'||e.code==='Backspace')&&selectedArea!==null&&document.getElementById('modalBg').style.display==='none') deleteArea(selectedArea);if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();const modalOpen=document.getElementById('modalBg').style.display!=='none';if(modalOpen&&editingIdx===-1){curPts=pendingPts?[...pendingPts]:[];closeModal(false);}else if(curPts.length>0){undoVertex();}else if(areas.length>0){areas.pop();selectedArea=null;updateList();saveAreas();render();}}});
+document.addEventListener('keyup',e=>{if(e.code==='Space'&&modeBeforeSpace){setMode(modeBeforeSpace||(MODO==='layout'?'label':'draw'));modeBeforeSpace=null;}});
 
 function setMode(m){
   mode=m;
@@ -1613,7 +2101,14 @@ function setMode(m){
   document.getElementById('btnLabel')?.classList.toggle('active-tool',m==='label');
   canvas.style.cursor=m==='pan'?'grab':m==='draw'||m==='rect'||m==='label'?'crosshair':'default';
   const lastStep=MODO==='layout'?'3. Elegí tipo y guardá':'3. Asigná actividades y %';
-  document.getElementById('instrTxt').innerHTML=m==='draw'?`<strong>Modo polígono:</strong><br>1. Clic = vértice${MODO==='layout'?' de la zona':' del área'}<br>2. Doble clic = cerrar polígono<br>${lastStep}`:m==='rect'?'<strong>Modo rectángulo:</strong><br>1. Clic y arrastrá para dibujar<br>2. Soltá para confirmar':m==='label'?'<strong>Modo etiqueta:</strong><br>Clic en el plano para poner una etiqueta':'<strong>Modo mover:</strong><br>Clic y arrastrá para mover el plano<br><kbd>Espacio</kbd> también activa este modo';
+  const TOOL_ICO={draw:document.getElementById('btnD').innerHTML,rect:document.getElementById('btnR').innerHTML,pan:document.getElementById('btnPan').innerHTML,label:document.getElementById('btnLabel').innerHTML};
+  const what=MODO==='layout'?'la zona':'el área';
+  const steps=m==='draw'?['Clic para marcar cada vértice','Doble clic para cerrar '+what,lastStep.replace(/^3\. /,'')]
+    :m==='rect'?['Clic y arrastrá sobre el plano','Soltá para cerrar '+what,lastStep.replace(/^3\. /,'')]
+    :m==='label'?['Clic en el plano para poner una etiqueta','Arrastrá una etiqueta para moverla','Clic sobre ella para editarla']
+    :['Clic y arrastrá para mover el plano','Rueda del mouse para hacer zoom','Mantené Espacio para mover desde otra herramienta'];
+  const title=m==='draw'?'Polígono':m==='rect'?'Rectángulo':m==='label'?'Etiqueta':'Mover';
+  document.getElementById('instrTxt').innerHTML=`<span class="instr-ico">${TOOL_ICO[m]||''}</span><strong>${title}</strong><ol>${steps.map(t=>`<li>${t}</li>`).join('')}</ol>`;
   updateList();render();
 }
 function zoomToSlider(val){const cx=canvas.width/2,cy=canvas.height/2;const target=baseScale*Math.pow(10,(val-50)/40);const f=target/scale;ox=cx-(cx-ox)*f;oy=cy-(cy-oy)*f;scale=target;render();}
@@ -1646,13 +2141,13 @@ async function cargarTrabajoSplash(input){
       const data=JSON.parse(e.target.result);
       if(!data.suc||!(data.floors||data.areas)) throw new Error();
       const suc=SUCURSALES.find(s=>s.code===data.suc);
-      if(!suc||!suc.available){alert('Sucursal no disponible.');return;}
+      if(!suc||!suc.available){toast('La sucursal '+data.suc+' del archivo no está disponible.','error');return;}
       currentSuc=suc;currentFloor=null;
       if(!aplicarTrabajo(data,suc.code)) throw new Error();
       if(window.filterSucursales)window.filterSucursales(document.getElementById('sucSearch')?.value||'');
       // enterFloor() lee las áreas de cada piso desde el navegador.
       await enterLayout();
-    }catch(err){alert('Archivo inválido.');}
+    }catch(err){toast('Archivo inválido: elegí un .json exportado desde esta plataforma.','error');}
   };
   reader.readAsText(file);
   input.value='';
@@ -1665,38 +2160,39 @@ async function cargarTrabajoSplash(input){
    if(floors){
     const fd={};
     floors.forEach(f=>{try{const saved=localStorage.getItem(`areas_${currentSuc.code}_${f.id}`);if(saved)fd[f.id]=JSON.parse(saved);}catch(e){}});
-    if(!Object.values(fd).some(a=>a&&a.length)){alert('No hay áreas para guardar.');return;}
+    if(!Object.values(fd).some(a=>a&&a.length)){toast('No hay áreas para guardar todavía.','info');return;}
     data=JSON.stringify({suc:currentSuc.code,multiFloor:true,floors:fd},null,2);
   }else{
-    if(!areas.length){alert('No hay áreas para guardar.');return;}
+    if(!areas.length){toast('No hay áreas para guardar todavía.','info');return;}
     data=JSON.stringify({suc:currentSuc.code,areas},null,2);
   }
   const a=document.createElement('a');
   a.href='data:application/json;charset=utf-8,'+encodeURIComponent(data);
   a.download='trabajo_'+(currentSuc?currentSuc.code:'SUC')+'_'+new Date().toISOString().slice(0,10)+'.json';
   a.click();
+  toast('Trabajo guardado: '+a.download,'success');
 }
 
 function cargarTrabajo(input){
   const file=input.files[0];if(!file)return;
   const reader=new FileReader();
-  reader.onload=e=>{
+  reader.onload=async e=>{
     try{
       const data=JSON.parse(e.target.result);
-      if(data.suc&&data.suc!==currentSuc.code&&!confirm('Este archivo es de '+data.suc+' pero estás en '+currentSuc.code+'. ¿Cargar igual?'))return;
+      if(data.suc&&data.suc!==currentSuc.code&&!await uiConfirm('El archivo es de '+data.suc+' y estás en '+currentSuc.code+'.',{title:'¿Cargar el trabajo igual?',ok:'Cargar igual',danger:false}))return;
       if(!aplicarTrabajo(data,currentSuc.code)) throw new Error();
       const key=currentFloor?`areas_${currentSuc.code}_${currentFloor.id}`:`areas_${currentSuc.code}`;
       areas=JSON.parse(localStorage.getItem(key)||'[]');colIdx=areas.length;selectedArea=null;
       updateList();render();
       if(window.filterSucursales)window.filterSucursales(document.getElementById('sucSearch')?.value||'');
-    }catch(err){alert('Archivo inválido.');}
+    }catch(err){toast('Archivo inválido: elegí un .json exportado desde esta plataforma.','error');}
   };
   reader.readAsText(file);
   input.value='';
 }
-  function limpiarAreas(){
-  if(!areas.length) return;
-  if(!confirm('¿Estás seguro que querés borrar todas las áreas? Esta acción no se puede deshacer.')) return;
+  async function limpiarAreas(){
+  if(!areas.length){toast('Este piso no tiene áreas para borrar.','info');return;}
+  if(!await uiConfirm(`Se borran las ${areas.length} áreas de este piso (${fmtM2(areas.reduce((s,a)=>s+a.totalArea,0))}). Te conviene exportar el .json antes. No se puede deshacer.`,{title:'¿Borrar todas las áreas del piso?',ok:'Borrar áreas'})) return;
   areas=[];colIdx=0;selectedArea=null;
   saveAreas();updateList();render();
 }
@@ -1710,7 +2206,7 @@ function getFamilia(actName){
   return '';
 }
   function checkBeforeExport(){
-  if(!currentSuc){ alert('No hay sucursal seleccionada.'); return false; }
+  if(!currentSuc){ toast('No hay sucursal seleccionada.','error'); return false; }
   return true;
 }
 function exportSVG(){
@@ -1721,7 +2217,7 @@ function exportSVG(){
   if(floors){
     floors.forEach(f=>{try{const saved=localStorage.getItem(`areas_${currentSuc.code}_${f.id}`);if(saved)exportAreas.push(...JSON.parse(saved));}catch(e){}});
   }else{exportAreas=[...areas];}
-  if(!exportAreas.length){alert('No hay áreas para exportar.');return;}
+  if(!exportAreas.length){toast('No hay áreas para exportar todavía.','info');return;}
 
   const W=1200,H=760,PANEL=330,PAD=30;
   const mapX=PANEL,mapW=W-PANEL,mapH=H;
@@ -1895,6 +2391,7 @@ function hl(idx,on){
   const a2=document.createElement('a');
   a2.href=url;a2.download=(currentSuc?currentSuc.code:'plano')+'_plano.svg';a2.click();
   URL.revokeObjectURL(url);
+  toast('Plano exportado: '+a2.download,'success');
 }
   function exportXLSX(){
     if(!checkBeforeExport()) return;
@@ -1904,7 +2401,7 @@ function hl(idx,on){
   if(floors){
     floors.forEach(f=>{try{const saved=localStorage.getItem(`areas_${currentSuc.code}_${f.id}`);if(saved)exportAreas.push(...JSON.parse(saved));}catch(e){}});
   }else{exportAreas=[...areas];}
-  if(!exportAreas.length){alert('No hay áreas para exportar.');return;}
+  if(!exportAreas.length){toast('No hay áreas para exportar todavía.','info');return;}
   const wb=XLSX.utils.book_new();
   // Mismo formato que la planilla de distribución de m2: una fila por actividad,
   // N° por área (todas las filas de un área comparten número), Sector = familia
@@ -1934,6 +2431,7 @@ function hl(idx,on){
   XLSX.utils.book_append_sheet(wb,ws,'BASE');
   const fname='BASE_'+(currentSuc?currentSuc.code:'SUC')+'_'+new Date().toISOString().slice(0,10)+'.xlsx';
   XLSX.writeFile(wb,fname);
+  toast('Tabla BASE exportada: '+fname,'success');
 }
   function cleanMText(t){
   return t.replace(/\\P/gi,' ').replace(/\\[a-zA-Z][^;]*;/g,'').replace(/[{}\\]/g,'').trim();
@@ -2241,73 +2739,63 @@ if(v==='LINE'){
 }
 canvas.addEventListener('mouseleave',()=>document.getElementById('areaTooltip').style.display='none');
 </script>
-<div id="areaTooltip" style="display:none;position:fixed;z-index:50;pointer-events:none;background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;box-shadow:0 4px 20px rgba(0,0,0,.15);max-width:260px;font-family:'Montserrat',sans-serif;font-size:11px;line-height:1.7"></div>
+<div id="areaTooltip" class="area-tip"></div>
 
 <!-- Modal subir plano -->
-<div id="uploadModalBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:16px;padding:28px 28px 24px;width:100%;max-width:440px;box-shadow:0 12px 48px rgba(0,0,0,.18);border-top:4px solid var(--brand);font-family:'Montserrat',sans-serif">
-    <h3 style="font-size:16px;font-weight:800;margin-bottom:4px">Subir plano DXF</h3>
-    <p style="font-size:11px;color:var(--text2);margin-bottom:20px">El plano quedará disponible para todos los usuarios.</p>
+<div class="modal-bg" id="uploadModalBg" style="display:none;z-index:200" onclick="if(event.target===this)closeUploadModal()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
+    <h3 id="uploadTitle">Subir plano DXF</h3>
+    <p class="desc">El plano queda disponible para todos los usuarios.</p>
 
-    <div id="uploadMsgBox" style="display:none;padding:9px 12px;border-radius:8px;font-size:12px;font-weight:500;margin-bottom:14px"></div>
+    <div id="uploadMsgBox" class="msg-box"></div>
 
-    <div style="margin-bottom:14px">
-      <label style="display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-dark);margin-bottom:6px">Sucursal</label>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer">
-          <input type="radio" name="sucType" value="existing" checked onchange="toggleSucType(this.value)"> Existente
-        </label>
-        <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer">
-          <input type="radio" name="sucType" value="new" onchange="toggleSucType(this.value)"> Nueva sucursal
-        </label>
+    <div class="dropdown-section">
+      <label>Sucursal</label>
+      <div class="radio-row">
+        <label><input type="radio" name="sucType" value="existing" checked onchange="toggleSucType(this.value)"> Existente</label>
+        <label><input type="radio" name="sucType" value="new" onchange="toggleSucType(this.value)"> Nueva sucursal</label>
       </div>
       <div id="sucExistingWrap">
-        <select id="uploadSucSelect" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;outline:none;color:var(--text)">
-          <option value="">— Seleccioná una sucursal —</option>
+        <select id="uploadSucSelect" aria-label="Sucursal existente">
+          <option value="">Seleccioná una sucursal…</option>
         </select>
       </div>
-      <div id="sucNewWrap" style="display:none;display:flex;gap:8px">
-        <div style="flex:0 0 90px">
-          <input id="uploadIATA" type="text" maxlength="4" placeholder="IATA" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;outline:none;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
-        </div>
-        <div style="flex:1">
-          <input id="uploadNombre" type="text" placeholder="Nombre completo de la sucursal" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;outline:none">
-        </div>
+      <div id="sucNewWrap" style="display:none;gap:8px">
+        <input id="uploadIATA" type="text" maxlength="4" placeholder="IATA" aria-label="Código IATA" autocomplete="off" spellcheck="false" style="flex:0 0 90px;font-family:var(--mono);text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+        <input id="uploadNombre" type="text" placeholder="Nombre completo de la sucursal…" aria-label="Nombre de la sucursal" autocomplete="off" style="flex:1">
       </div>
     </div>
 
-    <div style="margin-bottom:14px">
-      <label style="display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-dark);margin-bottom:6px">Nombre del piso</label>
-      <input id="uploadPisoNombre" type="text" placeholder="Ej: Planta Baja, Subsuelo, Piso 1..." style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;outline:none">
+    <div class="dropdown-section">
+      <label for="uploadPisoNombre">Nombre del piso</label>
+      <input id="uploadPisoNombre" type="text" autocomplete="off" placeholder="Ej: Planta Baja, Subsuelo, Piso 1…">
     </div>
 
-    <div style="margin-bottom:20px">
-      <label style="display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-dark);margin-bottom:6px">Archivo DXF</label>
-      <input type="file" id="uploadDXFInput" accept=".dxf" style="width:100%;padding:8px;border:1.5px dashed var(--border);border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;cursor:pointer">
+    <div class="dropdown-section">
+      <label for="uploadDXFInput">Archivo DXF</label>
+      <input type="file" id="uploadDXFInput" accept=".dxf" style="height:auto;padding:8px;border-style:dashed">
     </div>
 
-    <div style="display:flex;gap:8px">
-      <button onclick="closeUploadModal()" style="padding:10px 16px;background:none;border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer">Cancelar</button>
-      <button id="uploadSubmitBtn" onclick="submitPlanUpload()" style="flex:1;padding:10px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s">Subir plano</button>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" type="button" onclick="closeUploadModal()">Cancelar</button>
+      <button class="btn btn-primary" type="button" id="uploadSubmitBtn" onclick="submitPlanUpload()">Subir plano</button>
     </div>
   </div>
 </div>
 
-<div id="manageModalBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center" onclick="if(event.target===this)closeManageModal()">
-  <div style="background:#fff;border-radius:16px;padding:28px 28px 24px;width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(0,0,0,.18);border-top:4px solid var(--brand);font-family:'Montserrat',sans-serif">
-    <h3 style="font-size:16px;font-weight:800;margin-bottom:4px">Planos cargados</h3>
-    <p style="font-size:11px;color:var(--text2);margin-bottom:16px">Borrá puntualmente el que no corresponda — el resto queda intacto.</p>
-    <div id="manageList" style="overflow-y:auto;flex:1;margin-bottom:16px"></div>
-    <button onclick="closeManageModal()" style="padding:10px 16px;background:none;border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer">Cerrar</button>
+<div class="modal-bg" id="manageModalBg" style="display:none;z-index:200" onclick="if(event.target===this)closeManageModal()">
+  <div class="modal modal-flex" style="max-width:520px;max-height:80vh" role="dialog" aria-modal="true" aria-labelledby="manageTitle">
+    <div class="modal-head"><div class="modal-head-main"><h3 id="manageTitle">Planos cargados</h3><div class="sub">Borrá puntualmente el que no corresponda; el resto queda intacto.</div></div>
+      <button class="icon-btn" type="button" onclick="closeManageModal()" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="modal-body" id="manageList"></div>
   </div>
 </div>
 
-<div id="manageUsersModalBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center" onclick="if(event.target===this)closeManageUsersModal()">
-  <div style="background:#fff;border-radius:16px;padding:28px 28px 24px;width:100%;max-width:520px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(0,0,0,.18);border-top:4px solid var(--brand);font-family:'Montserrat',sans-serif">
-    <h3 style="font-size:16px;font-weight:800;margin-bottom:4px">Acceso por usuario</h3>
-    <p style="font-size:11px;color:var(--text2);margin-bottom:16px">Tildá las funciones a las que cada usuario debe tener acceso. Los cambios se guardan al instante.</p>
-    <div id="manageUsersList" style="overflow-y:auto;flex:1;margin-bottom:16px"></div>
-    <button onclick="closeManageUsersModal()" style="padding:10px 16px;background:none;border:1.5px solid var(--border);color:var(--text2);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer">Cerrar</button>
+<div class="modal-bg" id="manageUsersModalBg" style="display:none;z-index:200" onclick="if(event.target===this)closeManageUsersModal()">
+  <div class="modal modal-flex" style="max-width:560px;max-height:80vh" role="dialog" aria-modal="true" aria-labelledby="usersTitle">
+    <div class="modal-head"><div class="modal-head-main"><h3 id="usersTitle">Usuarios y accesos</h3><div class="sub">Tildá las funciones de cada usuario. Los cambios se guardan al instante.</div></div>
+      <button class="icon-btn" type="button" onclick="closeManageUsersModal()" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="modal-body" id="manageUsersList"></div>
   </div>
 </div>
 </body>

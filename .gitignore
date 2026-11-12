@@ -1,0 +1,4 @@
+# Skills locales del agente (no se publican en GitHub Pages)
+.agents/
+.claude/
+skills-lock.json
